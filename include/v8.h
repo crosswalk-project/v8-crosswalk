@@ -1835,6 +1835,24 @@ class V8_EXPORT Value : public Data {
   bool IsFloat32Array() const;
 
   /**
+   * Returns true if this value is a Float32x4Array.
+   * This is an experimental feature.
+   */
+  bool IsFloat32x4Array() const;
+
+  /**
+   * Returns true if this value is a Float64x2Array.
+   * This is an experimental feature.
+   */
+  bool IsFloat64x2Array() const;
+
+  /**
+   * Returns true if this value is a Int32x4Array.
+   * This is an experimental feature.
+   */
+  bool IsInt32x4Array() const;
+
+  /**
    * Returns true if this value is a Float64Array.
    * This is an experimental feature.
    */
@@ -2391,8 +2409,11 @@ enum ExternalArrayType {
   kExternalInt16Array,
   kExternalUint16Array,
   kExternalInt32Array,
+  kExternalInt32x4Array,
   kExternalUint32Array,
   kExternalFloat32Array,
+  kExternalFloat32x4Array,
+  kExternalFloat64x2Array,
   kExternalFloat64Array,
   kExternalUint8ClampedArray,
 
@@ -3311,6 +3332,42 @@ class V8_EXPORT Float32Array : public TypedArray {
 
  private:
   Float32Array();
+  static void CheckCast(Value* obj);
+};
+
+
+class V8_EXPORT Float32x4Array : public TypedArray {
+ public:
+  static Local<Float32x4Array> New(Handle<ArrayBuffer> array_buffer,
+                                   size_t byte_offset, size_t length);
+  V8_INLINE static Float32x4Array* Cast(Value* obj);
+
+ private:
+  Float32x4Array();
+  static void CheckCast(Value* obj);
+};
+
+
+class V8_EXPORT Float64x2Array : public TypedArray {
+ public:
+  static Local<Float64x2Array> New(Handle<ArrayBuffer> array_buffer,
+                                   size_t byte_offset, size_t length);
+  V8_INLINE static Float64x2Array* Cast(Value* obj);
+
+ private:
+  Float64x2Array();
+  static void CheckCast(Value* obj);
+};
+
+
+class V8_EXPORT Int32x4Array : public TypedArray {
+ public:
+  static Local<Int32x4Array> New(Handle<ArrayBuffer> array_buffer,
+                                 size_t byte_offset, size_t length);
+  V8_INLINE static Int32x4Array* Cast(Value* obj);
+
+ private:
+  Int32x4Array();
   static void CheckCast(Value* obj);
 };
 
@@ -6237,7 +6294,7 @@ class Internals {
   static const int kJSObjectHeaderSize = 3 * kApiPointerSize;
   static const int kFixedArrayHeaderSize = 2 * kApiPointerSize;
   static const int kContextHeaderSize = 2 * kApiPointerSize;
-  static const int kContextEmbedderDataIndex = 74;
+  static const int kContextEmbedderDataIndex = 87;
   static const int kFullStringRepresentationMask = 0x07;
   static const int kStringEncodingMask = 0x4;
   static const int kExternalTwoByteRepresentationTag = 0x02;
@@ -6255,7 +6312,7 @@ class Internals {
   static const int kNullValueRootIndex = 7;
   static const int kTrueValueRootIndex = 8;
   static const int kFalseValueRootIndex = 9;
-  static const int kEmptyStringRootIndex = 155;
+  static const int kEmptyStringRootIndex = 167;
 
   // The external allocation limit should be below 256 MB on all architectures
   // to avoid that resource-constrained embedders run low on memory.
@@ -6270,7 +6327,7 @@ class Internals {
   static const int kNodeIsIndependentShift = 3;
   static const int kNodeIsPartiallyDependentShift = 4;
 
-  static const int kJSObjectType = 0xbd;
+  static const int kJSObjectType = 0xc3;
   static const int kFirstNonstringType = 0x80;
   static const int kOddballType = 0x83;
   static const int kForeignType = 0x88;
@@ -7217,6 +7274,30 @@ Float32Array* Float32Array::Cast(v8::Value* value) {
   CheckCast(value);
 #endif
   return static_cast<Float32Array*>(value);
+}
+
+
+Float32x4Array* Float32x4Array::Cast(v8::Value* value) {
+#ifdef V8_ENABLE_CHECKS
+  CheckCast(value);
+#endif
+  return static_cast<Float32x4Array*>(value);
+}
+
+
+Float64x2Array* Float64x2Array::Cast(v8::Value* value) {
+#ifdef V8_ENABLE_CHECKS
+  CheckCast(value);
+#endif
+  return static_cast<Float64x2Array*>(value);
+}
+
+
+Int32x4Array* Int32x4Array::Cast(v8::Value* value) {
+#ifdef V8_ENABLE_CHECKS
+  CheckCast(value);
+#endif
+  return static_cast<Int32x4Array*>(value);
 }
 
 
