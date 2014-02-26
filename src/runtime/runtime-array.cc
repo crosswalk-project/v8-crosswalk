@@ -330,6 +330,26 @@ static void IterateTypedArrayElements(Isolate* isolate,
   }
 }
 
+#define DECLARE_ITERATE_SIMD_ARRAY_ELEMENTS(TYPE)                              \
+template <class ExternalArrayClass>                                            \
+static void Iterate##TYPE##ArrayElements(Isolate* isolate,                     \
+                                          Handle<JSObject> receiver,           \
+                                          ArrayConcatVisitor* visitor) {       \
+  Handle<ExternalArrayClass> array(                                            \
+      ExternalArrayClass::cast(receiver->elements()));                         \
+  uint32_t len = static_cast<uint32_t>(array->length());                       \
+                                                                               \
+  DCHECK(visitor != NULL);                                                     \
+  for (uint32_t j = 0; j < len; j++) {                                         \
+    HandleScope loop_scope(isolate);                                           \
+    Handle<Object> e = isolate->factory()->New##TYPE(array->get_scalar(j));    \
+    visitor->visit(j, e);                                                      \
+  }                                                                            \
+}
+
+DECLARE_ITERATE_SIMD_ARRAY_ELEMENTS(Float32x4)
+DECLARE_ITERATE_SIMD_ARRAY_ELEMENTS(Int32x4)
+DECLARE_ITERATE_SIMD_ARRAY_ELEMENTS(Float64x2)
 
 // Used for sorting indices in a List<uint32_t>.
 static int compareUInt32(const uint32_t* ap, const uint32_t* bp) {
@@ -671,6 +691,36 @@ static bool IterateElements(Isolate* isolate, Handle<JSObject> receiver,
     case FLOAT32_ELEMENTS: {
       IterateTypedArrayElements<FixedFloat32Array, float>(
       isolate, receiver, false, false, visitor);
+      break;
+    }
+    case EXTERNAL_FLOAT32x4_ELEMENTS: {
+      IterateFloat32x4ArrayElements<ExternalFloat32x4Array>(
+          isolate, receiver, visitor);
+      break;
+    }
+    case FLOAT32x4_ELEMENTS: {
+      IterateFloat32x4ArrayElements<FixedFloat32x4Array>(
+          isolate, receiver, visitor);
+      break;
+    }
+    case EXTERNAL_FLOAT64x2_ELEMENTS: {
+      IterateFloat64x2ArrayElements<ExternalFloat64x2Array>(
+          isolate, receiver, visitor);
+      break;
+    }
+    case FLOAT64x2_ELEMENTS: {
+      IterateFloat64x2ArrayElements<FixedFloat64x2Array>(
+          isolate, receiver, visitor);
+      break;
+    }
+    case EXTERNAL_INT32x4_ELEMENTS: {
+      IterateInt32x4ArrayElements<ExternalInt32x4Array>(
+          isolate, receiver, visitor);
+      break;
+    }
+    case INT32x4_ELEMENTS: {
+      IterateInt32x4ArrayElements<FixedInt32x4Array>(
+          isolate, receiver, visitor);
       break;
     }
     case EXTERNAL_FLOAT64_ELEMENTS: {

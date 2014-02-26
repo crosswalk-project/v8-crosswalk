@@ -20,6 +20,142 @@
 namespace v8 {
 namespace internal {
 
+inline bool IsSIMD128LoadStoreOp(BuiltinFunctionId op) {
+  return (op == kFloat32ArrayGetFloat32x4XYZW ||
+      op == kFloat32ArrayGetFloat32x4X ||
+      op == kFloat32ArrayGetFloat32x4XY ||
+      op == kFloat32ArrayGetFloat32x4XYZ ||
+      op == kFloat64ArrayGetFloat64x2XY ||
+      op == kFloat64ArrayGetFloat64x2X ||
+      op == kInt32ArrayGetInt32x4XYZW ||
+      op == kInt32ArrayGetInt32x4X ||
+      op == kInt32ArrayGetInt32x4XY ||
+      op == kInt32ArrayGetInt32x4XYZ ||
+      op == kInt8ArrayGetFloat32x4XYZW ||
+      op == kInt8ArrayGetFloat32x4X ||
+      op == kInt8ArrayGetFloat32x4XY ||
+      op == kInt8ArrayGetFloat32x4XYZ ||
+      op == kInt8ArrayGetFloat64x2XY ||
+      op == kInt8ArrayGetFloat64x2X ||
+      op == kInt8ArrayGetInt32x4XYZW ||
+      op == kInt8ArrayGetInt32x4X ||
+      op == kInt8ArrayGetInt32x4XY ||
+      op == kInt8ArrayGetInt32x4XYZ ||
+      op == kUint8ArrayGetFloat32x4XYZW ||
+      op == kUint8ArrayGetFloat32x4X ||
+      op == kUint8ArrayGetFloat32x4XY ||
+      op == kUint8ArrayGetFloat32x4XYZ ||
+      op == kUint8ArrayGetFloat64x2XY ||
+      op == kUint8ArrayGetFloat64x2X ||
+      op == kUint8ArrayGetInt32x4XYZW ||
+      op == kUint8ArrayGetInt32x4X ||
+      op == kUint8ArrayGetInt32x4XY ||
+      op == kUint8ArrayGetInt32x4XYZ ||
+      op == kFloat32ArraySetFloat32x4XYZW ||
+      op == kFloat32ArraySetFloat32x4X ||
+      op == kFloat32ArraySetFloat32x4XY ||
+      op == kFloat32ArraySetFloat32x4XYZ ||
+      op == kFloat64ArraySetFloat64x2XY ||
+      op == kFloat64ArraySetFloat64x2X ||
+      op == kInt32ArraySetInt32x4XYZW ||
+      op == kInt32ArraySetInt32x4X ||
+      op == kInt32ArraySetInt32x4XY ||
+      op == kInt32ArraySetInt32x4XYZ ||
+      op == kInt8ArraySetFloat32x4XYZW ||
+      op == kInt8ArraySetFloat32x4X ||
+      op == kInt8ArraySetFloat32x4XY ||
+      op == kInt8ArraySetFloat32x4XYZ ||
+      op == kInt8ArraySetFloat64x2XY ||
+      op == kInt8ArraySetFloat64x2X ||
+      op == kInt8ArraySetInt32x4XYZW ||
+      op == kInt8ArraySetInt32x4X ||
+      op == kInt8ArraySetInt32x4XY ||
+      op == kInt8ArraySetInt32x4XYZ ||
+      op == kUint8ArraySetFloat32x4XYZW ||
+      op == kUint8ArraySetFloat32x4X ||
+      op == kUint8ArraySetFloat32x4XY ||
+      op == kUint8ArraySetFloat32x4XYZ ||
+      op == kUint8ArraySetFloat64x2XY ||
+      op == kUint8ArraySetFloat64x2X ||
+      op == kUint8ArraySetInt32x4XYZW ||
+      op == kUint8ArraySetInt32x4X ||
+      op == kUint8ArraySetInt32x4XY ||
+      op == kUint8ArraySetInt32x4XYZ);
+}
+
+
+int GetSIMD128LoadStoreBytes(BuiltinFunctionId op) {
+  if (op == kFloat32ArrayGetFloat32x4XYZW ||
+      op == kFloat64ArrayGetFloat64x2XY ||
+      op == kInt32ArrayGetInt32x4XYZW ||
+      op == kInt8ArrayGetFloat32x4XYZW ||
+      op == kInt8ArrayGetFloat64x2XY ||
+      op == kInt8ArrayGetInt32x4XYZW ||
+      op == kUint8ArrayGetFloat32x4XYZW ||
+      op == kUint8ArrayGetFloat64x2XY ||
+      op == kUint8ArrayGetInt32x4XYZW ||
+      op == kFloat32ArraySetFloat32x4XYZW ||
+      op == kFloat64ArraySetFloat64x2XY ||
+      op == kInt32ArraySetInt32x4XYZW ||
+      op == kInt8ArraySetFloat32x4XYZW ||
+      op == kInt8ArraySetFloat64x2XY ||
+      op == kInt8ArraySetInt32x4XYZW ||
+      op == kUint8ArraySetFloat32x4XYZW ||
+      op == kUint8ArraySetFloat64x2XY ||
+      op == kUint8ArraySetInt32x4XYZW) {
+    return 16;
+  } else if (op == kFloat32ArrayGetFloat32x4X ||
+      op == kInt32ArrayGetInt32x4X ||
+      op == kInt8ArrayGetFloat32x4X ||
+      op == kInt8ArrayGetInt32x4X ||
+      op == kUint8ArrayGetFloat32x4X ||
+      op == kUint8ArrayGetInt32x4X ||
+      op == kFloat32ArraySetFloat32x4X ||
+      op == kInt32ArraySetInt32x4X ||
+      op == kInt8ArraySetFloat32x4X ||
+      op == kInt8ArraySetInt32x4X ||
+      op == kUint8ArraySetFloat32x4X ||
+      op == kUint8ArraySetInt32x4X) {
+    return 4;
+  } else if (op == kFloat32ArrayGetFloat32x4XY ||
+      op == kFloat64ArrayGetFloat64x2X ||
+      op == kInt32ArrayGetInt32x4XY ||
+      op == kInt8ArrayGetFloat32x4XY ||
+      op == kInt8ArrayGetFloat64x2X ||
+      op == kInt8ArrayGetInt32x4XY ||
+      op == kUint8ArrayGetFloat32x4XY ||
+      op == kUint8ArrayGetFloat64x2X ||
+      op == kUint8ArrayGetInt32x4XY ||
+      op == kFloat32ArraySetFloat32x4XY ||
+      op == kFloat64ArraySetFloat64x2X ||
+      op == kInt32ArraySetInt32x4XY ||
+      op == kInt8ArraySetFloat32x4XY ||
+      op == kInt8ArraySetFloat64x2X ||
+      op == kInt8ArraySetInt32x4XY ||
+      op == kUint8ArraySetFloat32x4XY ||
+      op == kUint8ArraySetFloat64x2X ||
+      op == kUint8ArraySetInt32x4XY) {
+    return 8;
+  } else if (op == kFloat32ArrayGetFloat32x4XYZ ||
+      op == kInt32ArrayGetInt32x4XYZ ||
+      op == kInt8ArrayGetFloat32x4XYZ ||
+      op == kInt8ArrayGetInt32x4XYZ ||
+      op == kUint8ArrayGetFloat32x4XYZ ||
+      op == kUint8ArrayGetInt32x4XYZ ||
+      op == kFloat32ArraySetFloat32x4XYZ ||
+      op == kInt32ArraySetInt32x4XYZ ||
+      op == kInt8ArraySetFloat32x4XYZ ||
+      op == kInt8ArraySetInt32x4XYZ ||
+      op == kUint8ArraySetFloat32x4XYZ ||
+      op == kUint8ArraySetInt32x4XYZ) {
+    return 12;
+  } else {
+    UNREACHABLE();
+    return -1;
+  }
+}
+
+
 // When invoking builtins, we need to record the safepoint in the middle of
 // the invoke instruction sequence generated by the macro assembler.
 class SafepointGenerator FINAL : public CallWrapper {
@@ -3069,13 +3205,95 @@ void LCodeGen::DoAccessArgumentsAt(LAccessArgumentsAt* instr) {
 }
 
 
+void LCodeGen::DoDeferredSIMD128ToTagged(LInstruction* instr,
+                                         Runtime::FunctionId id) {
+  // TODO(3095996): Get rid of this. For now, we need to make the
+  // result register contain a valid pointer because it is already
+  // contained in the register pointer map.
+  Register reg = ToRegister(instr->result());
+  __ Move(reg, Immediate(0));
+
+  PushSafepointRegistersScope scope(this);
+  __ mov(esi, Operand(ebp, StandardFrameConstants::kContextOffset));
+  __ CallRuntimeSaveDoubles(id);
+  RecordSafepointWithRegisters(
+      instr->pointer_map(), 0, Safepoint::kNoLazyDeopt);
+  __ StoreToSafepointRegisterSlot(reg, eax);
+}
+
+
+void LCodeGen::HandleExternalArrayOpRequiresTemp(
+    LOperand* key,
+    Representation key_representation,
+    ElementsKind elements_kind) {
+  if (ExternalArrayOpRequiresPreScale(key_representation, elements_kind)) {
+    int pre_shift_size = ElementsKindToShiftSize(elements_kind) -
+        static_cast<int>(maximal_scale_factor);
+    if (key_representation.IsSmi()) {
+      pre_shift_size -= kSmiTagSize;
+    }
+    DCHECK(pre_shift_size > 0);
+    __ shl(ToRegister(key), pre_shift_size);
+  } else {
+    __ SmiUntag(ToRegister(key));
+  }
+}
+
+
+template<class T>
+void LCodeGen::DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr) {
+  class DeferredSIMD128ToTagged FINAL : public LDeferredCode {
+   public:
+    DeferredSIMD128ToTagged(LCodeGen* codegen,
+        LInstruction* instr,
+        Runtime::FunctionId id)
+      : LDeferredCode(codegen), instr_(instr), id_(id) { }
+    virtual void Generate() OVERRIDE {
+      codegen()->DoDeferredSIMD128ToTagged(instr_, id_);
+    }
+    virtual LInstruction* instr() OVERRIDE { return instr_; }
+   private:
+    LInstruction* instr_;
+    Runtime::FunctionId id_;
+  };
+
+  // Allocate a SIMD128 object on the heap.
+  Register reg = ToRegister(instr->result());
+  Register tmp0 = ToRegister(instr->temp0());
+  Register tmp1 = ToRegister(instr->temp1());
+  DeferredSIMD128ToTagged* deferred = new(zone()) DeferredSIMD128ToTagged(
+      this, instr, static_cast<Runtime::FunctionId>(T::kRuntimeAllocatorId()));
+  __ jmp(deferred->entry());
+  __ bind(deferred->exit());
+
+  // Load the inner FixedTypedArray object to reg.
+  __ mov(tmp1, FieldOperand(reg, T::kValueOffset));
+
+  // Copy the SIMD128 value from the external array to the heap object.
+  STATIC_ASSERT(T::kValueSize % kPointerSize == 0);
+  LOperand* key = instr->key();
+  ElementsKind elements_kind = instr->elements_kind();
+  for (int offset = 0; offset < T::kValueSize; offset += kPointerSize) {
+    Operand operand(BuildFastArrayOperand(
+        instr->elements(),
+        key,
+        instr->hydrogen()->key()->representation(),
+        elements_kind,
+        instr->base_offset() + offset));
+    __ mov(tmp0, operand);
+    __ mov(FieldOperand(tmp1, FixedTypedArrayBase::kDataOffset + offset), tmp0);
+  }
+}
+
+
 void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
   ElementsKind elements_kind = instr->elements_kind();
   LOperand* key = instr->key();
   if (!key->IsConstantOperand() &&
       ExternalArrayOpRequiresTemp(instr->hydrogen()->key()->representation(),
                                   elements_kind)) {
-    __ SmiUntag(ToRegister(key));
+    HandleExternalArrayOpRequiresTemp(key,
+        instr->hydrogen()->key()->representation(), elements_kind);
   }
   Operand operand(BuildFastArrayOperand(
       instr->elements(),
@@ -3083,7 +3301,28 @@ void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
       instr->hydrogen()->key()->representation(),
       elements_kind,
       instr->base_offset()));
-  if (elements_kind == EXTERNAL_FLOAT32_ELEMENTS ||
+  BuiltinFunctionId op = instr->hydrogen()->op();
+  if (IsSIMD128LoadStoreOp(op)) {
+    if (GetSIMD128LoadStoreBytes(op) == 16) {
+      __ movups(ToSIMD128Register(instr->result()), operand);
+    } else if (GetSIMD128LoadStoreBytes(op) == 4) {
+      __ movss(ToSIMD128Register(instr->result()), operand);
+    } else if (GetSIMD128LoadStoreBytes(op) == 8) {
+      __ movq(ToSIMD128Register(instr->result()), operand);
+    } else if (GetSIMD128LoadStoreBytes(op) == 12) {
+      XMMRegister result(ToSIMD128Register(instr->result()));
+      XMMRegister xmm_scratch = double_scratch0();
+      __ movq(result, operand);
+      Operand operand2(BuildFastArrayOperand(
+          instr->elements(),
+          key,
+          instr->hydrogen()->key()->representation(),
+          elements_kind,
+          instr->base_offset() + 8));
+      __ movss(xmm_scratch, operand2);
+      __ movlhps(result, xmm_scratch);
+    }
+  } else if (elements_kind == EXTERNAL_FLOAT32_ELEMENTS ||
       elements_kind == FLOAT32_ELEMENTS) {
     XMMRegister result(ToDoubleRegister(instr->result()));
     __ movss(result, operand);
@@ -3091,6 +3330,12 @@ void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
   } else if (elements_kind == EXTERNAL_FLOAT64_ELEMENTS ||
              elements_kind == FLOAT64_ELEMENTS) {
     __ movsd(ToDoubleRegister(instr->result()), operand);
+  } else if (IsFloat32x4ElementsKind(elements_kind)) {
+    DoLoadKeyedSIMD128ExternalArray<Float32x4>(instr);
+  } else if (IsFloat64x2ElementsKind(elements_kind)) {
+    DoLoadKeyedSIMD128ExternalArray<Float64x2>(instr);
+  } else if (IsInt32x4ElementsKind(elements_kind)) {
+    DoLoadKeyedSIMD128ExternalArray<Int32x4>(instr);
   } else {
     Register result(ToRegister(instr->result()));
     switch (elements_kind) {
@@ -3126,8 +3371,14 @@ void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
         break;
       case EXTERNAL_FLOAT32_ELEMENTS:
       case EXTERNAL_FLOAT64_ELEMENTS:
+      case EXTERNAL_FLOAT32x4_ELEMENTS:
+      case EXTERNAL_FLOAT64x2_ELEMENTS:
+      case EXTERNAL_INT32x4_ELEMENTS:
       case FLOAT32_ELEMENTS:
       case FLOAT64_ELEMENTS:
+      case FLOAT32x4_ELEMENTS:
+      case FLOAT64x2_ELEMENTS:
+      case INT32x4_ELEMENTS:
       case FAST_SMI_ELEMENTS:
       case FAST_ELEMENTS:
       case FAST_DOUBLE_ELEMENTS:
@@ -3216,8 +3467,11 @@ Operand LCodeGen::BuildFastArrayOperand(
                    ((constant_value) << shift_size)
                        + base_offset);
   } else {
-    // Take the tag bit into account while computing the shift size.
-    if (key_representation.IsSmi() && (shift_size >= 1)) {
+    if (ExternalArrayOpRequiresPreScale(key_representation, elements_kind)) {
+      // Make sure the key is pre-scaled against maximal_scale_factor.
+      shift_size = static_cast<int>(maximal_scale_factor);
+    } else if (key_representation.IsSmi() && (shift_size >= 1)) {
+      // Take the tag bit into account while computing the shift size.
       shift_size -= kSmiTagSize;
     }
     ScaleFactor scale_factor = static_cast<ScaleFactor>(shift_size);
@@ -4175,17 +4429,52 @@ void LCodeGen::DoStoreNamedGeneric(LStoreNamedGeneric* instr) {
 
 void LCodeGen::DoBoundsCheck(LBoundsCheck* instr) {
   Condition cc = instr->hydrogen()->allow_equality() ? above : above_equal;
-  if (instr->index()->IsConstantOperand()) {
-    __ cmp(ToOperand(instr->length()),
-           ToImmediate(LConstantOperand::cast(instr->index()),
-                       instr->hydrogen()->length()->representation()));
-    cc = CommuteCondition(cc);
-  } else if (instr->length()->IsConstantOperand()) {
-    __ cmp(ToOperand(instr->index()),
-           ToImmediate(LConstantOperand::cast(instr->length()),
-                       instr->hydrogen()->index()->representation()));
+  BuiltinFunctionId op = instr->hydrogen()->op();
+  if (IsSIMD128LoadStoreOp(op)) {
+    cc = above;
+    Register index_in_bytes = ToRegister(instr->temp0());
+    Register length_in_bytes = ToRegister(instr->temp1());
+    if (instr->index()->IsConstantOperand())
+      __ mov(index_in_bytes, ToImmediate(LConstantOperand::cast(instr->index()),
+          instr->hydrogen()->index()->representation()));
+    else
+      __ mov(index_in_bytes, ToOperand(instr->index()));
+    int index_shift_size =
+        ElementsKindToShiftSize(instr->hydrogen()->element_kind());
+    if (instr->hydrogen()->index()->representation().IsSmi())
+      index_shift_size -= kSmiTagSize;
+    DCHECK(index_shift_size >= 0);
+    if (index_shift_size > 0)
+      __ shl(index_in_bytes, index_shift_size);
+    int bytes = GetSIMD128LoadStoreBytes(op);
+    __ add(index_in_bytes, Immediate(bytes));
+    if (instr->length()->IsConstantOperand())
+      __ mov(length_in_bytes,
+             ToImmediate(LConstantOperand::cast(instr->length()),
+      instr->hydrogen()->length()->representation()));
+    else
+      __ mov(length_in_bytes, ToOperand(instr->length()));
+    int length_shift_size =
+      ElementsKindToShiftSize(instr->hydrogen()->element_kind());
+    if (instr->hydrogen()->length()->representation().IsSmi())
+      length_shift_size -= kSmiTagSize;
+    DCHECK(length_shift_size >= 0);
+    if (length_shift_size > 0)
+      __ shl(length_in_bytes, length_shift_size);
+    __ cmp(index_in_bytes, length_in_bytes);
   } else {
-    __ cmp(ToRegister(instr->index()), ToOperand(instr->length()));
+    if (instr->index()->IsConstantOperand()) {
+      __ cmp(ToOperand(instr->length()),
+        ToImmediate(LConstantOperand::cast(instr->index()),
+        instr->hydrogen()->length()->representation()));
+      cc = CommuteCondition(cc);
+    } else if (instr->length()->IsConstantOperand()) {
+      __ cmp(ToOperand(instr->index()),
+        ToImmediate(LConstantOperand::cast(instr->length()),
+        instr->hydrogen()->index()->representation()));
+    } else {
+      __ cmp(ToRegister(instr->index()), ToOperand(instr->length()));
+    }
   }
   if (FLAG_debug_code && instr->hydrogen()->skip_check()) {
     Label done;
@@ -4198,13 +4487,46 @@ void LCodeGen::DoBoundsCheck(LBoundsCheck* instr) {
 }
 
 
+template<class T>
+void LCodeGen::DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr) {
+  DCHECK(instr->value()->IsRegister());
+  Register temp0 = ToRegister(instr->temp0());
+  Register temp1 = ToRegister(instr->temp1());
+  Register input_reg = ToRegister(instr->value());
+  __ test(input_reg, Immediate(kSmiTagMask));
+  DeoptimizeIf(zero, instr, Deoptimizer::kSmi);
+  __ CmpObjectType(input_reg, T::kInstanceType, temp0);
+  DeoptimizeIf(not_equal, instr, Deoptimizer::kNotASIMD128);
+
+  // Load the inner FixedTypedArray object to reg.
+  __ mov(temp1, FieldOperand(input_reg, T::kValueOffset));
+
+  // Copy the SIMD128 value from the heap object to the external array.
+  STATIC_ASSERT(T::kValueSize % kPointerSize == 0);
+  LOperand* key = instr->key();
+  ElementsKind elements_kind = instr->elements_kind();
+  for (int offset = 0; offset < T::kValueSize; offset += kPointerSize) {
+    Operand operand(BuildFastArrayOperand(
+        instr->elements(),
+        key,
+        instr->hydrogen()->key()->representation(),
+        elements_kind,
+        instr->base_offset() + offset));
+    __ mov(temp0,
+           FieldOperand(temp1, FixedTypedArrayBase::kDataOffset + offset));
+    __ mov(operand, temp0);
+  }
+}
+
+
 void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
   ElementsKind elements_kind = instr->elements_kind();
   LOperand* key = instr->key();
   if (!key->IsConstantOperand() &&
       ExternalArrayOpRequiresTemp(instr->hydrogen()->key()->representation(),
                                   elements_kind)) {
-    __ SmiUntag(ToRegister(key));
+    HandleExternalArrayOpRequiresTemp(key,
+        instr->hydrogen()->key()->representation(), elements_kind);
   }
   Operand operand(BuildFastArrayOperand(
       instr->elements(),
@@ -4212,7 +4534,28 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
       instr->hydrogen()->key()->representation(),
       elements_kind,
       instr->base_offset()));
-  if (elements_kind == EXTERNAL_FLOAT32_ELEMENTS ||
+  BuiltinFunctionId op = instr->hydrogen()->op();
+  if (IsSIMD128LoadStoreOp(op)) {
+    if (GetSIMD128LoadStoreBytes(op) == 16) {
+      __ movups(operand, ToSIMD128Register(instr->value()));
+    } else if (GetSIMD128LoadStoreBytes(op) == 4) {
+      __ movss(operand, ToSIMD128Register(instr->value()));
+    } else if (GetSIMD128LoadStoreBytes(op) == 8) {
+      __ movq(operand, ToSIMD128Register(instr->value()));
+    } else if (GetSIMD128LoadStoreBytes(op) == 12) {
+      XMMRegister value(ToSIMD128Register(instr->value()));
+      XMMRegister xmm_scratch = double_scratch0();
+      __ movq(operand, value);
+      Operand operand2(BuildFastArrayOperand(
+          instr->elements(),
+          key,
+          instr->hydrogen()->key()->representation(),
+          elements_kind,
+          instr->base_offset() + 8));
+      __ movhlps(xmm_scratch, value);
+      __ movss(operand2, xmm_scratch);
+    }
+  } else if (elements_kind == EXTERNAL_FLOAT32_ELEMENTS ||
       elements_kind == FLOAT32_ELEMENTS) {
     XMMRegister xmm_scratch = double_scratch0();
     __ cvtsd2ss(xmm_scratch, ToDoubleRegister(instr->value()));
@@ -4220,6 +4563,12 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
   } else if (elements_kind == EXTERNAL_FLOAT64_ELEMENTS ||
              elements_kind == FLOAT64_ELEMENTS) {
     __ movsd(operand, ToDoubleRegister(instr->value()));
+  } else if (IsFloat32x4ElementsKind(elements_kind)) {
+    DoStoreKeyedSIMD128ExternalArray<Float32x4>(instr);
+  } else if (IsFloat64x2ElementsKind(elements_kind)) {
+    DoStoreKeyedSIMD128ExternalArray<Float64x2>(instr);
+  } else if (IsInt32x4ElementsKind(elements_kind)) {
+    DoStoreKeyedSIMD128ExternalArray<Int32x4>(instr);
   } else {
     Register value = ToRegister(instr->value());
     switch (elements_kind) {
@@ -4245,8 +4594,14 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
         break;
       case EXTERNAL_FLOAT32_ELEMENTS:
       case EXTERNAL_FLOAT64_ELEMENTS:
+      case EXTERNAL_FLOAT32x4_ELEMENTS:
+      case EXTERNAL_FLOAT64x2_ELEMENTS:
+      case EXTERNAL_INT32x4_ELEMENTS:
       case FLOAT32_ELEMENTS:
       case FLOAT64_ELEMENTS:
+      case FLOAT32x4_ELEMENTS:
+      case FLOAT64x2_ELEMENTS:
+      case INT32x4_ELEMENTS:
       case FAST_SMI_ELEMENTS:
       case FAST_ELEMENTS:
       case FAST_DOUBLE_ELEMENTS:
