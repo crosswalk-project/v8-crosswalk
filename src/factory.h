@@ -317,6 +317,11 @@ class Factory {
   Handle<HeapNumber> NewHeapNumber(double value,
                                    PretenureFlag pretenure = NOT_TENURED);
 
+  Handle<Float32x4> NewFloat32x4(float32x4_value_t value,
+                                 PretenureFlag pretenure = NOT_TENURED);
+
+  Handle<Int32x4> NewInt32x4(int32x4_value_t value,
+                               PretenureFlag pretenure = NOT_TENURED);
 
   // These objects are used by the api to create env-independent data
   // structures in the heap.

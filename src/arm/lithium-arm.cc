@@ -2121,7 +2121,10 @@ LInstruction* LChunkBuilder::DoLoadRoot(HLoadRoot* instr) {
 LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
   ASSERT(instr->key()->representation().IsSmiOrInteger32());
   ElementsKind elements_kind = instr->elements_kind();
-  LOperand* key = UseRegisterOrConstantAtStart(instr->key());
+  bool load_128bits_without_neon = IsSIMD128ElementsKind(elements_kind);
+  LOperand* key = load_128bits_without_neon
+      ? UseRegisterOrConstant(instr->key())
+      : UseRegisterOrConstantAtStart(instr->key());
   LLoadKeyed* result = NULL;
 
   if (!instr->is_typed_elements()) {
@@ -2132,15 +2135,24 @@ LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
       ASSERT(instr->representation().IsSmiOrTagged());
       obj = UseRegisterAtStart(instr->elements());
     }
-    result = new(zone()) LLoadKeyed(obj, key);
+    result = new(zone()) LLoadKeyed(obj, key, NULL, NULL);
   } else {
     ASSERT(
         (instr->representation().IsInteger32() &&
          !IsDoubleOrFloatElementsKind(instr->elements_kind())) ||
         (instr->representation().IsDouble() &&
-         IsDoubleOrFloatElementsKind(instr->elements_kind())));
+         IsDoubleOrFloatElementsKind(instr->elements_kind())) ||
+        (instr->representation().IsTagged() &&
+         (IsSIMD128ElementsKind(instr->elements_kind()))));
     LOperand* backing_store = UseRegister(instr->elements());
-    result = new(zone()) LLoadKeyed(backing_store, key);
+    result = load_128bits_without_neon
+        ? new(zone()) LLoadKeyed(backing_store, key,
+                                 TempRegister(), TempRegister())
+        : new(zone()) LLoadKeyed(backing_store, key, NULL, NULL);
+    if (load_128bits_without_neon) {
+      info()->MarkAsDeferredCalling();
+      AssignPointerMap(result);
+    }
   }
 
   DefineAsRegister(result);
@@ -2189,22 +2201,31 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
       }
     }
 
-    return new(zone()) LStoreKeyed(object, key, val);
+    return new(zone()) LStoreKeyed(object, key, val, NULL);
   }
 
   ASSERT(
       (instr->value()->representation().IsInteger32() &&
        !IsDoubleOrFloatElementsKind(instr->elements_kind())) ||
       (instr->value()->representation().IsDouble() &&
-       IsDoubleOrFloatElementsKind(instr->elements_kind())));
+       IsDoubleOrFloatElementsKind(instr->elements_kind())) ||
+      (instr->value()->representation().IsTagged() &&
+       IsSIMD128ElementsKind(instr->elements_kind())));
   ASSERT((instr->is_fixed_typed_array() &&
           instr->elements()->representation().IsTagged()) ||
          (instr->is_external() &&
           instr->elements()->representation().IsExternal()));
   LOperand* val = UseRegister(instr->value());
-  LOperand* key = UseRegisterOrConstantAtStart(instr->key());
   LOperand* backing_store = UseRegister(instr->elements());
-  return new(zone()) LStoreKeyed(backing_store, key, val);
+  bool store_128bits_without_neon =
+      IsSIMD128ElementsKind(instr->elements_kind());
+  LOperand* key = store_128bits_without_neon
+      ? UseRegisterOrConstant(instr->key())
+      : UseRegisterOrConstantAtStart(instr->key());
+  LStoreKeyed* result =
+      new(zone()) LStoreKeyed(backing_store, key, val,
+          store_128bits_without_neon ? TempRegister() : NULL);
+  return store_128bits_without_neon ? AssignEnvironment(result) : result;
 }
 
 

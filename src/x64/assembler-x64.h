@@ -373,6 +373,7 @@ enum ScaleFactor {
   times_2 = 1,
   times_4 = 2,
   times_8 = 3,
+  maximal_scale_factor = times_8,
   times_int_size = times_4,
   times_pointer_size = (kPointerSize == 8) ? times_8 : times_4
 };

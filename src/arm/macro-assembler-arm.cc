@@ -3244,6 +3244,26 @@ void MacroAssembler::AllocateHeapNumberWithValue(Register result,
 }
 
 
+// Allocates a simd128 object or jumps to the need_gc label if the young space
+// is full and a scavenge is needed.
+void MacroAssembler::AllocateSIMDHeapObject(int size,
+                                            Register result,
+                                            Register scratch1,
+                                            Register scratch2,
+                                            Register map,
+                                            Label* gc_required,
+                                            TaggingMode tagging_mode) {
+  Allocate(size, result, scratch1, scratch2, gc_required,
+           tagging_mode == TAG_RESULT ? TAG_OBJECT : NO_ALLOCATION_FLAGS);
+
+  if (tagging_mode == TAG_RESULT) {
+    str(map, FieldMemOperand(result, HeapObject::kMapOffset));
+  } else {
+    str(map, MemOperand(result, HeapObject::kMapOffset));
+  }
+}
+
+
 // Copies a fixed number of fields of heap objects from src to dst.
 void MacroAssembler::CopyFields(Register dst,
                                 Register src,
