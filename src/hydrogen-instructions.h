@@ -6603,6 +6603,15 @@ class HLoadKeyed V8_FINAL
           elements_kind == FLOAT32_ELEMENTS ||
           elements_kind == FLOAT64_ELEMENTS) {
         set_representation(Representation::Double());
+      } else if (IsFloat32x4ElementsKind(elements_kind)) {
+        set_representation(CpuFeatures::SupportsSIMD128InCrankshaft() ?
+            Representation::Float32x4() : Representation::Tagged());
+      } else if (IsFloat64x2ElementsKind(elements_kind)) {
+        set_representation(CpuFeatures::SupportsSIMD128InCrankshaft() ?
+            Representation::Float64x2() : Representation::Tagged());
+      } else if (IsInt32x4ElementsKind(elements_kind)) {
+        set_representation(CpuFeatures::SupportsSIMD128InCrankshaft() ?
+            Representation::Int32x4() : Representation::Tagged());
       } else {
         set_representation(Representation::Integer32());
       }
@@ -6909,6 +6918,18 @@ class HStoreKeyed V8_FINAL
     if (IsDoubleOrFloatElementsKind(elements_kind())) {
       return Representation::Double();
     }
+    if (IsFloat32x4ElementsKind(elements_kind())) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Float32x4() : Representation::Tagged();
+    }
+    if (IsFloat64x2ElementsKind(elements_kind())) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Float64x2() : Representation::Tagged();
+    }
+    if (IsInt32x4ElementsKind(elements_kind())) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Int32x4() : Representation::Tagged();
+    }
     if (SmiValuesAre32Bits() && store_mode_ == STORE_TO_INITIALIZED_ENTRY) {
       return Representation::Integer32();
     }
@@ -6940,6 +6961,18 @@ class HStoreKeyed V8_FINAL
     }
     if (IsDoubleOrFloatElementsKind(elements_kind())) {
       return Representation::Double();
+    }
+    if (IsFloat32x4ElementsKind(elements_kind())) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Float32x4() : Representation::Tagged();
+    }
+    if (IsFloat64x2ElementsKind(elements_kind())) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Float64x2() : Representation::Tagged();
+    }
+    if (IsInt32x4ElementsKind(elements_kind())) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Int32x4() : Representation::Tagged();
     }
     if (SmiValuesAre32Bits() && store_mode_ == STORE_TO_INITIALIZED_ENTRY) {
       return Representation::Integer32();
