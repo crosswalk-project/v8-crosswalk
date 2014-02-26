@@ -592,6 +592,187 @@ bool ParserTraits::ShortcutNumericLiteralBinaryExpression(
 }
 
 
+bool ParserTraits::BuildSIMD128LoadStoreExpression(
+    Expression** expression, ZoneList<Expression*>* arguments, int pos,
+    AstNodeFactory* factory) {
+  Property* prop = (*expression)->AsProperty();
+  Expression* tarray_op_literal = NULL;
+
+  if (prop) {
+    Property* simd_type_prop = prop->obj()->AsProperty();
+    if (simd_type_prop) {
+      VariableProxy* simd_var = simd_type_prop->obj()->AsVariableProxy();
+      if (simd_var && simd_var->raw_name() &&
+          simd_var->raw_name()->IsOneByteEqualTo("SIMD")) {
+        Literal* type_literal =  simd_type_prop->key()->AsLiteral();
+        if (type_literal && type_literal->raw_value() &&
+            type_literal->raw_value()->AsString()) {
+          const AstRawString* type_literal_raw_string =
+              type_literal->raw_value()->AsString();
+          if (type_literal_raw_string->IsOneByteEqualTo("float32x4")) {
+            Literal* op_literal = prop->key()->AsLiteral();
+            if (op_literal && op_literal->raw_value() &&
+                op_literal->raw_value()->AsString()) {
+              const AstRawString* op_raw_string =
+                  op_literal->raw_value()->AsString();
+              AstValueFactory* ast_factory = parser_->ast_value_factory();
+              if (op_raw_string->IsOneByteEqualTo("load")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_getFloat32x4XYZW");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("loadX")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_getFloat32x4X");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("loadXY")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_getFloat32x4XY");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("loadXYZ")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_getFloat32x4XYZ");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("store")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_setFloat32x4XYZW");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("storeX")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_setFloat32x4X");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("storeXY")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_setFloat32x4XY");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("storeXYZ")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_setFloat32x4XYZ");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              }
+            }
+          } else if (type_literal_raw_string->IsOneByteEqualTo("int32x4")) {
+            Literal* op_literal = prop->key()->AsLiteral();
+            if (op_literal && op_literal->raw_value() &&
+                op_literal->raw_value()->AsString()) {
+              const AstRawString* op_raw_string =
+                  op_literal->raw_value()->AsString();
+              AstValueFactory* ast_factory = parser_->ast_value_factory();
+              if (op_raw_string->IsOneByteEqualTo("load")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_getInt32x4XYZW");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("loadX")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_getInt32x4X");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("loadXY")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_getInt32x4XY");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("loadXYZ")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_getInt32x4XYZ");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("store")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_setInt32x4XYZW");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("storeX")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_setInt32x4X");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("storeXY")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_setInt32x4XY");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("storeXYZ")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_setInt32x4XYZ");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              }
+            }
+          } else if (type_literal_raw_string->IsOneByteEqualTo("float64x2")) {
+            Literal* op_literal = prop->key()->AsLiteral();
+            if (op_literal && op_literal->raw_value() &&
+                op_literal->raw_value()->AsString()) {
+              const AstRawString* op_raw_string =
+                  op_literal->raw_value()->AsString();
+              AstValueFactory* ast_factory = parser_->ast_value_factory();
+              if (op_raw_string->IsOneByteEqualTo("load")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_getFloat64x2XY");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("loadX")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_getFloat64x2X");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("store")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_setFloat64x2XY");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              } else if (op_raw_string->IsOneByteEqualTo("storeX")) {
+                const AstRawString* op_str =
+                    ast_factory->GetOneByteString("_setFloat64x2X");
+                tarray_op_literal =
+                    factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (tarray_op_literal) {
+    if (arguments && arguments->length() == 2) {
+      Expression* tarray = arguments->at(0);
+      Expression* index = arguments->at(1);
+      Expression* tarray_op =
+          factory->NewProperty(tarray, tarray_op_literal, pos);
+      Zone* zone = parser_->zone();
+      ZoneList<Expression*>* tarray_op_args =
+          new (zone) ZoneList<Expression*>(1, zone);
+      tarray_op_args->Add(index, zone);
+      *expression = factory->NewCall(tarray_op, tarray_op_args, pos);
+      return true;
+    } else if (arguments && arguments->length() == 3) {
+      Expression* tarray = arguments->at(0);
+      Expression* index = arguments->at(1);
+      Expression* value = arguments->at(2);
+      Expression* tarray_op =
+          factory->NewProperty(tarray, tarray_op_literal, pos);
+      Zone* zone = parser_->zone();
+      ZoneList<Expression*>* tarray_op_args =
+          new (zone) ZoneList<Expression*>(1, zone);
+      tarray_op_args->Add(index, zone);
+      tarray_op_args->Add(value, zone);
+      *expression = factory->NewCall(tarray_op, tarray_op_args, pos);
+      return true;
+    }
+  }
+  return false;
+}
+
+
 Expression* ParserTraits::BuildUnaryExpression(Expression* expression,
                                                Token::Value op, int pos,
                                                AstNodeFactory* factory) {
