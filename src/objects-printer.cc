@@ -60,6 +60,15 @@ void HeapObject::HeapObjectPrint(std::ostream& os) {  // NOLINT
       HeapNumber::cast(this)->HeapNumberPrint(os);
       os << ">";
       break;
+    case FLOAT32x4_TYPE:
+      Float32x4::cast(this)->Float32x4Print(os);
+      break;
+    case FLOAT64x2_TYPE:
+      Float64x2::cast(this)->Float64x2Print(os);
+      break;
+    case INT32x4_TYPE:
+      Int32x4::cast(this)->Int32x4Print(os);
+      break;
     case FIXED_DOUBLE_ARRAY_TYPE:
       FixedDoubleArray::cast(this)->FixedDoubleArrayPrint(os);
       break;
@@ -270,6 +279,38 @@ static void DoPrintElements(std::ostream& os, Object* object) {  // NOLINT
 }
 
 
+template<class T>
+static void DoPrintFloat32x4Elements(std::ostream& os, Object* object) {
+  T* p = T::cast(object);
+  for (int i = 0; i < p->length(); i++) {
+    float32x4_value_t value =  p->get_scalar(i);
+    os << "   " << i << ": (" << value.storage[0] << value.storage[1] <<
+        value.storage[2] << value.storage[3] << ")\n";
+  }
+}
+
+
+template<class T>
+static void DoPrintFloat64x2Elements(std::ostream& os, Object* object) {
+  T* p = T::cast(object);
+  for (int i = 0; i < p->length(); i++) {
+    float64x2_value_t value =  p->get_scalar(i);
+    os << "   " << i << ": (" << value.storage[0] << value.storage[1] << ")\n";
+  }
+}
+
+
+template<class T>
+static void DoPrintInt32x4Elements(std::ostream& os, Object* object) {
+  T* p = T::cast(object);
+  for (int i = 0; i < p->length(); i++) {
+    int32x4_value_t value =  p->get_scalar(i);
+    os << "   " << i << ": (" << value.storage[0] << value.storage[1] <<
+        value.storage[2] << value.storage[3] << ")\n";
+  }
+}
+
+
 void JSObject::PrintElements(std::ostream& os) {  // NOLINT
   // Don't call GetElementsKind, its validation code can cause the printer to
   // fail when debugging.
@@ -310,6 +351,24 @@ void JSObject::PrintElements(std::ostream& os) {  // NOLINT
     break;                                 \
   }
 
+#define PRINT_FLOAT32x4_ELEMENTS(Kind, Type)                                \
+    case Kind: {                                                            \
+      DoPrintFloat32x4Elements<Type>(os, elements());                       \
+      break;                                                                \
+    }
+
+#define PRINT_FLOAT64x2_ELEMENTS(Kind, Type)                                \
+    case Kind: {                                                            \
+      DoPrintFloat64x2Elements<Type>(os, elements());                       \
+      break;                                                                \
+    }
+
+#define PRINT_INT32x4_ELEMENTS(Kind, Type)                                  \
+    case Kind: {                                                            \
+      DoPrintInt32x4Elements<Type>(os, elements());                         \
+      break;                                                                \
+    }
+
     PRINT_ELEMENTS(EXTERNAL_UINT8_CLAMPED_ELEMENTS, ExternalUint8ClampedArray)
     PRINT_ELEMENTS(EXTERNAL_INT8_ELEMENTS, ExternalInt8Array)
     PRINT_ELEMENTS(EXTERNAL_UINT8_ELEMENTS,
@@ -322,6 +381,11 @@ void JSObject::PrintElements(std::ostream& os) {  // NOLINT
         ExternalUint32Array)
     PRINT_ELEMENTS(EXTERNAL_FLOAT32_ELEMENTS, ExternalFloat32Array)
     PRINT_ELEMENTS(EXTERNAL_FLOAT64_ELEMENTS, ExternalFloat64Array)
+    PRINT_FLOAT32x4_ELEMENTS(EXTERNAL_FLOAT32x4_ELEMENTS,
+        ExternalFloat32x4Array)
+    PRINT_FLOAT64x2_ELEMENTS(EXTERNAL_FLOAT64x2_ELEMENTS,
+        ExternalFloat64x2Array)
+    PRINT_INT32x4_ELEMENTS(EXTERNAL_INT32x4_ELEMENTS, ExternalInt32x4Array)
 
     PRINT_ELEMENTS(UINT8_ELEMENTS, FixedUint8Array)
     PRINT_ELEMENTS(UINT8_CLAMPED_ELEMENTS, FixedUint8ClampedArray)
@@ -332,6 +396,9 @@ void JSObject::PrintElements(std::ostream& os) {  // NOLINT
     PRINT_ELEMENTS(INT32_ELEMENTS, FixedInt32Array)
     PRINT_ELEMENTS(FLOAT32_ELEMENTS, FixedFloat32Array)
     PRINT_ELEMENTS(FLOAT64_ELEMENTS, FixedFloat64Array)
+    PRINT_FLOAT32x4_ELEMENTS(FLOAT32x4_ELEMENTS, FixedFloat32x4Array)
+    PRINT_FLOAT64x2_ELEMENTS(FLOAT64x2_ELEMENTS, FixedFloat64x2Array)
+    PRINT_INT32x4_ELEMENTS(INT32x4_ELEMENTS, FixedInt32x4Array)
 
 #undef PRINT_ELEMENTS
 
