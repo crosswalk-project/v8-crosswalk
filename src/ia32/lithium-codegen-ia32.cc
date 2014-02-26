@@ -3332,13 +3332,115 @@ void LCodeGen::DoAccessArgumentsAt(LAccessArgumentsAt* instr) {
 }
 
 
+void LCodeGen::DoDeferredSIMD128ToTagged(LInstruction* instr,
+                                         Runtime::FunctionId id) {
+  // TODO(3095996): Get rid of this. For now, we need to make the
+  // result register contain a valid pointer because it is already
+  // contained in the register pointer map.
+  Register reg = ToRegister(instr->result());
+  __ Set(reg, Immediate(0));
+
+  PushSafepointRegistersScope scope(this);
+  __ mov(esi, Operand(ebp, StandardFrameConstants::kContextOffset));
+  __ CallRuntimeSaveDoubles(id);
+  RecordSafepointWithRegisters(
+      instr->pointer_map(), 0, Safepoint::kNoLazyDeopt);
+  __ StoreToSafepointRegisterSlot(reg, eax);
+}
+
+
+void LCodeGen::HandleExternalArrayOpRequiresTemp(
+    LOperand* key,
+    Representation key_representation,
+    ElementsKind elements_kind) {
+  if (ExternalArrayOpRequiresPreScale(key_representation, elements_kind)) {
+    int pre_shift_size = ElementsKindToShiftSize(elements_kind) -
+        static_cast<int>(maximal_scale_factor);
+    if (key_representation.IsSmi()) {
+      pre_shift_size -= kSmiTagSize;
+    }
+    ASSERT(pre_shift_size > 0);
+    __ shl(ToRegister(key), pre_shift_size);
+  } else {
+    __ SmiUntag(ToRegister(key));
+  }
+}
+
+
+template<class T>
+void LCodeGen::DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr) {
+  class DeferredSIMD128ToTagged V8_FINAL : public LDeferredCode {
+    public:
+      DeferredSIMD128ToTagged(LCodeGen* codegen,
+          LInstruction* instr,
+          Runtime::FunctionId id,
+          const X87Stack& x87_stack)
+        : LDeferredCode(codegen, x87_stack), instr_(instr), id_(id) { }
+      virtual void Generate() V8_OVERRIDE {
+        codegen()->DoDeferredSIMD128ToTagged(instr_, id_);
+      }
+      virtual LInstruction* instr() V8_OVERRIDE { return instr_; }
+    private:
+      LInstruction* instr_;
+      Runtime::FunctionId id_;
+  };
+
+  // Allocate a SIMD128 object on the heap.
+  Register reg = ToRegister(instr->result());
+  Register tmp = ToRegister(instr->temp());
+  DeferredSIMD128ToTagged* deferred = new(zone()) DeferredSIMD128ToTagged(
+      this, instr, static_cast<Runtime::FunctionId>(T::kRuntimeAllocatorId()),
+      x87_stack_);
+  if (FLAG_inline_new) {
+    __ AllocateSIMDHeapObject(T::kSize, reg, tmp, deferred->entry(),
+        static_cast<Heap::RootListIndex>(T::kMapRootIndex()));
+  } else {
+    __ jmp(deferred->entry());
+  }
+  __ bind(deferred->exit());
+
+  // Copy the SIMD128 value from the external array to the heap object.
+  STATIC_ASSERT(T::kValueSize % kPointerSize == 0);
+  LOperand* key = instr->key();
+  ElementsKind elements_kind = instr->elements_kind();
+  for (int offset = 0; offset < T::kValueSize; offset += kPointerSize) {
+    Operand operand(BuildFastArrayOperand(
+        instr->elements(),
+        key,
+        instr->hydrogen()->key()->representation(),
+        elements_kind,
+        offset,
+        instr->additional_index()));
+    __ mov(tmp, operand);
+    __ mov(FieldOperand(reg, T::kValueOffset + offset), tmp);
+  }
+}
+
+
 void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
+  class DeferredSIMD128ToTagged V8_FINAL : public LDeferredCode {
+    public:
+      DeferredSIMD128ToTagged(LCodeGen* codegen,
+          LInstruction* instr,
+          Runtime::FunctionId id,
+          const X87Stack& x87_stack)
+        : LDeferredCode(codegen, x87_stack), instr_(instr), id_(id) { }
+      virtual void Generate() V8_OVERRIDE {
+        codegen()->DoDeferredSIMD128ToTagged(instr_, id_);
+      }
+      virtual LInstruction* instr() V8_OVERRIDE { return instr_; }
+    private:
+      LInstruction* instr_;
+      Runtime::FunctionId id_;
+  };
+
   ElementsKind elements_kind = instr->elements_kind();
   LOperand* key = instr->key();
   if (!key->IsConstantOperand() &&
       ExternalArrayOpRequiresTemp(instr->hydrogen()->key()->representation(),
                                   elements_kind)) {
-    __ SmiUntag(ToRegister(key));
+    HandleExternalArrayOpRequiresTemp(key,
+        instr->hydrogen()->key()->representation(), elements_kind);
   }
   Operand operand(BuildFastArrayOperand(
       instr->elements(),
@@ -3365,6 +3467,10 @@ void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
     } else {
       X87Mov(ToX87Register(instr->result()), operand);
     }
+  } else if (IsFloat32x4ElementsKind(elements_kind)) {
+    DoLoadKeyedSIMD128ExternalArray<Float32x4>(instr);
+  } else if (IsInt32x4ElementsKind(elements_kind)) {
+    DoLoadKeyedSIMD128ExternalArray<Int32x4>(instr);
   } else {
     Register result(ToRegister(instr->result()));
     switch (elements_kind) {
@@ -3400,8 +3506,12 @@ void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
         break;
       case EXTERNAL_FLOAT32_ELEMENTS:
       case EXTERNAL_FLOAT64_ELEMENTS:
+      case EXTERNAL_FLOAT32x4_ELEMENTS:
+      case EXTERNAL_INT32x4_ELEMENTS:
       case FLOAT32_ELEMENTS:
       case FLOAT64_ELEMENTS:
+      case FLOAT32x4_ELEMENTS:
+      case INT32x4_ELEMENTS:
       case FAST_SMI_ELEMENTS:
       case FAST_ELEMENTS:
       case FAST_DOUBLE_ELEMENTS:
@@ -3506,8 +3616,11 @@ Operand LCodeGen::BuildFastArrayOperand(
                    ((constant_value + additional_index) << shift_size)
                        + offset);
   } else {
-    // Take the tag bit into account while computing the shift size.
-    if (key_representation.IsSmi() && (shift_size >= 1)) {
+    if (ExternalArrayOpRequiresPreScale(key_representation, elements_kind)) {
+      // Make sure the key is pre-scaled against maximal_scale_factor.
+      shift_size = static_cast<int>(maximal_scale_factor);
+    } else if (key_representation.IsSmi() && (shift_size >= 1)) {
+      // Take the tag bit into account while computing the shift size.
       shift_size -= kSmiTagSize;
     }
     ScaleFactor scale_factor = static_cast<ScaleFactor>(shift_size);
@@ -4436,13 +4549,42 @@ void LCodeGen::DoBoundsCheck(LBoundsCheck* instr) {
 }
 
 
+template<class T>
+void LCodeGen::DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr) {
+  ASSERT(instr->value()->IsRegister());
+  Register temp = ToRegister(instr->temp());
+  Register input_reg = ToRegister(instr->value());
+  __ test(input_reg, Immediate(kSmiTagMask));
+  DeoptimizeIf(zero, instr->environment());
+  __ CmpObjectType(input_reg, T::kInstanceType, temp);
+  DeoptimizeIf(not_equal, instr->environment());
+
+  // Copy the SIMD128 value from the heap object to the external array.
+  STATIC_ASSERT(T::kValueSize % kPointerSize == 0);
+  LOperand* key = instr->key();
+  ElementsKind elements_kind = instr->elements_kind();
+  for (int offset = 0; offset < T::kValueSize; offset += kPointerSize) {
+    Operand operand(BuildFastArrayOperand(
+        instr->elements(),
+        key,
+        instr->hydrogen()->key()->representation(),
+        elements_kind,
+        offset,
+        instr->additional_index()));
+    __ mov(temp, FieldOperand(input_reg, T::kValueOffset + offset));
+    __ mov(operand, temp);
+  }
+}
+
+
 void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
   ElementsKind elements_kind = instr->elements_kind();
   LOperand* key = instr->key();
   if (!key->IsConstantOperand() &&
       ExternalArrayOpRequiresTemp(instr->hydrogen()->key()->representation(),
                                   elements_kind)) {
-    __ SmiUntag(ToRegister(key));
+    HandleExternalArrayOpRequiresTemp(key,
+        instr->hydrogen()->key()->representation(), elements_kind);
   }
   Operand operand(BuildFastArrayOperand(
       instr->elements(),
@@ -4470,6 +4612,10 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
     } else {
       X87Mov(operand, ToX87Register(instr->value()));
     }
+  } else if (IsFloat32x4ElementsKind(elements_kind)) {
+    DoStoreKeyedSIMD128ExternalArray<Float32x4>(instr);
+  } else if (IsInt32x4ElementsKind(elements_kind)) {
+    DoStoreKeyedSIMD128ExternalArray<Int32x4>(instr);
   } else {
     Register value = ToRegister(instr->value());
     switch (elements_kind) {
@@ -4495,8 +4641,12 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
         break;
       case EXTERNAL_FLOAT32_ELEMENTS:
       case EXTERNAL_FLOAT64_ELEMENTS:
+      case EXTERNAL_FLOAT32x4_ELEMENTS:
+      case EXTERNAL_INT32x4_ELEMENTS:
       case FLOAT32_ELEMENTS:
       case FLOAT64_ELEMENTS:
+      case FLOAT32x4_ELEMENTS:
+      case INT32x4_ELEMENTS:
       case FAST_SMI_ELEMENTS:
       case FAST_ELEMENTS:
       case FAST_DOUBLE_ELEMENTS:
@@ -5966,6 +6116,16 @@ Condition LCodeGen::EmitTypeofIs(LTypeofIsAndBranch* instr, Register input) {
     __ JumpIfSmi(input, true_label, true_distance);
     __ cmp(FieldOperand(input, HeapObject::kMapOffset),
            factory()->heap_number_map());
+    final_branch_condition = equal;
+
+  } else if (type_name->Equals(heap()->float32x4_string())) {
+    __ JumpIfSmi(input, false_label, false_distance);
+    __ CmpObjectType(input, FLOAT32x4_TYPE, input);
+    final_branch_condition = equal;
+
+  } else if (type_name->Equals(heap()->int32x4_string())) {
+    __ JumpIfSmi(input, false_label, false_distance);
+    __ CmpObjectType(input, INT32x4_TYPE, input);
     final_branch_condition = equal;
 
   } else if (type_name->Equals(heap()->string_string())) {

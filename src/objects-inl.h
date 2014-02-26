@@ -177,6 +177,8 @@ bool Object::NonFailureIsHeapObject() {
 
 
 TYPE_CHECKER(HeapNumber, HEAP_NUMBER_TYPE)
+TYPE_CHECKER(Float32x4, FLOAT32x4_TYPE)
+TYPE_CHECKER(Int32x4, INT32x4_TYPE)
 TYPE_CHECKER(Symbol, SYMBOL_TYPE)
 
 
@@ -1145,6 +1147,23 @@ MaybeObject* Object::GetProperty(Name* key, PropertyAttributes* attributes) {
     write_double_field(p, offset, value)
 #endif  // V8_TARGET_ARCH_MIPS
 
+#define READ_FLOAT32x4_FIELD(p, offset) \
+  (*reinterpret_cast<float32x4_value_t*>(FIELD_ADDR(p, offset)))
+
+#define WRITE_FLOAT32x4_FIELD(p, offset, value) \
+  (*reinterpret_cast<float32x4_value_t*>(FIELD_ADDR(p, offset)) = value)
+
+#define READ_INT32x4_FIELD(p, offset) \
+  (*reinterpret_cast<int32x4_value_t*>(FIELD_ADDR(p, offset)))
+
+#define WRITE_INT32x4_FIELD(p, offset, value) \
+  (*reinterpret_cast<int32x4_value_t*>(FIELD_ADDR(p, offset)) = value)
+
+#define READ_FLOAT_FIELD(p, offset) \
+  (*reinterpret_cast<float*>(FIELD_ADDR(p, offset)))
+
+#define WRITE_FLOAT_FIELD(p, offset, value) \
+  (*reinterpret_cast<float*>(FIELD_ADDR(p, offset)) = value)
 
 #define READ_INT_FIELD(p, offset) \
   (*reinterpret_cast<int*>(FIELD_ADDR(p, offset)))
@@ -1414,6 +1433,58 @@ int HeapNumber::get_exponent() {
 
 int HeapNumber::get_sign() {
   return READ_INT_FIELD(this, kExponentOffset) & kSignMask;
+}
+
+
+int Float32x4::kRuntimeAllocatorId() {
+  return Runtime::kAllocateFloat32x4;
+}
+
+
+int Float32x4::kMapRootIndex() {
+  return Heap::kFloat32x4MapRootIndex;
+}
+
+
+float32x4_value_t Float32x4::value() {
+  return READ_FLOAT32x4_FIELD(this, kValueOffset);
+}
+
+
+void Float32x4::set_value(float32x4_value_t value) {
+  WRITE_FLOAT32x4_FIELD(this, kValueOffset, value);
+}
+
+
+float Float32x4::getAt(int index) {
+  ASSERT(index >= 0 && index < kLanes);
+  return READ_FLOAT_FIELD(this, kValueOffset + index * kFloatSize);
+}
+
+
+int Int32x4::kRuntimeAllocatorId() {
+  return Runtime::kAllocateInt32x4;
+}
+
+
+int Int32x4::kMapRootIndex() {
+  return Heap::kInt32x4MapRootIndex;
+}
+
+
+int32x4_value_t Int32x4::value() {
+  return READ_INT32x4_FIELD(this, kValueOffset);
+}
+
+
+void Int32x4::set_value(int32x4_value_t value) {
+  WRITE_INT32x4_FIELD(this, kValueOffset, value);
+}
+
+
+int32_t Int32x4::getAt(int index) {
+  ASSERT(index >= 0 && index < kLanes);
+  return READ_INT32_FIELD(this, kValueOffset + index * kInt32Size);
 }
 
 
@@ -2822,6 +2893,8 @@ CAST_ACCESSOR(JSObject)
 CAST_ACCESSOR(Smi)
 CAST_ACCESSOR(HeapObject)
 CAST_ACCESSOR(HeapNumber)
+CAST_ACCESSOR(Float32x4)
+CAST_ACCESSOR(Int32x4)
 CAST_ACCESSOR(Oddball)
 CAST_ACCESSOR(Cell)
 CAST_ACCESSOR(PropertyCell)
@@ -2854,8 +2927,10 @@ CAST_ACCESSOR(ExternalUint8Array)
 CAST_ACCESSOR(ExternalInt16Array)
 CAST_ACCESSOR(ExternalUint16Array)
 CAST_ACCESSOR(ExternalInt32Array)
+CAST_ACCESSOR(ExternalInt32x4Array)
 CAST_ACCESSOR(ExternalUint32Array)
 CAST_ACCESSOR(ExternalFloat32Array)
+CAST_ACCESSOR(ExternalFloat32x4Array)
 CAST_ACCESSOR(ExternalFloat64Array)
 CAST_ACCESSOR(ExternalUint8ClampedArray)
 CAST_ACCESSOR(Struct)
@@ -3626,6 +3701,62 @@ void ExternalFloat32Array::set(int index, float value) {
 }
 
 
+float32x4_value_t ExternalFloat32x4Array::get_scalar(int index) {
+  ASSERT((index >= 0) && (index < this->length()));
+  float* ptr = static_cast<float*>(external_pointer());
+  float32x4_value_t value;
+  value.storage[0] = ptr[index * 4 + 0];
+  value.storage[1] = ptr[index * 4 + 1];
+  value.storage[2] = ptr[index * 4 + 2];
+  value.storage[3] = ptr[index * 4 + 3];
+  return value;
+}
+
+
+MaybeObject* ExternalFloat32x4Array::get(int index) {
+  float32x4_value_t value = get_scalar(index);
+  return GetHeap()->AllocateFloat32x4(value);
+}
+
+
+void ExternalFloat32x4Array::set(int index, const float32x4_value_t& value) {
+  ASSERT((index >= 0) && (index < this->length()));
+  float* ptr = static_cast<float*>(external_pointer());
+  ptr[index * 4 + 0] = value.storage[0];
+  ptr[index * 4 + 1] = value.storage[1];
+  ptr[index * 4 + 2] = value.storage[2];
+  ptr[index * 4 + 3] = value.storage[3];
+}
+
+
+int32x4_value_t ExternalInt32x4Array::get_scalar(int index) {
+  ASSERT((index >= 0) && (index < this->length()));
+  int32_t* ptr = static_cast<int32_t*>(external_pointer());
+  int32x4_value_t value;
+  value.storage[0] = ptr[index * 4 + 0];
+  value.storage[1] = ptr[index * 4 + 1];
+  value.storage[2] = ptr[index * 4 + 2];
+  value.storage[3] = ptr[index * 4 + 3];
+  return value;
+}
+
+
+MaybeObject* ExternalInt32x4Array::get(int index) {
+  int32x4_value_t value = get_scalar(index);
+  return GetHeap()->AllocateInt32x4(value);
+}
+
+
+void ExternalInt32x4Array::set(int index, const int32x4_value_t& value) {
+  ASSERT((index >= 0) && (index < this->length()));
+  int32_t* ptr = static_cast<int32_t*>(external_pointer());
+  ptr[index * 4 + 0] = value.storage[0];
+  ptr[index * 4 + 1] = value.storage[1];
+  ptr[index * 4 + 2] = value.storage[2];
+  ptr[index * 4 + 3] = value.storage[3];
+}
+
+
 double ExternalFloat64Array::get_scalar(int index) {
   ASSERT((index >= 0) && (index < this->length()));
   double* ptr = static_cast<double*>(external_pointer());
@@ -3665,6 +3796,10 @@ int FixedTypedArrayBase::size() {
       break;
     case FIXED_FLOAT64_ARRAY_TYPE:
       element_size = 8;
+      break;
+    case FIXED_FLOAT32x4_ARRAY_TYPE:
+    case FIXED_INT32x4_ARRAY_TYPE:
+      element_size = 16;
       break;
     default:
       UNREACHABLE();
@@ -3743,6 +3878,51 @@ Handle<Object> FixedTypedArray<Traits>::SetValue(
                      Object);
 }
 
+template<> inline
+MaybeObject* FixedTypedArray<Float32x4ArrayTraits>::SetValue(
+    uint32_t index, Object* value) {
+  float32x4_value_t cast_value;
+  cast_value.storage[0] = static_cast<float>(OS::nan_value());
+  cast_value.storage[1] = static_cast<float>(OS::nan_value());
+  cast_value.storage[2] = static_cast<float>(OS::nan_value());
+  cast_value.storage[3] = static_cast<float>(OS::nan_value());
+  Heap* heap = GetHeap();
+  if (index < static_cast<uint32_t>(length())) {
+    if (value->IsFloat32x4()) {
+      cast_value = Float32x4::cast(value)->value();
+    } else {
+      // Clamp undefined to NaN (default). All other types have been
+      // converted to a number type further up in the call chain.
+      ASSERT(value->IsUndefined());
+    }
+    set(index, cast_value);
+  }
+  return heap->AllocateFloat32x4(cast_value);
+}
+
+
+template<> inline
+MaybeObject* FixedTypedArray<Int32x4ArrayTraits>::SetValue(
+    uint32_t index, Object* value) {
+  int32x4_value_t cast_value;
+  cast_value.storage[0] = 0;
+  cast_value.storage[1] = 0;
+  cast_value.storage[2] = 0;
+  cast_value.storage[3] = 0;
+  Heap* heap = GetHeap();
+  if (index < static_cast<uint32_t>(length())) {
+    if (value->IsInt32x4()) {
+      cast_value = Int32x4::cast(value)->value();
+    } else {
+      // Clamp undefined to zero (default). All other types have been
+      // converted to a number type further up in the call chain.
+      ASSERT(value->IsUndefined());
+    }
+    set(index, cast_value);
+  }
+  return heap->AllocateInt32x4(cast_value);
+}
+
 
 MaybeObject* Uint8ArrayTraits::ToObject(Heap*, uint8_t scalar) {
   return Smi::FromInt(scalar);
@@ -3781,6 +3961,17 @@ MaybeObject* Int32ArrayTraits::ToObject(Heap* heap, int32_t scalar) {
 
 MaybeObject* Float32ArrayTraits::ToObject(Heap* heap, float scalar) {
   return heap->NumberFromDouble(scalar);
+}
+
+
+MaybeObject* Int32x4ArrayTraits::ToObject(Heap* heap, int32x4_value_t scalar) {
+  return heap->AllocateInt32x4(scalar);
+}
+
+
+MaybeObject* Float32x4ArrayTraits::ToObject(
+    Heap* heap, float32x4_value_t scalar) {
+  return heap->AllocateFloat32x4(scalar);
 }
 
 
