@@ -163,6 +163,7 @@ struct MaybeBoolFlag {
 #define FLAG FLAG_FULL
 
 // Flags for language modes and experimental language features.
+DEFINE_BOOL(simd_object, false, "enable SIMD object and operations")
 DEFINE_BOOL(use_strict, false, "enforce strict mode")
 
 DEFINE_BOOL(es_staging, false, "enable all completed harmony features")
