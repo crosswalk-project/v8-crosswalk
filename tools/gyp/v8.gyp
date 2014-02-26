@@ -1087,7 +1087,8 @@
           '../../src/array-iterator.js',
           '../../src/harmony-string.js',
           '../../src/harmony-array.js',
-          '../../src/harmony-math.js'
+          '../../src/harmony-math.js',
+          '../../src/simd128.js',
         ],
       },
       'actions': [
