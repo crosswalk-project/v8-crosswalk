@@ -4559,6 +4559,14 @@ void FullCodeGenerator::EmitLiteralCompareTypeof(Expression* expr,
     __ cmp(FieldOperand(eax, HeapObject::kMapOffset),
            isolate()->factory()->heap_number_map());
     Split(equal, if_true, if_false, fall_through);
+  } else if (check->Equals(isolate()->heap()->float32x4_string())) {
+    __ JumpIfSmi(eax, if_false);
+    __ CmpObjectType(eax, FLOAT32x4_TYPE, edx);
+    Split(equal, if_true, if_false, fall_through);
+  } else if (check->Equals(isolate()->heap()->int32x4_string())) {
+    __ JumpIfSmi(eax, if_false);
+    __ CmpObjectType(eax, INT32x4_TYPE, edx);
+    Split(equal, if_true, if_false, fall_through);
   } else if (check->Equals(isolate()->heap()->string_string())) {
     __ JumpIfSmi(eax, if_false);
     __ CmpObjectType(eax, FIRST_NONSTRING_TYPE, edx);

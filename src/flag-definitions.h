@@ -166,6 +166,7 @@ struct MaybeBoolFlag {
 #define FLAG FLAG_FULL
 
 // Flags for language modes and experimental language features.
+DEFINE_bool(simd_object, false, "enable SIMD object and operations")
 DEFINE_bool(use_strict, false, "enforce strict mode")
 DEFINE_bool(es_staging, false, "enable upcoming ES6+ features")
 

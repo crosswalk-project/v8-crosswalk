@@ -101,6 +101,12 @@ enum BindingFlags {
   V(SECURITY_TOKEN_INDEX, Object, security_token) \
   V(BOOLEAN_FUNCTION_INDEX, JSFunction, boolean_function) \
   V(NUMBER_FUNCTION_INDEX, JSFunction, number_function) \
+  V(FLOAT32x4_FUNCTION_INDEX, JSFunction, float32x4_function) \
+  V(FLOAT32x4_FUNCTION_PROTOTYPE_MAP_INDEX, Map, \
+    float32x4_function_prototype_map) \
+  V(INT32x4_FUNCTION_INDEX, JSFunction, int32x4_function) \
+  V(INT32x4_FUNCTION_PROTOTYPE_MAP_INDEX, Map, \
+    int32x4_function_prototype_map) \
   V(STRING_FUNCTION_INDEX, JSFunction, string_function) \
   V(STRING_FUNCTION_PROTOTYPE_MAP_INDEX, Map, string_function_prototype_map) \
   V(SYMBOL_FUNCTION_INDEX, JSFunction, symbol_function) \
@@ -110,6 +116,7 @@ enum BindingFlags {
   V(JS_ARRAY_MAPS_INDEX, Object, js_array_maps) \
   V(DATE_FUNCTION_INDEX, JSFunction, date_function) \
   V(JSON_OBJECT_INDEX, JSObject, json_object) \
+  V(SIMD_OBJECT_INDEX, JSObject, simd_object) \
   V(REGEXP_FUNCTION_INDEX, JSFunction, regexp_function) \
   V(INITIAL_OBJECT_PROTOTYPE_INDEX, JSObject, initial_object_prototype) \
   V(INITIAL_ARRAY_PROTOTYPE_INDEX, JSObject, initial_array_prototype) \
@@ -133,6 +140,8 @@ enum BindingFlags {
   V(INT32_ARRAY_FUN_INDEX, JSFunction, int32_array_fun) \
   V(FLOAT32_ARRAY_FUN_INDEX, JSFunction, float32_array_fun) \
   V(FLOAT64_ARRAY_FUN_INDEX, JSFunction, float64_array_fun) \
+  V(FLOAT32x4_ARRAY_FUN_INDEX, JSFunction, float32x4_array_fun) \
+  V(INT32x4_ARRAY_FUN_INDEX, JSFunction, int32x4_array_fun) \
   V(UINT8_CLAMPED_ARRAY_FUN_INDEX, JSFunction, uint8_clamped_array_fun) \
   V(DATA_VIEW_FUN_INDEX, JSFunction, data_view_fun) \
   V(SLOPPY_FUNCTION_MAP_INDEX, Map, sloppy_function_map) \
@@ -277,6 +286,10 @@ class Context: public FixedArray {
     INITIAL_ARRAY_PROTOTYPE_INDEX,
     BOOLEAN_FUNCTION_INDEX,
     NUMBER_FUNCTION_INDEX,
+    FLOAT32x4_FUNCTION_INDEX,
+    FLOAT32x4_FUNCTION_PROTOTYPE_MAP_INDEX,
+    INT32x4_FUNCTION_INDEX,
+    INT32x4_FUNCTION_PROTOTYPE_MAP_INDEX,
     STRING_FUNCTION_INDEX,
     STRING_FUNCTION_PROTOTYPE_MAP_INDEX,
     SYMBOL_FUNCTION_INDEX,
@@ -286,6 +299,7 @@ class Context: public FixedArray {
     JS_ARRAY_MAPS_INDEX,
     DATE_FUNCTION_INDEX,
     JSON_OBJECT_INDEX,
+    SIMD_OBJECT_INDEX,
     REGEXP_FUNCTION_INDEX,
     CREATE_DATE_FUN_INDEX,
     TO_NUMBER_FUN_INDEX,
@@ -307,6 +321,8 @@ class Context: public FixedArray {
     UINT32_ARRAY_FUN_INDEX,
     INT32_ARRAY_FUN_INDEX,
     FLOAT32_ARRAY_FUN_INDEX,
+    FLOAT32x4_ARRAY_FUN_INDEX,
+    INT32x4_ARRAY_FUN_INDEX,
     FLOAT64_ARRAY_FUN_INDEX,
     UINT8_CLAMPED_ARRAY_FUN_INDEX,
     DATA_VIEW_FUN_INDEX,

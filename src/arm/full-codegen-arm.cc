@@ -4545,6 +4545,14 @@ void FullCodeGenerator::EmitLiteralCompareTypeof(Expression* expr,
     __ LoadRoot(ip, Heap::kHeapNumberMapRootIndex);
     __ cmp(r0, ip);
     Split(eq, if_true, if_false, fall_through);
+  } else if (check->Equals(isolate()->heap()->float32x4_string())) {
+    __ JumpIfSmi(r0, if_false);
+    __ CompareObjectType(r0, r0, r1, FLOAT32x4_TYPE);
+    Split(eq, if_true, if_false, fall_through);
+  } else if (check->Equals(isolate()->heap()->int32x4_string())) {
+    __ JumpIfSmi(r0, if_false);
+    __ CompareObjectType(r0, r0, r1, INT32x4_TYPE);
+    Split(eq, if_true, if_false, fall_through);
   } else if (check->Equals(isolate()->heap()->string_string())) {
     __ JumpIfSmi(r0, if_false);
     // Check for undetectable objects => false.

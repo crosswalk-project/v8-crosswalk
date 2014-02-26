@@ -536,6 +536,8 @@ function NonNumberToNumber(x) {
   if (IS_BOOLEAN(x)) return x ? 1 : 0;
   if (IS_UNDEFINED(x)) return NAN;
   if (IS_SYMBOL(x)) return NAN;
+  if (IsFloat32x4(x)) return NaN;
+  if (IsInt32x4(x)) return NaN;
   return (IS_NULL(x)) ? 0 : ToNumber(%DefaultNumber(x));
 }
 

@@ -106,6 +106,8 @@
 //           - ExternalInt32Array
 //           - ExternalUint32Array
 //           - ExternalFloat32Array
+//           - ExternalFloat32x4Array
+//           - ExternalInt32x4Array
 //       - Name
 //         - String
 //           - SeqString
@@ -126,6 +128,8 @@
 //               - ExternalTwoByteInternalizedString
 //         - Symbol
 //       - HeapNumber
+//       - Float32x4
+//       - Int32x4
 //       - Cell
 //         - PropertyCell
 //       - Code
@@ -373,6 +377,8 @@ const int kStubMinorKeyBits = kBitsPerInt - kSmiTagSize - kStubMajorKeyBits;
   V(PROPERTY_CELL_TYPE)                                                        \
                                                                                \
   V(HEAP_NUMBER_TYPE)                                                          \
+  V(FLOAT32x4_TYPE)                                                            \
+  V(INT32x4_TYPE)                                                              \
   V(FOREIGN_TYPE)                                                              \
   V(BYTE_ARRAY_TYPE)                                                           \
   V(FREE_SPACE_TYPE)                                                           \
@@ -386,6 +392,8 @@ const int kStubMinorKeyBits = kBitsPerInt - kSmiTagSize - kStubMajorKeyBits;
   V(EXTERNAL_INT32_ARRAY_TYPE)                                                 \
   V(EXTERNAL_UINT32_ARRAY_TYPE)                                                \
   V(EXTERNAL_FLOAT32_ARRAY_TYPE)                                               \
+  V(EXTERNAL_FLOAT32x4_ARRAY_TYPE)                                             \
+  V(EXTERNAL_INT32x4_ARRAY_TYPE)                                               \
   V(EXTERNAL_FLOAT64_ARRAY_TYPE)                                               \
   V(EXTERNAL_UINT8_CLAMPED_ARRAY_TYPE)                                         \
                                                                                \
@@ -394,8 +402,10 @@ const int kStubMinorKeyBits = kBitsPerInt - kSmiTagSize - kStubMajorKeyBits;
   V(FIXED_INT16_ARRAY_TYPE)                                                    \
   V(FIXED_UINT16_ARRAY_TYPE)                                                   \
   V(FIXED_INT32_ARRAY_TYPE)                                                    \
+  V(FIXED_INT32x4_ARRAY_TYPE)                                                  \
   V(FIXED_UINT32_ARRAY_TYPE)                                                   \
   V(FIXED_FLOAT32_ARRAY_TYPE)                                                  \
+  V(FIXED_FLOAT32x4_ARRAY_TYPE)                                                \
   V(FIXED_FLOAT64_ARRAY_TYPE)                                                  \
   V(FIXED_UINT8_CLAMPED_ARRAY_TYPE)                                            \
                                                                                \
@@ -721,6 +731,8 @@ enum InstanceType {
   // "Data", objects that cannot contain non-map-word pointers to heap
   // objects.
   HEAP_NUMBER_TYPE,
+  FLOAT32x4_TYPE,
+  INT32x4_TYPE,
   FOREIGN_TYPE,
   BYTE_ARRAY_TYPE,
   FREE_SPACE_TYPE,
@@ -732,6 +744,8 @@ enum InstanceType {
   EXTERNAL_INT32_ARRAY_TYPE,
   EXTERNAL_UINT32_ARRAY_TYPE,
   EXTERNAL_FLOAT32_ARRAY_TYPE,
+  EXTERNAL_FLOAT32x4_ARRAY_TYPE,
+  EXTERNAL_INT32x4_ARRAY_TYPE,
   EXTERNAL_FLOAT64_ARRAY_TYPE,
   EXTERNAL_UINT8_CLAMPED_ARRAY_TYPE,  // LAST_EXTERNAL_ARRAY_TYPE
 
@@ -740,8 +754,10 @@ enum InstanceType {
   FIXED_INT16_ARRAY_TYPE,
   FIXED_UINT16_ARRAY_TYPE,
   FIXED_INT32_ARRAY_TYPE,
+  FIXED_INT32x4_ARRAY_TYPE,
   FIXED_UINT32_ARRAY_TYPE,
   FIXED_FLOAT32_ARRAY_TYPE,
+  FIXED_FLOAT32x4_ARRAY_TYPE,
   FIXED_FLOAT64_ARRAY_TYPE,
   FIXED_UINT8_CLAMPED_ARRAY_TYPE,  // LAST_FIXED_TYPED_ARRAY_TYPE
 
@@ -992,6 +1008,8 @@ class MaybeObject BASE_EMBEDDED {
 
 #define HEAP_OBJECT_TYPE_LIST(V)               \
   V(HeapNumber)                                \
+  V(Float32x4)                                 \
+  V(Int32x4)                                  \
   V(Name)                                      \
   V(UniqueName)                                \
   V(String)                                    \
@@ -1014,6 +1032,8 @@ class MaybeObject BASE_EMBEDDED {
   V(ExternalInt32Array)                        \
   V(ExternalUint32Array)                       \
   V(ExternalFloat32Array)                      \
+  V(ExternalFloat32x4Array)                    \
+  V(ExternalInt32x4Array)                      \
   V(ExternalFloat64Array)                      \
   V(ExternalUint8ClampedArray)                 \
   V(FixedTypedArrayBase)                       \
@@ -1024,6 +1044,8 @@ class MaybeObject BASE_EMBEDDED {
   V(FixedUint32Array)                          \
   V(FixedInt32Array)                           \
   V(FixedFloat32Array)                         \
+  V(FixedFloat32x4Array)                       \
+  V(FixedInt32x4Array)                         \
   V(FixedFloat64Array)                         \
   V(FixedUint8ClampedArray)                    \
   V(ByteArray)                                 \
@@ -1994,6 +2016,82 @@ class HeapNumber: public HeapObject {
 };
 
 
+class Float32x4: public HeapObject {
+ public:
+  typedef float32x4_value_t value_t;
+  static const int kLanes = 4;
+  static const int kValueSize = kFloat32x4Size;
+  static const InstanceType kInstanceType = FLOAT32x4_TYPE;
+  static inline int kRuntimeAllocatorId();
+  static inline int kMapRootIndex();
+
+  // [value]: float32x4 value.
+  inline float32x4_value_t value();
+  inline void set_value(float32x4_value_t value);
+
+  // Casting.
+  static inline Float32x4* cast(Object* obj);
+
+  inline void Float32x4Print() {
+    Float32x4Print(stdout);
+  }
+  void Float32x4Print(FILE* out);
+  void Float32x4Print(StringStream* accumulator);
+  DECLARE_VERIFIER(Float32x4)
+
+  inline float getAt(int index);
+  inline float x() { return getAt(0); }
+  inline float y() { return getAt(1); }
+  inline float z() { return getAt(2); }
+  inline float w() { return getAt(3); }
+
+  // Layout description.
+  static const int kValueOffset = HeapObject::kHeaderSize;
+  static const int kSize = kValueOffset + kValueSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Float32x4);
+};
+
+
+class Int32x4: public HeapObject {
+ public:
+  typedef int32x4_value_t value_t;
+  static const int kValueSize = kInt32x4Size;
+  static const InstanceType kInstanceType = INT32x4_TYPE;
+  static inline int kRuntimeAllocatorId();
+  static inline int kMapRootIndex();
+
+  // [value]: int32x4 value.
+  inline int32x4_value_t value();
+  inline void set_value(int32x4_value_t value);
+
+  // Casting.
+  static inline Int32x4* cast(Object* obj);
+
+  inline void Int32x4Print() {
+    Int32x4Print(stdout);
+  }
+  void Int32x4Print(FILE* out);
+  void Int32x4Print(StringStream* accumulator);
+  DECLARE_VERIFIER(Int32x4)
+
+  static const int kLanes = 4;
+  inline int32_t getAt(int32_t index);
+  inline int32_t x() { return getAt(0); }
+  inline int32_t y() { return getAt(1); }
+  inline int32_t z() { return getAt(2); }
+  inline int32_t w() { return getAt(3); }
+
+  // Layout description.
+  static const int kValueOffset = HeapObject::kHeaderSize;
+  static const int kSize = kValueOffset + kValueSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Int32x4);
+};
+
+
 enum EnsureElementsMode {
   DONT_ALLOW_DOUBLE_ELEMENTS,
   ALLOW_COPIED_DOUBLE_ELEMENTS,
@@ -2215,6 +2313,8 @@ class JSObject: public JSReceiver {
   inline bool HasExternalInt32Elements();
   inline bool HasExternalUint32Elements();
   inline bool HasExternalFloat32Elements();
+  inline bool HasExternalFloat32x4Elements();
+  inline bool HasExternalInt32x4Elements();
   inline bool HasExternalFloat64Elements();
 
   inline bool HasFixedTypedArrayElements();
@@ -2229,6 +2329,8 @@ class JSObject: public JSReceiver {
   inline bool HasFixedUint32Elements();
   inline bool HasFixedFloat32Elements();
   inline bool HasFixedFloat64Elements();
+  inline bool HasFixedFloat32x4Elements();
+  inline bool HasFixedInt32x4Elements();
 
   bool HasFastArgumentsElements();
   bool HasDictionaryArgumentsElements();
@@ -4658,7 +4760,7 @@ class FreeSpace: public HeapObject {
 
 
 // V has parameters (Type, type, TYPE, C type, element_size)
-#define TYPED_ARRAYS(V) \
+#define BUILTIN_TYPED_ARRAY(V) \
   V(Uint8, uint8, UINT8, uint8_t, 1)                                           \
   V(Int8, int8, INT8, int8_t, 1)                                               \
   V(Uint16, uint16, UINT16, uint16_t, 2)                                       \
@@ -4669,6 +4771,15 @@ class FreeSpace: public HeapObject {
   V(Float64, float64, FLOAT64, double, 8)                                      \
   V(Uint8Clamped, uint8_clamped, UINT8_CLAMPED, uint8_t, 1)
 
+
+#define SIMD128_TYPED_ARRAY(V) \
+  V(Float32x4, float32x4, FLOAT32x4, v8::internal::float32x4_value_t, 16)      \
+  V(Int32x4, int32x4, INT32x4, v8::internal::int32x4_value_t, 16)
+
+
+#define TYPED_ARRAYS(V) \
+  BUILTIN_TYPED_ARRAY(V) \
+  SIMD128_TYPED_ARRAY(V)
 
 
 // An ExternalArray represents a fixed-size array of primitive values
@@ -4930,6 +5041,59 @@ class ExternalFloat32Array: public ExternalArray {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ExternalFloat32Array);
+};
+
+
+class ExternalFloat32x4Array: public ExternalArray {
+ public:
+  // Setter and getter.
+  inline float32x4_value_t get_scalar(int index);
+  MUST_USE_RESULT inline MaybeObject* get(int index);
+  inline void set(int index, const float32x4_value_t& value);
+
+  static Handle<Object> SetValue(Handle<ExternalFloat32x4Array> array,
+                                 uint32_t index,
+                                 Handle<Object> value);
+
+  // This accessor applies the correct conversion from Smi, HeapNumber
+  // and undefined.
+  MUST_USE_RESULT MaybeObject* SetValue(uint32_t index, Object* value);
+
+  // Casting.
+  static inline ExternalFloat32x4Array* cast(Object* obj);
+
+  // Dispatched behavior.
+  DECLARE_PRINTER(ExternalFloat32x4Array)
+  DECLARE_VERIFIER(ExternalFloat32x4Array)
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ExternalFloat32x4Array);
+};
+
+
+class ExternalInt32x4Array: public ExternalArray {
+ public:
+  // Setter and getter.
+  inline int32x4_value_t get_scalar(int index);
+  MUST_USE_RESULT inline MaybeObject* get(int index);
+  inline void set(int index, const int32x4_value_t& value);
+
+  static Handle<Object> SetValue(Handle<ExternalInt32x4Array> array,
+                                 uint32_t index,
+                                 Handle<Object> value);
+  // This accessor applies the correct conversion from Smi, HeapNumber
+  // and undefined.
+  MUST_USE_RESULT MaybeObject* SetValue(uint32_t index, Object* value);
+
+  // Casting.
+  static inline ExternalInt32x4Array* cast(Object* obj);
+
+  // Dispatched behavior.
+  DECLARE_PRINTER(ExternalInt32x4Array)
+  DECLARE_VERIFIER(ExternalInt32x4Array)
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ExternalInt32x4Array);
 };
 
 
@@ -6675,6 +6839,7 @@ class Script: public Struct {
   V(Math, min, MathMin)                             \
   V(Math, imul, MathImul)
 
+
 enum BuiltinFunctionId {
   kArrayCode,
 #define DECLARE_FUNCTION_ID(ignored1, ignore2, name)    \
@@ -7682,7 +7847,8 @@ class JSBuiltinsObject: public GlobalObject {
 };
 
 
-// Representation for JS Wrapper objects, String, Number, Boolean, etc.
+// Representation for JS Wrapper objects, String, Number, Float32x4, Int32x4,
+// Boolean, etc.
 class JSValue: public JSObject {
  public:
   // [value]: the object being wrapped.

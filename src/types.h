@@ -157,16 +157,18 @@ namespace internal {
   V(OtherSigned32,       1 << 4  | REPRESENTATION(kTagged | kUntaggedNumber)) \
   V(Unsigned32,          1 << 5  | REPRESENTATION(kTagged | kUntaggedNumber)) \
   V(Float,               1 << 6  | REPRESENTATION(kTagged | kUntaggedNumber)) \
-  V(Symbol,              1 << 7  | REPRESENTATION(kTaggedPtr)) \
-  V(InternalizedString,  1 << 8  | REPRESENTATION(kTaggedPtr)) \
-  V(OtherString,         1 << 9  | REPRESENTATION(kTaggedPtr)) \
-  V(Undetectable,        1 << 10 | REPRESENTATION(kTaggedPtr)) \
-  V(Array,               1 << 11 | REPRESENTATION(kTaggedPtr)) \
-  V(Function,            1 << 12 | REPRESENTATION(kTaggedPtr)) \
-  V(RegExp,              1 << 13 | REPRESENTATION(kTaggedPtr)) \
-  V(OtherObject,         1 << 14 | REPRESENTATION(kTaggedPtr)) \
-  V(Proxy,               1 << 15 | REPRESENTATION(kTaggedPtr)) \
-  V(Internal,            1 << 16 | REPRESENTATION(kTagged | kUntagged)) \
+  V(Float32x4,           1 << 7  | REPRESENTATION(kTaggedPtr)) \
+  V(Int32x4,             1 << 8  | REPRESENTATION(kTaggedPtr)) \
+  V(Symbol,              1 << 9  | REPRESENTATION(kTaggedPtr)) \
+  V(InternalizedString,  1 << 10 | REPRESENTATION(kTaggedPtr)) \
+  V(OtherString,         1 << 11  | REPRESENTATION(kTaggedPtr)) \
+  V(Undetectable,        1 << 12 | REPRESENTATION(kTaggedPtr)) \
+  V(Array,               1 << 13 | REPRESENTATION(kTaggedPtr)) \
+  V(Function,            1 << 14 | REPRESENTATION(kTaggedPtr)) \
+  V(RegExp,              1 << 15 | REPRESENTATION(kTaggedPtr)) \
+  V(OtherObject,         1 << 16 | REPRESENTATION(kTaggedPtr)) \
+  V(Proxy,               1 << 17 | REPRESENTATION(kTaggedPtr)) \
+  V(Internal,            1 << 18 | REPRESENTATION(kTagged | kUntagged)) \
   \
   V(Oddball,             kBoolean | kNull | kUndefined)                 \
   V(Signed32,            kSignedSmall | kOtherSigned32)                 \
@@ -180,14 +182,14 @@ namespace internal {
   V(Detectable,          kDetectableReceiver | kNumber | kName)         \
   V(Object,              kDetectableObject | kUndetectable)             \
   V(Receiver,            kObject | kProxy)                              \
-  V(NonNumber,           kOddball | kName | kReceiver | kInternal)      \
+  V(NonNumber,           kOddball | kName | kFloat32x4 | kInt32x4 |     \
+                         kReceiver | kInternal)                         \
   V(Any,                 kNumber | kNonNumber)
 
 #define BITSET_TYPE_LIST(V) \
   MASK_BITSET_TYPE_LIST(V) \
   REPRESENTATION_BITSET_TYPE_LIST(V) \
   SEMANTIC_BITSET_TYPE_LIST(V)
-
 
 // struct Config {
 //   typedef Base;
