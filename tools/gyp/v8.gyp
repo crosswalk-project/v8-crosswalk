@@ -803,6 +803,7 @@
         '../../src/runtime/runtime-proxy.cc',
         '../../src/runtime/runtime-regexp.cc',
         '../../src/runtime/runtime-scopes.cc',
+        '../../src/runtime/runtime-simd.cc',
         '../../src/runtime/runtime-strings.cc',
         '../../src/runtime/runtime-symbol.cc',
         '../../src/runtime/runtime-test.cc',
@@ -1645,7 +1646,8 @@
           '../../src/harmony-typedarray.js',
           '../../src/harmony-classes.js',
           '../../src/harmony-templates.js',
-          '../../src/harmony-regexp.js'
+          '../../src/harmony-regexp.js',
+          '../../src/simd128.js',
         ],
         'libraries_bin_file': '<(SHARED_INTERMEDIATE_DIR)/libraries.bin',
         'libraries_experimental_bin_file': '<(SHARED_INTERMEDIATE_DIR)/libraries-experimental.bin',
