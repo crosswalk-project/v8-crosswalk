@@ -28,6 +28,12 @@ std::ostream& operator<<(std::ostream& os, ExternalArrayType type) {
       return os << "ExternalFloat32Array";
     case kExternalFloat64Array:
       return os << "ExternalFloat64Array";
+    case kExternalFloat32x4Array:
+      return os << "ExternalFloat32x4Array";
+    case kExternalInt32x4Array:
+      return os << "ExternalInt32x4Array";
+    case kExternalFloat64x2Array:
+      return os << "ExternalFloat64x2Array";
     case kExternalUint8ClampedArray:
       return os << "ExternalUint8ClampedArray";
   }
