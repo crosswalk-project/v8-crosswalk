@@ -1605,11 +1605,12 @@ class LLoadRoot V8_FINAL : public LTemplateInstruction<1, 0, 0> {
 };
 
 
-class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 0> {
+class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 1> {
  public:
-  LLoadKeyed(LOperand* elements, LOperand* key) {
+  LLoadKeyed(LOperand* elements, LOperand* key, LOperand* temp) {
     inputs_[0] = elements;
     inputs_[1] = key;
+    temps_[0] = temp;
   }
 
   DECLARE_CONCRETE_INSTRUCTION(LoadKeyed, "load-keyed")
@@ -1626,12 +1627,18 @@ class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 0> {
   }
   LOperand* elements() { return inputs_[0]; }
   LOperand* key() { return inputs_[1]; }
+  LOperand* temp() { return temps_[0]; }
   virtual void PrintDataTo(StringStream* stream) V8_OVERRIDE;
   uint32_t additional_index() const { return hydrogen()->index_offset(); }
   ElementsKind elements_kind() const {
     return hydrogen()->elements_kind();
   }
 };
+
+
+inline static bool ExternalArrayOpRequiresPreScale(ElementsKind kind) {
+  return ElementsKindToShiftSize(kind) > static_cast<int>(maximal_scale_factor);
+}
 
 
 class LLoadKeyedGeneric V8_FINAL : public LTemplateInstruction<1, 3, 0> {

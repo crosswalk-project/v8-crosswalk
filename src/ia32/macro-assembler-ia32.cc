@@ -1809,6 +1809,33 @@ void MacroAssembler::AllocateHeapNumber(Register result,
 }
 
 
+void MacroAssembler::AllocateSIMDHeapObject(int size,
+                                            Register result,
+                                            Register scratch,
+                                            Label* gc_required,
+                                            Heap::RootListIndex map_index) {
+  Allocate(size, result, scratch, no_reg, gc_required, TAG_OBJECT);
+
+  // Set the map.
+  switch (map_index) {
+    case Heap::kFloat32x4MapRootIndex:
+      mov(FieldOperand(result, HeapObject::kMapOffset),
+          Immediate(isolate()->factory()->float32x4_map()));
+      break;
+    case Heap::kFloat64x2MapRootIndex:
+      mov(FieldOperand(result, HeapObject::kMapOffset),
+          Immediate(isolate()->factory()->float64x2_map()));
+      break;
+    case Heap::kInt32x4MapRootIndex:
+      mov(FieldOperand(result, HeapObject::kMapOffset),
+          Immediate(isolate()->factory()->int32x4_map()));
+      break;
+    default:
+      UNREACHABLE();
+  }
+}
+
+
 void MacroAssembler::AllocateTwoByteString(Register result,
                                            Register length,
                                            Register scratch1,

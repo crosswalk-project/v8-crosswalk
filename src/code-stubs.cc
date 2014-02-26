@@ -621,6 +621,9 @@ void ToBooleanStub::Types::Print(StringStream* stream) const {
   if (Contains(STRING)) printer.Add("String");
   if (Contains(SYMBOL)) printer.Add("Symbol");
   if (Contains(HEAP_NUMBER)) printer.Add("HeapNumber");
+  if (Contains(FLOAT32x4)) printer.Add("Float32x4");
+  if (Contains(FLOAT64x2)) printer.Add("Float64x2");
+  if (Contains(INT32x4)) printer.Add("Int32x4");
   stream->Add(")");
 }
 
@@ -648,6 +651,15 @@ bool ToBooleanStub::Types::UpdateStatus(Handle<Object> object) {
   } else if (object->IsSymbol()) {
     Add(SYMBOL);
     return true;
+  } else if (object->IsFloat32x4()) {
+    Add(FLOAT32x4);
+    return true;
+  } else if (object->IsFloat64x2()) {
+    Add(FLOAT64x2);
+    return true;
+  } else if (object->IsInt32x4()) {
+    Add(INT32x4);
+    return true;
   } else if (object->IsHeapNumber()) {
     ASSERT(!object->IsUndetectableObject());
     Add(HEAP_NUMBER);
@@ -665,6 +677,9 @@ bool ToBooleanStub::Types::NeedsMap() const {
   return Contains(ToBooleanStub::SPEC_OBJECT)
       || Contains(ToBooleanStub::STRING)
       || Contains(ToBooleanStub::SYMBOL)
+      || Contains(ToBooleanStub::FLOAT32x4)
+      || Contains(ToBooleanStub::FLOAT64x2)
+      || Contains(ToBooleanStub::INT32x4)
       || Contains(ToBooleanStub::HEAP_NUMBER);
 }
 

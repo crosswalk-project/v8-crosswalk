@@ -783,6 +783,12 @@ Register LoadStubCompiler::HandlerFrontendHeader(
     function_index = Context::SYMBOL_FUNCTION_INDEX;
   } else if (type->Is(HeapType::Number())) {
     function_index = Context::NUMBER_FUNCTION_INDEX;
+  } else if (type->Is(HeapType::Float32x4())) {
+    function_index = Context::FLOAT32x4_FUNCTION_INDEX;
+  } else if (type->Is(HeapType::Float64x2())) {
+    function_index = Context::FLOAT64x2_FUNCTION_INDEX;
+  } else if (type->Is(HeapType::Int32x4())) {
+    function_index = Context::INT32x4_FUNCTION_INDEX;
   } else if (type->Is(HeapType::Boolean())) {
     // Booleans use the generic oddball map, so an additional check is needed to
     // ensure the receiver is really a boolean.
