@@ -152,7 +152,8 @@ InlineCacheHolderFlag IC::GetCodeCacheForObject(Object* object) {
 
   // If the object is a value, we use the prototype map for the cache.
   ASSERT(object->IsString() || object->IsSymbol() ||
-         object->IsNumber() || object->IsBoolean());
+         object->IsNumber() || object->IsFloat32x4() ||
+         object->IsInt32x4() || object->IsBoolean());
   return PROTOTYPE_MAP;
 }
 
@@ -170,6 +171,8 @@ HeapObject* IC::GetCodeCacheHolder(Isolate* isolate,
 InlineCacheHolderFlag IC::GetCodeCacheFlag(HeapType* type) {
   if (type->Is(HeapType::Boolean()) ||
       type->Is(HeapType::Number()) ||
+      type->Is(HeapType::Float32x4()) ||
+      type->Is(HeapType::Int32x4()) ||
       type->Is(HeapType::String()) ||
       type->Is(HeapType::Symbol())) {
     return PROTOTYPE_MAP;
@@ -188,6 +191,10 @@ Handle<Map> IC::GetCodeCacheHolder(InlineCacheHolderFlag flag,
       constructor = context->boolean_function();
     } else if (type->Is(HeapType::Number())) {
       constructor = context->number_function();
+    } else if (type->Is(HeapType::Float32x4())) {
+      constructor = context->float32x4_function();
+    } else if (type->Is(HeapType::Int32x4())) {
+      constructor = context->int32x4_function();
     } else if (type->Is(HeapType::String())) {
       constructor = context->string_function();
     } else {

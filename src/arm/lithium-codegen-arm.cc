@@ -3103,6 +3103,95 @@ void LCodeGen::DoAccessArgumentsAt(LAccessArgumentsAt* instr) {
 }
 
 
+void LCodeGen::DoDeferredSIMD128ToTagged(LInstruction* instr,
+                                         Runtime::FunctionId id) {
+  // TODO(3095996): Get rid of this. For now, we need to make the
+  // result register contain a valid pointer because it is already
+  // contained in the register pointer map.
+  Register reg = ToRegister(instr->result());
+  __ mov(reg, Operand::Zero());
+
+  PushSafepointRegistersScope scope(this, Safepoint::kWithRegisters);
+  __ ldr(cp, MemOperand(fp, StandardFrameConstants::kContextOffset));
+  __ CallRuntimeSaveDoubles(id);
+  RecordSafepointWithRegisters(
+      instr->pointer_map(), 0, Safepoint::kNoLazyDeopt);
+  __ sub(r0, r0, Operand(kHeapObjectTag));
+  __ StoreToSafepointRegisterSlot(r0, reg);
+}
+
+
+template<class T>
+void LCodeGen::DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr) {
+  class DeferredSIMD128ToTagged V8_FINAL : public LDeferredCode {
+    public:
+      DeferredSIMD128ToTagged(LCodeGen* codegen, LInstruction* instr,
+                              Runtime::FunctionId id)
+          : LDeferredCode(codegen), instr_(instr), id_(id) { }
+      virtual void Generate() V8_OVERRIDE {
+        codegen()->DoDeferredSIMD128ToTagged(instr_, id_);
+      }
+      virtual LInstruction* instr() V8_OVERRIDE { return instr_; }
+    private:
+      LInstruction* instr_;
+      Runtime::FunctionId id_;
+  };
+
+  // Allocate a SIMD128 object on the heap.
+  Register reg = ToRegister(instr->result());
+  Register temp = ToRegister(instr->temp());
+  Register temp2 = ToRegister(instr->temp2());
+  Register scratch = scratch0();
+
+  DeferredSIMD128ToTagged* deferred = new(zone()) DeferredSIMD128ToTagged(
+      this, instr, static_cast<Runtime::FunctionId>(T::kRuntimeAllocatorId()));
+  if (FLAG_inline_new) {
+    __ LoadRoot(scratch, static_cast<Heap::RootListIndex>(T::kMapRootIndex()));
+    __ AllocateSIMDHeapObject(T::kSize, reg, temp, temp2, scratch,
+                              deferred->entry(), DONT_TAG_RESULT);
+  } else {
+    __ jmp(deferred->entry());
+  }
+  __ bind(deferred->exit());
+
+  // Copy the SIMD128 value from the external array to the heap object.
+  STATIC_ASSERT(T::kValueSize % kPointerSize == 0);
+  Register external_pointer = ToRegister(instr->elements());
+  Register key = no_reg;
+  ElementsKind elements_kind = instr->elements_kind();
+  bool key_is_constant = instr->key()->IsConstantOperand();
+  int constant_key = 0;
+  if (key_is_constant) {
+    constant_key = ToInteger32(LConstantOperand::cast(instr->key()));
+    if (constant_key & 0xF0000000) {
+      Abort(kArrayIndexConstantValueTooBig);
+    }
+  } else {
+    key = ToRegister(instr->key());
+  }
+  int element_size_shift = ElementsKindToShiftSize(elements_kind);
+  int shift_size = (instr->hydrogen()->key()->representation().IsSmi())
+      ? (element_size_shift - kSmiTagSize) : element_size_shift;
+  int additional_offset = IsFixedTypedArrayElementsKind(elements_kind)
+      ? FixedTypedArrayBase::kDataOffset - kHeapObjectTag
+      : 0;
+  int base_offset =
+      (instr->additional_index() << element_size_shift) + additional_offset;
+  Operand operand = key_is_constant
+      ? Operand(constant_key << element_size_shift)
+      : Operand(key, LSL, shift_size);
+
+  __ add(scratch, external_pointer, operand);
+  for (int offset = 0; offset < T::kValueSize; offset += kPointerSize) {
+    __ ldr(temp, MemOperand(scratch, base_offset + offset));
+    __ str(temp, MemOperand(reg, T::kValueOffset + offset));
+  }
+
+  // Now that we have finished with the object's real address tag it
+  __ add(reg, reg, Operand(kHeapObjectTag));
+}
+
+
 void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
   Register external_pointer = ToRegister(instr->elements());
   Register key = no_reg;
@@ -3143,6 +3232,10 @@ void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
     } else  {  // loading doubles, not floats.
       __ vldr(result, scratch0(), base_offset);
     }
+  } else if (IsFloat32x4ElementsKind(elements_kind)) {
+    DoLoadKeyedSIMD128ExternalArray<Float32x4>(instr);
+  } else if (IsInt32x4ElementsKind(elements_kind)) {
+    DoLoadKeyedSIMD128ExternalArray<Int32x4>(instr);
   } else {
     Register result = ToRegister(instr->result());
     MemOperand mem_operand = PrepareKeyedOperand(
@@ -3184,6 +3277,10 @@ void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
       case FLOAT64_ELEMENTS:
       case EXTERNAL_FLOAT32_ELEMENTS:
       case EXTERNAL_FLOAT64_ELEMENTS:
+      case FLOAT32x4_ELEMENTS:
+      case INT32x4_ELEMENTS:
+      case EXTERNAL_FLOAT32x4_ELEMENTS:
+      case EXTERNAL_INT32x4_ELEMENTS:
       case FAST_HOLEY_DOUBLE_ELEMENTS:
       case FAST_HOLEY_ELEMENTS:
       case FAST_HOLEY_SMI_ELEMENTS:
@@ -4151,6 +4248,59 @@ void LCodeGen::DoBoundsCheck(LBoundsCheck* instr) {
 }
 
 
+template<class T>
+void LCodeGen::DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr) {
+  ASSERT(instr->value()->IsRegister());
+  Register temp = ToRegister(instr->temp());
+  Register input_reg = ToRegister(instr->value());
+  __ SmiTst(input_reg);
+  DeoptimizeIf(eq, instr->environment());
+  __ CompareObjectType(input_reg, temp, no_reg, T::kInstanceType);
+  DeoptimizeIf(ne, instr->environment());
+
+  STATIC_ASSERT(T::kValueSize % kPointerSize == 0);
+  Register external_pointer = ToRegister(instr->elements());
+  Register key = no_reg;
+  ElementsKind elements_kind = instr->elements_kind();
+  bool key_is_constant = instr->key()->IsConstantOperand();
+  int constant_key = 0;
+  if (key_is_constant) {
+    constant_key = ToInteger32(LConstantOperand::cast(instr->key()));
+    if (constant_key & 0xF0000000) {
+      Abort(kArrayIndexConstantValueTooBig);
+    }
+  } else {
+    key = ToRegister(instr->key());
+  }
+  int element_size_shift = ElementsKindToShiftSize(elements_kind);
+  int shift_size = (instr->hydrogen()->key()->representation().IsSmi())
+      ? (element_size_shift - kSmiTagSize) : element_size_shift;
+  int additional_offset = IsFixedTypedArrayElementsKind(elements_kind)
+      ? FixedTypedArrayBase::kDataOffset - kHeapObjectTag
+      : 0;
+
+  int base_offset =
+      (instr->additional_index() << element_size_shift) + additional_offset;
+  Register address = scratch0();
+  if (key_is_constant) {
+    if (constant_key != 0) {
+      __ add(address, external_pointer,
+          Operand(constant_key << element_size_shift));
+    } else {
+      address = external_pointer;
+    }
+  } else {
+    __ add(address, external_pointer, Operand(key, LSL, shift_size));
+  }
+
+  for (int offset = 0; offset < T::kValueSize; offset += kPointerSize) {
+    __ ldr(temp, MemOperand(input_reg,
+          T::kValueOffset - kHeapObjectTag + offset));
+    __ str(temp, MemOperand(address, base_offset + offset));
+  }
+}
+
+
 void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
   Register external_pointer = ToRegister(instr->elements());
   Register key = no_reg;
@@ -4197,6 +4347,10 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
     } else {  // Storing doubles, not floats.
       __ vstr(value, address, base_offset);
     }
+  } else if (IsFloat32x4ElementsKind(elements_kind)) {
+    DoStoreKeyedSIMD128ExternalArray<Float32x4>(instr);
+  } else if (IsInt32x4ElementsKind(elements_kind)) {
+    DoStoreKeyedSIMD128ExternalArray<Int32x4>(instr);
   } else {
     Register value(ToRegister(instr->value()));
     MemOperand mem_operand = PrepareKeyedOperand(
@@ -4228,6 +4382,10 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
       case FLOAT64_ELEMENTS:
       case EXTERNAL_FLOAT32_ELEMENTS:
       case EXTERNAL_FLOAT64_ELEMENTS:
+      case FLOAT32x4_ELEMENTS:
+      case INT32x4_ELEMENTS:
+      case EXTERNAL_FLOAT32x4_ELEMENTS:
+      case EXTERNAL_INT32x4_ELEMENTS:
       case FAST_DOUBLE_ELEMENTS:
       case FAST_ELEMENTS:
       case FAST_SMI_ELEMENTS:
@@ -5425,6 +5583,16 @@ Condition LCodeGen::EmitTypeofIs(Label* true_label,
     __ JumpIfSmi(input, true_label);
     __ ldr(scratch, FieldMemOperand(input, HeapObject::kMapOffset));
     __ CompareRoot(scratch, Heap::kHeapNumberMapRootIndex);
+    final_branch_condition = eq;
+
+  } else if (type_name->Equals(heap()->float32x4_string())) {
+    __ JumpIfSmi(input, false_label);
+    __ CompareObjectType(input, scratch, no_reg, FLOAT32x4_TYPE);
+    final_branch_condition = eq;
+
+  } else if (type_name->Equals(heap()->int32x4_string())) {
+    __ JumpIfSmi(input, false_label);
+    __ CompareObjectType(input, scratch, no_reg, INT32x4_TYPE);
     final_branch_condition = eq;
 
   } else if (type_name->Equals(heap()->string_string())) {

@@ -675,6 +675,10 @@ Handle<HeapType> IC::CurrentTypeOf(Handle<Object> object, Isolate* isolate) {
 Handle<Map> IC::TypeToMap(HeapType* type, Isolate* isolate) {
   if (type->Is(HeapType::Number()))
     return isolate->factory()->heap_number_map();
+  if (type->Is(HeapType::Float32x4()))
+    return isolate->factory()->float32x4_map();
+  if (type->Is(HeapType::Int32x4()))
+    return isolate->factory()->int32x4_map();
   if (type->Is(HeapType::Boolean())) return isolate->factory()->oddball_map();
   if (type->IsConstant()) {
     return handle(Handle<JSGlobalObject>::cast(type->AsConstant())->map());
@@ -689,6 +693,10 @@ typename T::TypeHandle IC::MapToType(Handle<Map> map,
                                      typename T::Region* region) {
   if (map->instance_type() == HEAP_NUMBER_TYPE) {
     return T::Number(region);
+  } else if (map->instance_type() == FLOAT32x4_TYPE) {
+    return T::Float32x4(region);
+  } else if (map->instance_type() == INT32x4_TYPE) {
+    return T::Int32x4(region);
   } else if (map->instance_type() == ODDBALL_TYPE) {
     // The only oddballs that can be recorded in ICs are booleans.
     return T::Boolean(region);

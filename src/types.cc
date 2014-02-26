@@ -205,6 +205,10 @@ int TypeImpl<Config>::LubBitset(i::Map* map) {
       return kOddball;
     case HEAP_NUMBER_TYPE:
       return kFloat & kTaggedPtr;
+    case FLOAT32x4_TYPE:
+      return kFloat32x4 & kTaggedPtr;
+    case INT32x4_TYPE:
+      return kInt32x4 & kTaggedPtr;
     case JS_VALUE_TYPE:
     case JS_DATE_TYPE:
     case JS_OBJECT_TYPE:
@@ -572,6 +576,8 @@ Representation Representation::FromType(Type* type) {
   if (type->Is(Type::SignedSmall())) return Representation::Smi();
   if (type->Is(Type::Signed32())) return Representation::Integer32();
   if (type->Is(Type::Number())) return Representation::Double();
+  if (type->Is(Type::Float32x4())) return Representation::Float32x4();
+  if (type->Is(Type::Int32x4())) return Representation::Int32x4();
   return Representation::Tagged();
 }
 
