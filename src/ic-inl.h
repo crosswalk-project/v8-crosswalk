@@ -105,7 +105,8 @@ InlineCacheHolderFlag IC::GetCodeCacheForObject(Object* object) {
 
   // If the object is a value, we use the prototype map for the cache.
   ASSERT(object->IsString() || object->IsSymbol() ||
-         object->IsNumber() || object->IsBoolean());
+         object->IsNumber() || object->IsFloat32x4() ||
+         object->IsInt32x4() || object->IsBoolean());
   return PROTOTYPE_MAP;
 }
 

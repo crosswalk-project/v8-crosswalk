@@ -1555,6 +1555,11 @@ class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 0> {
 };
 
 
+inline static bool ExternalArrayOpRequiresPreScale(ElementsKind kind) {
+  return ElementsKindToShiftSize(kind) > static_cast<int>(maximal_scale_factor);
+}
+
+
 class LLoadKeyedGeneric V8_FINAL : public LTemplateInstruction<1, 3, 0> {
  public:
   LLoadKeyedGeneric(LOperand* context, LOperand* obj, LOperand* key) {
