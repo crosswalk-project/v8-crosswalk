@@ -142,7 +142,9 @@ MaybeHandle<Object> Runtime::SetObjectProperty(Isolate* isolate,
     JSObject::ValidateElements(js_object);
     if (js_object->HasExternalArrayElements() ||
         js_object->HasFixedTypedArrayElements()) {
-      if (!value->IsNumber() && !value->IsUndefined()) {
+      if (!value->IsNumber() &&  !value->IsFloat32x4() &&
+          !value->IsFloat64x2() && !value->IsInt32x4() &&
+          !value->IsUndefined()) {
         ASSIGN_RETURN_ON_EXCEPTION(isolate, value,
                                    Execution::ToNumber(isolate, value), Object);
       }
@@ -162,7 +164,9 @@ MaybeHandle<Object> Runtime::SetObjectProperty(Isolate* isolate,
       if (!object->IsJSObject()) return value;
       Handle<JSObject> js_object = Handle<JSObject>::cast(object);
       if (js_object->HasExternalArrayElements()) {
-        if (!value->IsNumber() && !value->IsUndefined()) {
+        if (!value->IsNumber() &&  !value->IsFloat32x4() &&
+            !value->IsFloat64x2() && !value->IsInt32x4() &&
+            !value->IsUndefined()) {
           ASSIGN_RETURN_ON_EXCEPTION(
               isolate, value, Execution::ToNumber(isolate, value), Object);
         }
