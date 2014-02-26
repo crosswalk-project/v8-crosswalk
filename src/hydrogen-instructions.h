@@ -6658,6 +6658,15 @@ class HLoadKeyed V8_FINAL
           elements_kind == FLOAT32_ELEMENTS ||
           elements_kind == FLOAT64_ELEMENTS) {
         set_representation(Representation::Double());
+      } else if (IsFloat32x4ElementsKind(elements_kind)) {
+        set_representation(CpuFeatures::SupportsSIMD128InCrankshaft() ?
+            Representation::Float32x4() : Representation::Tagged());
+      } else if (IsFloat64x2ElementsKind(elements_kind)) {
+        set_representation(CpuFeatures::SupportsSIMD128InCrankshaft() ?
+            Representation::Float64x2() : Representation::Tagged());
+      } else if (IsInt32x4ElementsKind(elements_kind)) {
+        set_representation(CpuFeatures::SupportsSIMD128InCrankshaft() ?
+            Representation::Int32x4() : Representation::Tagged());
       } else {
         set_representation(Representation::Integer32());
       }
@@ -6988,6 +6997,19 @@ class HStoreKeyed V8_FINAL
     if (kind == FAST_SMI_ELEMENTS && SmiValuesAre32Bits() &&
         mode == STORE_TO_INITIALIZED_ENTRY) {
       return Representation::Integer32();
+    }
+
+    if (IsFloat32x4ElementsKind(kind)) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Float32x4() : Representation::Tagged();
+    }
+    if (IsFloat64x2ElementsKind(kind)) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Float64x2() : Representation::Tagged();
+    }
+    if (IsInt32x4ElementsKind(kind)) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Int32x4() : Representation::Tagged();
     }
 
     if (IsFastSmiElementsKind(kind)) {
