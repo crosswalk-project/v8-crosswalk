@@ -35,9 +35,12 @@ enum ElementsKind {
   EXTERNAL_INT16_ELEMENTS,
   EXTERNAL_UINT16_ELEMENTS,
   EXTERNAL_INT32_ELEMENTS,
+  EXTERNAL_INT32x4_ELEMENTS,
   EXTERNAL_UINT32_ELEMENTS,
   EXTERNAL_FLOAT32_ELEMENTS,
+  EXTERNAL_FLOAT32x4_ELEMENTS,
   EXTERNAL_FLOAT64_ELEMENTS,
+  EXTERNAL_FLOAT64x2_ELEMENTS,
   EXTERNAL_UINT8_CLAMPED_ELEMENTS,
 
   // Fixed typed arrays
@@ -47,8 +50,11 @@ enum ElementsKind {
   INT16_ELEMENTS,
   UINT32_ELEMENTS,
   INT32_ELEMENTS,
+  INT32x4_ELEMENTS,
   FLOAT32_ELEMENTS,
+  FLOAT32x4_ELEMENTS,
   FLOAT64_ELEMENTS,
+  FLOAT64x2_ELEMENTS,
   UINT8_CLAMPED_ELEMENTS,
 
   // Derived constants from ElementsKind
@@ -133,8 +139,38 @@ inline bool IsExternalFloatOrDoubleElementsKind(ElementsKind kind) {
 }
 
 
+inline bool IsExternalFloat32x4ElementsKind(ElementsKind kind) {
+  return kind == EXTERNAL_FLOAT32x4_ELEMENTS;
+}
+
+
+inline bool IsExternalFloat64x2ElementsKind(ElementsKind kind) {
+  return kind == EXTERNAL_FLOAT64x2_ELEMENTS;
+}
+
+
+inline bool IsExternalInt32x4ElementsKind(ElementsKind kind) {
+  return kind == EXTERNAL_INT32x4_ELEMENTS;
+}
+
+
 inline bool IsFixedFloatElementsKind(ElementsKind kind) {
   return kind == FLOAT32_ELEMENTS || kind == FLOAT64_ELEMENTS;
+}
+
+
+inline bool IsFixedFloat32x4ElementsKind(ElementsKind kind) {
+  return kind == FLOAT32x4_ELEMENTS;
+}
+
+
+inline bool IsFixedFloat64x2ElementsKind(ElementsKind kind) {
+  return kind == FLOAT64x2_ELEMENTS;
+}
+
+
+inline bool IsFixedInt32x4ElementsKind(ElementsKind kind) {
+  return kind == INT32x4_ELEMENTS;
 }
 
 
@@ -142,6 +178,30 @@ inline bool IsDoubleOrFloatElementsKind(ElementsKind kind) {
   return IsFastDoubleElementsKind(kind) ||
       IsExternalFloatOrDoubleElementsKind(kind) ||
       IsFixedFloatElementsKind(kind);
+}
+
+
+inline bool IsFloat32x4ElementsKind(ElementsKind kind) {
+  return IsExternalFloat32x4ElementsKind(kind) ||
+      IsFixedFloat32x4ElementsKind(kind);
+}
+
+
+inline bool IsFloat64x2ElementsKind(ElementsKind kind) {
+  return IsExternalFloat64x2ElementsKind(kind) ||
+      IsFixedFloat64x2ElementsKind(kind);
+}
+
+
+inline bool IsInt32x4ElementsKind(ElementsKind kind) {
+  return IsExternalInt32x4ElementsKind(kind) ||
+      IsFixedInt32x4ElementsKind(kind);
+}
+
+
+inline bool IsSIMD128ElementsKind(ElementsKind kind) {
+  return IsFloat32x4ElementsKind(kind) || IsFloat64x2ElementsKind(kind) ||
+         IsInt32x4ElementsKind(kind);
 }
 
 
