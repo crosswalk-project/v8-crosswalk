@@ -1473,6 +1473,21 @@ void HeapObject::HeapObjectShortPrint(std::ostream& os) {  // NOLINT
       os << '>';
       break;
     }
+    case FLOAT32x4_TYPE:
+      os << "<Float32x4: ";
+      Float32x4::cast(this)->Float32x4Print(os);
+      os << '>';
+      break;
+    case FLOAT64x2_TYPE:
+      os << "<Float64x2: ";
+      Float64x2::cast(this)->Float64x2Print(os);
+      os << '>';
+      break;
+    case INT32x4_TYPE:
+      os << "<Int32x4: ";
+      Int32x4::cast(this)->Int32x4Print(os);
+      os << '>';
+      break;
     case JS_PROXY_TYPE:
       os << "<JSProxy>";
       break;
@@ -1579,6 +1594,9 @@ void HeapObject::IterateBody(InstanceType type, int object_size,
     case JS_GLOBAL_OBJECT_TYPE:
     case JS_BUILTINS_OBJECT_TYPE:
     case JS_MESSAGE_OBJECT_TYPE:
+    case FLOAT32x4_TYPE:
+    case FLOAT64x2_TYPE:
+    case INT32x4_TYPE:
       JSObject::BodyDescriptor::IterateBody(this, object_size, v);
       break;
     case JS_FUNCTION_TYPE:
@@ -1660,6 +1678,45 @@ bool HeapNumber::HeapNumberBooleanValue() {
 
 void HeapNumber::HeapNumberPrint(std::ostream& os) {  // NOLINT
   os << value();
+}
+
+
+void Float32x4::Float32x4Print(std::ostream& os) {
+  // The Windows version of vsnprintf can allocate when printing a %g string
+  // into a buffer that may not be big enough.  We don't want random memory
+  // allocation when producing post-crash stack traces, so we print into a
+  // buffer that is plenty big enough for any floating point number, then
+  // print that using vsnprintf (which may truncate but never allocate if
+  // there is no more space in the buffer).
+  EmbeddedVector<char, 100> buffer;
+  SNPrintF(buffer, "%.16g %.16g %.16g %.16g", x(), y(), z(), w());
+  os << buffer.start();
+}
+
+
+void Int32x4::Int32x4Print(std::ostream& os) {
+  // The Windows version of vsnprintf can allocate when printing a %g string
+  // into a buffer that may not be big enough.  We don't want random memory
+  // allocation when producing post-crash stack traces, so we print into a
+  // buffer that is plenty big enough for any floating point number, then
+  // print that using vsnprintf (which may truncate but never allocate if
+  // there is no more space in the buffer).
+  EmbeddedVector<char, 100> buffer;
+  SNPrintF(buffer, "%u %u %u %u", x(), y(), z(), w());
+  os << buffer.start();
+}
+
+
+void Float64x2::Float64x2Print(std::ostream& os) {
+  // The Windows version of vsnprintf can allocate when printing a %g string
+  // into a buffer that may not be big enough.  We don't want random memory
+  // allocation when producing post-crash stack traces, so we print into a
+  // buffer that is plenty big enough for any floating point number, then
+  // print that using vsnprintf (which may truncate but never allocate if
+  // there is no more space in the buffer).
+  EmbeddedVector<char, 100> buffer;
+  SNPrintF(buffer, "%.16g %.16g", x(), y());
+  os << buffer.start();
 }
 
 
@@ -1833,6 +1890,9 @@ const char* Representation::Mnemonic() const {
     case kTagged: return "t";
     case kSmi: return "s";
     case kDouble: return "d";
+    case kFloat32x4: return "float32x4";
+    case kFloat64x2: return "float64x2";
+    case kInt32x4: return "int32x44";
     case kInteger32: return "i";
     case kHeapObject: return "h";
     case kExternal: return "x";
@@ -13013,7 +13073,8 @@ MaybeHandle<Object> JSObject::SetElement(Handle<JSObject> object,
 
   if (object->HasExternalArrayElements() ||
       object->HasFixedTypedArrayElements()) {
-    if (!value->IsNumber() && !value->IsUndefined()) {
+    if (!value->IsNumber() && !value->IsFloat32x4() && !value->IsFloat64x2() &&
+        !value->IsInt32x4() && !value->IsUndefined()) {
       ASSIGN_RETURN_ON_EXCEPTION(
           isolate, value,
           Execution::ToNumber(isolate, value), Object);
@@ -15279,6 +15340,75 @@ void GlobalObject::InvalidatePropertyCell(Handle<GlobalObject> global,
   int entry = dictionary->FindEntry(name);
   if (entry == NameDictionary::kNotFound) return;
   PropertyCell::InvalidateEntry(dictionary, entry);
+}
+
+
+Handle<Object> ExternalFloat32x4Array::SetValue(
+    Handle<ExternalFloat32x4Array> array,
+    uint32_t index,
+    Handle<Object> value) {
+  float32x4_value_t cast_value;
+  cast_value.storage[0] =
+      static_cast<float>(std::numeric_limits<double>::quiet_NaN());
+  cast_value.storage[1] =
+      static_cast<float>(std::numeric_limits<double>::quiet_NaN());
+  cast_value.storage[2] =
+      static_cast<float>(std::numeric_limits<double>::quiet_NaN());
+  cast_value.storage[3] =
+      static_cast<float>(std::numeric_limits<double>::quiet_NaN());
+  if (index < static_cast<uint32_t>(array->length())) {
+    if (value->IsFloat32x4()) {
+      cast_value = Handle<Float32x4>::cast(value)->get();
+    } else {
+      // Clamp undefined to NaN (default). All other types have been
+      // converted to a number type further up in the call chain.
+      DCHECK(value->IsUndefined());
+    }
+    array->set(index, cast_value);
+  }
+  return array->GetIsolate()->factory()->NewFloat32x4(cast_value);
+}
+
+
+Handle<Object> ExternalInt32x4Array::SetValue(
+    Handle<ExternalInt32x4Array> array, uint32_t index, Handle<Object> value) {
+  int32x4_value_t cast_value;
+  cast_value.storage[0] = 0;
+  cast_value.storage[1] = 0;
+  cast_value.storage[2] = 0;
+  cast_value.storage[3] = 0;
+  if (index < static_cast<uint32_t>(array->length())) {
+    if (value->IsInt32x4()) {
+      cast_value = Handle<Int32x4>::cast(value)->get();
+    } else {
+      // Clamp undefined to zero (default). All other types have been
+      // converted to a number type further up in the call chain.
+      DCHECK(value->IsUndefined());
+    }
+    array->set(index, cast_value);
+  }
+  return array->GetIsolate()->factory()->NewInt32x4(cast_value);
+}
+
+
+Handle<Object> ExternalFloat64x2Array::SetValue(
+    Handle<ExternalFloat64x2Array> array,
+    uint32_t index,
+    Handle<Object> value) {
+  float64x2_value_t cast_value;
+  cast_value.storage[0] = std::numeric_limits<double>::quiet_NaN();
+  cast_value.storage[1] = std::numeric_limits<double>::quiet_NaN();
+  if (index < static_cast<uint32_t>(array->length())) {
+    if (value->IsFloat64x2()) {
+      cast_value = Handle<Float64x2>::cast(value)->get();
+    } else {
+      // Clamp undefined to NaN (default). All other types have been
+      // converted to a number type further up in the call chain.
+      DCHECK(value->IsUndefined());
+    }
+    array->set(index, cast_value);
+  }
+  return array->GetIsolate()->factory()->NewFloat64x2(cast_value);
 }
 
 

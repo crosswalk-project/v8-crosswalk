@@ -128,6 +128,7 @@ class OptimizedFunctionVisitor BASE_EMBEDDED {
     "non-strict elements in KeyedLoadGenericStub")                             \
   V(kNotADateObject, "not a date object")                                      \
   V(kNotAHeapNumber, "not a heap number")                                      \
+  V(kNotASIMD128, "not a simd128 value")                                       \
   V(kNotAHeapNumberUndefinedBoolean, "not a heap number/undefined/true/false") \
   V(kNotAHeapNumberUndefined, "not a heap number/undefined")                   \
   V(kNotAJavaScriptObject, "not a JavaScript object")                          \
