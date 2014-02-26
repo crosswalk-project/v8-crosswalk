@@ -47,11 +47,11 @@ EXPAND_MACROS = [
 # that the parser doesn't bit-rot. Change the values as needed when you add,
 # remove or change runtime functions, but make sure we don't lose our ability
 # to parse them!
-EXPECTED_FUNCTION_COUNT = 428
-EXPECTED_FUZZABLE_COUNT = 331
+EXPECTED_FUNCTION_COUNT = 443
+EXPECTED_FUZZABLE_COUNT = 340
 EXPECTED_CCTEST_COUNT = 7
-EXPECTED_UNKNOWN_COUNT = 16
-EXPECTED_BUILTINS_COUNT = 809
+EXPECTED_UNKNOWN_COUNT = 22
+EXPECTED_BUILTINS_COUNT = 929
 
 
 # Don't call these at all.
@@ -86,6 +86,10 @@ BLACKLISTED = [
   # TODO(jkummerow): Fix these and un-blacklist them!
   "CreateDateTimeFormat",
   "CreateNumberFormat",
+
+  "CreateFloat32x4",
+  "CreateFloat64x2",
+  "CreateInt32x4",
 
   # TODO(danno): Fix these internal function that are only callable form stubs
   # and un-blacklist them!
