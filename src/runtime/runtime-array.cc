@@ -319,6 +319,54 @@ static void IterateExternalArrayElements(Isolate* isolate,
 }
 
 
+static void IterateExternalFloat32x4ArrayElements(Isolate* isolate,
+                                                  Handle<JSObject> receiver,
+                                                  ArrayConcatVisitor* visitor) {
+  Handle<ExternalFloat32x4Array> array(
+      ExternalFloat32x4Array::cast(receiver->elements()));
+  uint32_t len = static_cast<uint32_t>(array->length());
+
+  DCHECK(visitor != NULL);
+  for (uint32_t j = 0; j < len; j++) {
+    HandleScope loop_scope(isolate);
+    Handle<Object> e = isolate->factory()->NewFloat32x4(array->get_scalar(j));
+    visitor->visit(j, e);
+  }
+}
+
+
+static void IterateExternalFloat64x2ArrayElements(Isolate* isolate,
+                                                  Handle<JSObject> receiver,
+                                                  ArrayConcatVisitor* visitor) {
+  Handle<ExternalFloat64x2Array> array(
+      ExternalFloat64x2Array::cast(receiver->elements()));
+  uint32_t len = static_cast<uint32_t>(array->length());
+
+  DCHECK(visitor != NULL);
+  for (uint32_t j = 0; j < len; j++) {
+    HandleScope loop_scope(isolate);
+    Handle<Object> e = isolate->factory()->NewFloat64x2(array->get_scalar(j));
+    visitor->visit(j, e);
+  }
+}
+
+
+static void IterateExternalInt32x4ArrayElements(Isolate* isolate,
+                                                 Handle<JSObject> receiver,
+                                                 ArrayConcatVisitor* visitor) {
+  Handle<ExternalInt32x4Array> array(
+      ExternalInt32x4Array::cast(receiver->elements()));
+  uint32_t len = static_cast<uint32_t>(array->length());
+
+  DCHECK(visitor != NULL);
+  for (uint32_t j = 0; j < len; j++) {
+    HandleScope loop_scope(isolate);
+    Handle<Object> e = isolate->factory()->NewInt32x4(array->get_scalar(j));
+    visitor->visit(j, e);
+  }
+}
+
+
 // Used for sorting indices in a List<uint32_t>.
 static int compareUInt32(const uint32_t* ap, const uint32_t* bp) {
   uint32_t a = *ap;
@@ -573,6 +621,18 @@ static bool IterateElements(Isolate* isolate, Handle<JSArray> receiver,
     case EXTERNAL_FLOAT32_ELEMENTS: {
       IterateExternalArrayElements<ExternalFloat32Array, float>(
           isolate, receiver, false, false, visitor);
+      break;
+    }
+    case EXTERNAL_FLOAT32x4_ELEMENTS: {
+      IterateExternalFloat32x4ArrayElements(isolate, receiver, visitor);
+      break;
+    }
+    case EXTERNAL_FLOAT64x2_ELEMENTS: {
+      IterateExternalFloat64x2ArrayElements(isolate, receiver, visitor);
+      break;
+    }
+    case EXTERNAL_INT32x4_ELEMENTS: {
+      IterateExternalInt32x4ArrayElements(isolate, receiver, visitor);
       break;
     }
     case EXTERNAL_FLOAT64_ELEMENTS: {
