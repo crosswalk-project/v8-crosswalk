@@ -847,7 +847,6 @@ bool HInstruction::CanDeoptimize() {
     case HValue::kSeqStringGetChar:
     case HValue::kStoreCodeEntry:
     case HValue::kStoreFrameContext:
-    case HValue::kStoreKeyed:
     case HValue::kStoreNamedField:
     case HValue::kStoreNamedGeneric:
     case HValue::kStringCharCodeAt:
@@ -857,6 +856,10 @@ bool HInstruction::CanDeoptimize() {
     case HValue::kUnknownOSRValue:
     case HValue::kUseConst:
       return false;
+
+    case HValue::kStoreKeyed:
+      return !CpuFeatures::SupportsSIMD128InCrankshaft() &&
+             IsSIMD128ElementsKind(HStoreKeyed::cast(this)->elements_kind());
 
     case HValue::kAdd:
     case HValue::kAllocateBlockContext:
