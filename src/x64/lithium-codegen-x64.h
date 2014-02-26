@@ -96,6 +96,7 @@ class LCodeGen: public LCodeGenBase {
   void DoDeferredLoadMutableDouble(LLoadFieldByIndex* instr,
                                    Register object,
                                    Register index);
+  void DoDeferredSIMD128ToTagged(LInstruction* instr, Runtime::FunctionId id);
 
 // Parallel move support.
   void DoParallelMove(LParallelMove* move);
@@ -301,9 +302,15 @@ class LCodeGen: public LCodeGenBase {
 
   void EnsureSpaceForLazyDeopt(int space_needed) V8_OVERRIDE;
   void DoLoadKeyedExternalArray(LLoadKeyed* instr);
+  void HandleExternalArrayOpRequiresPreScale(LOperand* key,
+                                             ElementsKind elements_kind);
+  template<class T>
+  void DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr);
   void DoLoadKeyedFixedDoubleArray(LLoadKeyed* instr);
   void DoLoadKeyedFixedArray(LLoadKeyed* instr);
   void DoStoreKeyedExternalArray(LStoreKeyed* instr);
+  template<class T>
+  void DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr);
   void DoStoreKeyedFixedDoubleArray(LStoreKeyed* instr);
   void DoStoreKeyedFixedArray(LStoreKeyed* instr);
 #ifdef _MSC_VER

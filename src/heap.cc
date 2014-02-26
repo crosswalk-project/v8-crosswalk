@@ -2538,6 +2538,9 @@ bool Heap::CreateInitialMaps() {
 
     ALLOCATE_VARSIZE_MAP(FIXED_ARRAY_TYPE, scope_info)
     ALLOCATE_MAP(HEAP_NUMBER_TYPE, HeapNumber::kSize, heap_number)
+    ALLOCATE_MAP(FLOAT32x4_TYPE, Float32x4::kSize, float32x4)
+    ALLOCATE_MAP(FLOAT64x2_TYPE, Float64x2::kSize, float64x2)
+    ALLOCATE_MAP(INT32x4_TYPE, Int32x4::kSize, int32x4)
     ALLOCATE_MAP(SYMBOL_TYPE, Symbol::kSize, symbol)
     ALLOCATE_MAP(FOREIGN_TYPE, Foreign::kSize, foreign)
 
@@ -2677,6 +2680,66 @@ AllocationResult Heap::AllocateHeapNumber(double value,
 
   result->set_map_no_write_barrier(heap_number_map());
   HeapNumber::cast(result)->set_value(value);
+  return result;
+}
+
+
+AllocationResult Heap::AllocateFloat32x4(float32x4_value_t value,
+                                         PretenureFlag pretenure) {
+  // Statically ensure that it is safe to allocate float32x4 objects in paged
+  // spaces.
+  int size = Float32x4::kSize;
+  STATIC_ASSERT(Float32x4::kSize <= Page::kMaxRegularHeapObjectSize);
+
+  AllocationSpace space = SelectSpace(size, OLD_DATA_SPACE, pretenure);
+
+  HeapObject* result;
+  { AllocationResult allocation = AllocateRaw(size, space, OLD_DATA_SPACE);
+    if (!allocation.To(&result)) return allocation;
+  }
+
+  result->set_map_no_write_barrier(float32x4_map());
+  Float32x4::cast(result)->set_value(value);
+  return result;
+}
+
+
+AllocationResult Heap::AllocateFloat64x2(float64x2_value_t value,
+                                         PretenureFlag pretenure) {
+  // Statically ensure that it is safe to allocate float64x2 objects in paged
+  // spaces.
+  int size = Float64x2::kSize;
+  STATIC_ASSERT(Float64x2::kSize <= Page::kMaxRegularHeapObjectSize);
+
+  AllocationSpace space = SelectSpace(size, OLD_DATA_SPACE, pretenure);
+
+  HeapObject* result;
+  { AllocationResult allocation = AllocateRaw(size, space, OLD_DATA_SPACE);
+    if (!allocation.To(&result)) return allocation;
+  }
+
+  result->set_map_no_write_barrier(float64x2_map());
+  Float64x2::cast(result)->set_value(value);
+  return result;
+}
+
+
+AllocationResult Heap::AllocateInt32x4(int32x4_value_t value,
+                                       PretenureFlag pretenure) {
+  // Statically ensure that it is safe to allocate int32x4 objects in paged
+  // spaces.
+  int size = Int32x4::kSize;
+  STATIC_ASSERT(Int32x4::kSize <= Page::kMaxRegularHeapObjectSize);
+
+  AllocationSpace space = SelectSpace(size, OLD_DATA_SPACE, pretenure);
+
+  HeapObject* result;
+  { AllocationResult allocation = AllocateRaw(size, space, OLD_DATA_SPACE);
+    if (!allocation.To(&result)) return allocation;
+  }
+
+  result->set_map_no_write_barrier(int32x4_map());
+  Int32x4::cast(result)->set_value(value);
   return result;
 }
 
