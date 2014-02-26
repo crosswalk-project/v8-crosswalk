@@ -18,6 +18,21 @@
 namespace v8 {
 namespace internal {
 
+void CPU::SetUp() {
+  CpuFeatures::Probe(false);
+}
+
+
+bool CPU::SupportsCrankshaft() {
+  return CpuFeatures::IsSupported(SSE2);
+}
+
+
+bool CPU::SupportsSIMD128InCrankshaft() {
+  return false;
+}
+
+
 void CPU::FlushICache(void* start, size_t size) {
   // No need to flush the instruction cache on Intel. On Intel instruction
   // cache flushing is only necessary when multiple cores running the same

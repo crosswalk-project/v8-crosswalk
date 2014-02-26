@@ -2187,6 +2187,9 @@ function Stringify(x, depth) {
       return "undefined";
     case "boolean":
     case "number":
+    case "float32x4":
+    case "float64x2":
+    case "int32x4":
     case "function":
       return x.toString();
     case "string":

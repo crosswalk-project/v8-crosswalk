@@ -4474,6 +4474,18 @@ void FullCodeGenerator::EmitLiteralCompareTypeof(Expression* expr,
     __ movp(rax, FieldOperand(rax, HeapObject::kMapOffset));
     __ CompareRoot(rax, Heap::kHeapNumberMapRootIndex);
     Split(equal, if_true, if_false, fall_through);
+  } else if (String::Equals(check, factory->float32x4_string())) {
+    __ JumpIfSmi(rax, if_false);
+    __ CmpObjectType(rax, FLOAT32x4_TYPE, rdx);
+    Split(equal, if_true, if_false, fall_through);
+  } else if (String::Equals(check, factory->float64x2_string())) {
+    __ JumpIfSmi(rax, if_false);
+    __ CmpObjectType(rax, FLOAT64x2_TYPE, rdx);
+    Split(equal, if_true, if_false, fall_through);
+  } else if (String::Equals(check, factory->int32x4_string())) {
+    __ JumpIfSmi(rax, if_false);
+    __ CmpObjectType(rax, INT32x4_TYPE, rdx);
+    Split(equal, if_true, if_false, fall_through);
   } else if (String::Equals(check, factory->string_string())) {
     __ JumpIfSmi(rax, if_false);
     // Check for undetectable objects => false.

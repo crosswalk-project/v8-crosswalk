@@ -328,11 +328,11 @@ def BuildFilterChain(macro_filename):
   if macro_filename:
     (consts, macros) = ReadMacros(ReadFile(macro_filename))
     filter_chain.append(lambda l: ExpandConstants(l, consts))
+    filter_chain.append(lambda l: ExpandInlineMacros(l))
     filter_chain.append(lambda l: ExpandMacros(l, macros))
 
   filter_chain.extend([
     RemoveCommentsAndTrailingWhitespace,
-    ExpandInlineMacros,
     Validate,
     jsmin.JavaScriptMinifier().JSMinify
   ])
