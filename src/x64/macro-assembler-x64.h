@@ -1187,6 +1187,12 @@ class MacroAssembler: public Assembler {
                           Label* gc_required,
                           MutableMode mode = IMMUTABLE);
 
+  void AllocateSIMDHeapObject(int size,
+                              Register result,
+                              Register scratch,
+                              Label* gc_required,
+                              Heap::RootListIndex map_index);
+
   // Allocate a sequential string. All the header fields of the string object
   // are initialized.
   void AllocateTwoByteString(Register result,
