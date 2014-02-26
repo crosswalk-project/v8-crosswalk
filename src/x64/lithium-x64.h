@@ -1636,6 +1636,11 @@ class LLoadRoot FINAL : public LTemplateInstruction<1, 0, 0> {
 };
 
 
+inline static bool ExternalArrayOpRequiresPreScale(ElementsKind kind) {
+  return ElementsKindToShiftSize(kind) > static_cast<int>(maximal_scale_factor);
+}
+
+
 inline static bool ExternalArrayOpRequiresTemp(
     Representation key_representation,
     ElementsKind elements_kind) {
@@ -1652,11 +1657,14 @@ inline static bool ExternalArrayOpRequiresTemp(
 }
 
 
-class LLoadKeyed FINAL : public LTemplateInstruction<1, 2, 0> {
+class LLoadKeyed FINAL : public LTemplateInstruction<1, 2, 2> {
  public:
-  LLoadKeyed(LOperand* elements, LOperand* key) {
+  LLoadKeyed(LOperand* elements, LOperand* key,
+             LOperand* temp0, LOperand* temp1) {
     inputs_[0] = elements;
     inputs_[1] = key;
+    temps_[0] = temp0;
+    temps_[1] = temp1;
   }
 
   DECLARE_CONCRETE_INSTRUCTION(LoadKeyed, "load-keyed")
@@ -1674,6 +1682,8 @@ class LLoadKeyed FINAL : public LTemplateInstruction<1, 2, 0> {
   LOperand* elements() { return inputs_[0]; }
   LOperand* key() { return inputs_[1]; }
   void PrintDataTo(StringStream* stream) OVERRIDE;
+  LOperand* temp0() { return temps_[0]; }
+  LOperand* temp1() { return temps_[1]; }
   uint32_t base_offset() const { return hydrogen()->base_offset(); }
   ElementsKind elements_kind() const {
     return hydrogen()->elements_kind();
@@ -2215,12 +2225,15 @@ class LStoreNamedGeneric FINAL : public LTemplateInstruction<0, 3, 0> {
 };
 
 
-class LStoreKeyed FINAL : public LTemplateInstruction<0, 3, 0> {
+class LStoreKeyed FINAL : public LTemplateInstruction<0, 3, 2> {
  public:
-  LStoreKeyed(LOperand* object, LOperand* key, LOperand* value) {
+  LStoreKeyed(LOperand* object, LOperand* key, LOperand* value,
+              LOperand* temp0, LOperand* temp1) {
     inputs_[0] = object;
     inputs_[1] = key;
     inputs_[2] = value;
+    temps_[0] = temp0;
+    temps_[1] = temp1;
   }
 
   bool is_external() const { return hydrogen()->is_external(); }
@@ -2233,6 +2246,8 @@ class LStoreKeyed FINAL : public LTemplateInstruction<0, 3, 0> {
   LOperand* elements() { return inputs_[0]; }
   LOperand* key() { return inputs_[1]; }
   LOperand* value() { return inputs_[2]; }
+  LOperand* temp0() { return temps_[0]; }
+  LOperand* temp1() { return temps_[1]; }
   ElementsKind elements_kind() const { return hydrogen()->elements_kind(); }
 
   DECLARE_CONCRETE_INSTRUCTION(StoreKeyed, "store-keyed")
