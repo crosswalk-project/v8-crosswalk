@@ -931,6 +931,20 @@ std::ostream& operator<<(std::ostream& os, const ChangesOf& v);
     return new (zone) I(p1, p2, p3, p4, p5, p6);                             \
   }
 
+#define DECLARE_INSTRUCTION_FACTORY_P7(I, P1, P2, P3, P4, P5, P6, P7)        \
+  static I* New(Isolate* isolate,                                            \
+                Zone* zone,                                                  \
+                HValue* context,                                             \
+                P1 p1,                                                       \
+                P2 p2,                                                       \
+                P3 p3,                                                       \
+                P4 p4,                                                       \
+                P5 p5,                                                       \
+                P6 p6,                                                       \
+                P7 p7) {                                                     \
+    return new(zone) I(p1, p2, p3, p4, p5, p6, p7);                          \
+  }
+
 #define DECLARE_INSTRUCTION_WITH_CONTEXT_FACTORY_P0(I)           \
   static I* New(Isolate* isolate, Zone* zone, HValue* context) { \
     return new (zone) I(context);                                \
@@ -3992,6 +4006,8 @@ class HBoundsCheckBaseIndexInformation;
 class HBoundsCheck FINAL : public HTemplateInstruction<2> {
  public:
   DECLARE_INSTRUCTION_FACTORY_P2(HBoundsCheck, HValue*, HValue*);
+  DECLARE_INSTRUCTION_FACTORY_P4(HBoundsCheck, HValue*, HValue*,
+                                 BuiltinFunctionId, ElementsKind);
 
   bool skip_check() const { return skip_check_; }
   void set_skip_check() { skip_check_ = true; }
@@ -4030,6 +4046,8 @@ class HBoundsCheck FINAL : public HTemplateInstruction<2> {
   HValue* length() const { return OperandAt(1); }
   bool allow_equality() const { return allow_equality_; }
   void set_allow_equality(bool v) { allow_equality_ = v; }
+  BuiltinFunctionId op() const { return op_; }
+  ElementsKind element_kind() const { return element_kind_; }
 
   int RedefinedOperandIndex() OVERRIDE { return 0; }
   bool IsPurelyInformativeDefinition() OVERRIDE { return skip_check(); }
@@ -4047,16 +4065,21 @@ class HBoundsCheck FINAL : public HTemplateInstruction<2> {
   int offset_;
   int scale_;
   bool allow_equality_;
+  BuiltinFunctionId op_;
+  ElementsKind element_kind_;
 
  private:
   // Normally HBoundsCheck should be created using the
   // HGraphBuilder::AddBoundsCheck() helper.
   // However when building stubs, where we know that the arguments are Int32,
   // it makes sense to invoke this constructor directly.
-  HBoundsCheck(HValue* index, HValue* length)
+  HBoundsCheck(HValue* index, HValue* length,
+               BuiltinFunctionId op = kNumberOfBuiltinFunction,
+               ElementsKind element_kind = EXTERNAL_INT8_ELEMENTS)
     : skip_check_(false),
       base_(NULL), offset_(0), scale_(0),
-      allow_equality_(false) {
+      allow_equality_(false), op_(op),
+      element_kind_(element_kind) {
     SetOperandAt(0, index);
     SetOperandAt(1, length);
     SetFlag(kFlexibleRepresentation);
@@ -6541,6 +6564,9 @@ class HLoadKeyed FINAL
                                  ElementsKind, LoadKeyedHoleMode);
   DECLARE_INSTRUCTION_FACTORY_P6(HLoadKeyed, HValue*, HValue*, HValue*,
                                  ElementsKind, LoadKeyedHoleMode, int);
+  DECLARE_INSTRUCTION_FACTORY_P7(HLoadKeyed, HValue*, HValue*, HValue*,
+                                 ElementsKind, LoadKeyedHoleMode, int,
+                                 BuiltinFunctionId);
 
   bool is_external() const {
     return IsExternalArrayElementsKind(elements_kind());
@@ -6560,6 +6586,7 @@ class HLoadKeyed FINAL
   bool HasDependency() const { return OperandAt(0) != OperandAt(2); }
   uint32_t base_offset() const { return BaseOffsetField::decode(bit_field_); }
   bool TryIncreaseBaseOffset(uint32_t increase_by_value) OVERRIDE;
+  BuiltinFunctionId op() {return op_;}
   HValue* GetKey() OVERRIDE { return key(); }
   void SetKey(HValue* key) OVERRIDE { SetOperandAt(1, key); }
   bool IsDehoisted() const OVERRIDE {
@@ -6620,8 +6647,9 @@ class HLoadKeyed FINAL
              HValue* dependency,
              ElementsKind elements_kind,
              LoadKeyedHoleMode mode = NEVER_RETURN_HOLE,
-             int offset = kDefaultKeyedHeaderOffsetSentinel)
-      : bit_field_(0) {
+             int offset = kDefaultKeyedHeaderOffsetSentinel,
+             BuiltinFunctionId op = kNumberOfBuiltinFunction)
+      : bit_field_(0), op_(op) {
     offset = offset == kDefaultKeyedHeaderOffsetSentinel
         ? GetDefaultHeaderSizeForElementsKind(elements_kind)
         : offset;
@@ -6659,11 +6687,53 @@ class HLoadKeyed FINAL
         SetDependsOnFlag(kDoubleArrayElements);
       }
     } else {
-      if (elements_kind == EXTERNAL_FLOAT32_ELEMENTS ||
+      if (op_ == kFloat32ArrayGetFloat32x4XYZW ||
+          op_ == kFloat32ArrayGetFloat32x4X ||
+          op_ == kFloat32ArrayGetFloat32x4XY ||
+          op_ == kFloat32ArrayGetFloat32x4XYZ ||
+          op_ == kInt8ArrayGetFloat32x4XYZW ||
+          op_ == kInt8ArrayGetFloat32x4X ||
+          op_ == kInt8ArrayGetFloat32x4XY ||
+          op_ == kInt8ArrayGetFloat32x4XYZ ||
+          op_ == kUint8ArrayGetFloat32x4XYZW ||
+          op_ == kUint8ArrayGetFloat32x4X ||
+          op_ == kUint8ArrayGetFloat32x4XY ||
+          op_ == kUint8ArrayGetFloat32x4XYZ) {
+        set_representation(Representation::Float32x4());
+      } else if (op_ == kFloat64ArrayGetFloat64x2XY ||
+          op_ == kFloat64ArrayGetFloat64x2X ||
+          op_ == kInt8ArrayGetFloat64x2XY ||
+          op_ == kInt8ArrayGetFloat64x2X ||
+          op_ == kUint8ArrayGetFloat64x2XY ||
+          op_ == kUint8ArrayGetFloat64x2X) {
+        set_representation(Representation::Float64x2());
+      } else if (op_ == kInt32ArrayGetInt32x4XYZW ||
+          op_ == kInt32ArrayGetInt32x4X ||
+          op_ == kInt32ArrayGetInt32x4XY ||
+          op_ == kInt32ArrayGetInt32x4XYZ ||
+          op_ == kInt8ArrayGetInt32x4XYZW ||
+          op_ == kInt8ArrayGetInt32x4X ||
+          op_ == kInt8ArrayGetInt32x4XY ||
+          op_ == kInt8ArrayGetInt32x4XYZ ||
+          op_ == kUint8ArrayGetInt32x4XYZW ||
+          op_ == kUint8ArrayGetInt32x4X ||
+          op_ == kUint8ArrayGetInt32x4XY ||
+          op_ == kUint8ArrayGetInt32x4XYZ) {
+        set_representation(Representation::Int32x4());
+      } else if (elements_kind == EXTERNAL_FLOAT32_ELEMENTS ||
           elements_kind == EXTERNAL_FLOAT64_ELEMENTS ||
           elements_kind == FLOAT32_ELEMENTS ||
           elements_kind == FLOAT64_ELEMENTS) {
         set_representation(Representation::Double());
+      } else if (IsFloat32x4ElementsKind(elements_kind)) {
+        set_representation(CpuFeatures::SupportsSIMD128InCrankshaft() ?
+            Representation::Float32x4() : Representation::Tagged());
+      } else if (IsFloat64x2ElementsKind(elements_kind)) {
+        set_representation(CpuFeatures::SupportsSIMD128InCrankshaft() ?
+            Representation::Float64x2() : Representation::Tagged());
+      } else if (IsInt32x4ElementsKind(elements_kind)) {
+        set_representation(CpuFeatures::SupportsSIMD128InCrankshaft() ?
+            Representation::Int32x4() : Representation::Tagged());
       } else {
         set_representation(Representation::Integer32());
       }
@@ -6713,6 +6783,7 @@ class HLoadKeyed FINAL
     public BitField<bool, kStartIsDehoisted, kBitsForIsDehoisted>
     {};  // NOLINT
   uint32_t bit_field_;
+  BuiltinFunctionId op_;
 };
 
 
@@ -6976,6 +7047,9 @@ class HStoreKeyed FINAL
                                  ElementsKind, StoreFieldOrKeyedMode);
   DECLARE_INSTRUCTION_FACTORY_P6(HStoreKeyed, HValue*, HValue*, HValue*,
                                  ElementsKind, StoreFieldOrKeyedMode, int);
+  DECLARE_INSTRUCTION_FACTORY_P7(HStoreKeyed, HValue*, HValue*, HValue*,
+                                 ElementsKind, StoreFieldOrKeyedMode, int,
+                                 BuiltinFunctionId);
 
   Representation RequiredInputRepresentation(int index) OVERRIDE {
     // kind_fast:               tagged[int32] = tagged
@@ -6992,6 +7066,40 @@ class HStoreKeyed FINAL
     }
 
     DCHECK_EQ(index, 2);
+    if (op_ == kFloat32ArraySetFloat32x4XYZW ||
+        op_ == kFloat32ArraySetFloat32x4X ||
+        op_ == kFloat32ArraySetFloat32x4XY ||
+        op_ == kFloat32ArraySetFloat32x4XYZ ||
+        op_ == kInt8ArraySetFloat32x4XYZW ||
+        op_ == kInt8ArraySetFloat32x4X ||
+        op_ == kInt8ArraySetFloat32x4XY ||
+        op_ == kInt8ArraySetFloat32x4XYZ ||
+        op_ == kUint8ArraySetFloat32x4XYZW ||
+        op_ == kUint8ArraySetFloat32x4X ||
+        op_ == kUint8ArraySetFloat32x4XY ||
+        op_ == kUint8ArraySetFloat32x4XYZ) {
+      return Representation::Float32x4();
+    } else if (op_ == kFloat64ArraySetFloat64x2XY ||
+        op_ == kFloat64ArraySetFloat64x2X ||
+        op_ == kInt8ArraySetFloat64x2XY ||
+        op_ == kInt8ArraySetFloat64x2X ||
+        op_ == kUint8ArraySetFloat64x2XY ||
+        op_ == kUint8ArraySetFloat64x2X) {
+      return Representation::Float64x2();
+    } else if (op_ == kInt32ArraySetInt32x4XYZW ||
+        op_ == kInt32ArraySetInt32x4X ||
+        op_ == kInt32ArraySetInt32x4XY ||
+        op_ == kInt32ArraySetInt32x4XYZ ||
+        op_ == kInt8ArraySetInt32x4XYZW ||
+        op_ == kInt8ArraySetInt32x4X ||
+        op_ == kInt8ArraySetInt32x4XY ||
+        op_ == kInt8ArraySetInt32x4XYZ ||
+        op_ == kUint8ArraySetInt32x4XYZW ||
+        op_ == kUint8ArraySetInt32x4X ||
+        op_ == kUint8ArraySetInt32x4XY ||
+        op_ == kUint8ArraySetInt32x4XYZ) {
+      return Representation::Int32x4();
+    }
     return RequiredValueRepresentation(elements_kind(), store_mode());
   }
 
@@ -7004,6 +7112,19 @@ class HStoreKeyed FINAL
     if (kind == FAST_SMI_ELEMENTS && SmiValuesAre32Bits() &&
         mode == STORE_TO_INITIALIZED_ENTRY) {
       return Representation::Integer32();
+    }
+
+    if (IsFloat32x4ElementsKind(kind)) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Float32x4() : Representation::Tagged();
+    }
+    if (IsFloat64x2ElementsKind(kind)) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Float64x2() : Representation::Tagged();
+    }
+    if (IsInt32x4ElementsKind(kind)) {
+      return CpuFeatures::SupportsSIMD128InCrankshaft() ?
+          Representation::Int32x4() : Representation::Tagged();
     }
 
     if (IsFastSmiElementsKind(kind)) {
@@ -7033,6 +7154,40 @@ class HStoreKeyed FINAL
     if (IsUninitialized()) {
       return Representation::None();
     }
+    if (op_ == kFloat32ArraySetFloat32x4XYZW ||
+        op_ == kFloat32ArraySetFloat32x4X ||
+        op_ == kFloat32ArraySetFloat32x4XY ||
+        op_ == kFloat32ArraySetFloat32x4XYZ ||
+        op_ == kInt8ArraySetFloat32x4XYZW ||
+        op_ == kInt8ArraySetFloat32x4X ||
+        op_ == kInt8ArraySetFloat32x4XY ||
+        op_ == kInt8ArraySetFloat32x4XYZ ||
+        op_ == kUint8ArraySetFloat32x4XYZW ||
+        op_ == kUint8ArraySetFloat32x4X ||
+        op_ == kUint8ArraySetFloat32x4XY ||
+        op_ == kUint8ArraySetFloat32x4XYZ) {
+      return Representation::Float32x4();
+    } else if (op_ == kFloat64ArraySetFloat64x2XY ||
+        op_ == kFloat64ArraySetFloat64x2X ||
+        op_ == kInt8ArraySetFloat64x2XY ||
+        op_ == kInt8ArraySetFloat64x2X ||
+        op_ == kUint8ArraySetFloat64x2XY ||
+        op_ == kUint8ArraySetFloat64x2X) {
+      return Representation::Float64x2();
+    } else if (op_ == kInt32ArraySetInt32x4XYZW ||
+        op_ == kInt32ArraySetInt32x4X ||
+        op_ == kInt32ArraySetInt32x4XY ||
+        op_ == kInt32ArraySetInt32x4XYZ ||
+        op_ == kInt8ArraySetInt32x4XYZW ||
+        op_ == kInt8ArraySetInt32x4X ||
+        op_ == kInt8ArraySetInt32x4XY ||
+        op_ == kInt8ArraySetInt32x4XYZ ||
+        op_ == kUint8ArraySetInt32x4XYZW ||
+        op_ == kUint8ArraySetInt32x4X ||
+        op_ == kUint8ArraySetInt32x4XY ||
+        op_ == kUint8ArraySetInt32x4XYZ) {
+      return Representation::Int32x4();
+    }
     Representation r =
         RequiredValueRepresentation(elements_kind(), store_mode());
     // For fast object elements kinds, don't assume anything.
@@ -7040,6 +7195,7 @@ class HStoreKeyed FINAL
     return r;
   }
 
+  BuiltinFunctionId op() const { return op_; }
   HValue* elements() const { return OperandAt(0); }
   HValue* key() const { return OperandAt(1); }
   HValue* value() const { return OperandAt(2); }
@@ -7100,7 +7256,8 @@ class HStoreKeyed FINAL
  private:
   HStoreKeyed(HValue* obj, HValue* key, HValue* val, ElementsKind elements_kind,
               StoreFieldOrKeyedMode store_mode = INITIALIZING_STORE,
-              int offset = kDefaultKeyedHeaderOffsetSentinel)
+              int offset = kDefaultKeyedHeaderOffsetSentinel,
+              BuiltinFunctionId op = kNumberOfBuiltinFunction)
       : base_offset_(offset == kDefaultKeyedHeaderOffsetSentinel
                          ? GetDefaultHeaderSizeForElementsKind(elements_kind)
                          : offset),
@@ -7108,7 +7265,8 @@ class HStoreKeyed FINAL
                    IsUninitializedField::encode(false) |
                    StoreModeField::encode(store_mode) |
                    ElementsKindField::encode(elements_kind)),
-        dominator_(NULL) {
+        dominator_(NULL),
+        op_(op) {
     SetOperandAt(0, obj);
     SetOperandAt(1, key);
     SetOperandAt(2, val);
@@ -7148,6 +7306,7 @@ class HStoreKeyed FINAL
   uint32_t base_offset_;
   uint32_t bit_field_;
   HValue* dominator_;
+  BuiltinFunctionId op_;
 };
 
 
