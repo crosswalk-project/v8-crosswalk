@@ -1146,7 +1146,7 @@ void Genesis::InitializeGlobal(Handle<GlobalObject> global_object,
       native_context()->set_##type##_array_fun(*fun);                         \
       native_context()->set_##type##_array_external_map(*external_map);       \
     }
-    TYPED_ARRAYS(INSTALL_TYPED_ARRAY)
+    BUILTIN_TYPED_ARRAY(INSTALL_TYPED_ARRAY)
 #undef INSTALL_TYPED_ARRAY
 
     Handle<JSFunction> data_view_fun =
@@ -1381,6 +1381,66 @@ void Genesis::InitializeExperimentalGlobal() {
   HARMONY_STAGED(FEATURE_INITIALIZE_GLOBAL)
   HARMONY_SHIPPING(FEATURE_INITIALIZE_GLOBAL)
 #undef FEATURE_INITIALIZE_GLOBAL
+
+  if (FLAG_simd_object) {
+    Handle<JSObject> global =
+        Handle<JSObject>(native_context()->global_object());
+    // --- S I M D ---
+    Handle<String> name = factory()->InternalizeUtf8String("SIMD");
+    Handle<JSFunction> cons = factory()->NewFunction(name);
+    JSFunction::SetInstancePrototype(cons,
+        Handle<Object>(native_context()->initial_object_prototype(),
+                       isolate()));
+    cons->SetInstanceClassName(*name);
+    Handle<JSObject> simd_object = factory()->NewJSObject(cons, TENURED);
+    DCHECK(simd_object->IsJSObject());
+    JSObject::SetOwnPropertyIgnoreAttributes(
+        global, name, simd_object, DONT_ENUM).Check();
+    native_context()->set_simd_object(*simd_object);
+    // --- f l o a t 3 2 x 4 ---
+    Handle<JSFunction> float32x4_fun =
+        InstallFunction(simd_object, "float32x4", FLOAT32x4_TYPE,
+                        Float32x4::kSize,
+                        isolate()->initial_object_prototype(),
+                        Builtins::kIllegal);
+    native_context()->set_float32x4_function(*float32x4_fun);
+
+    // --- f l o a t 6 4 x 2 ---
+    Handle<JSFunction> float64x2_fun =
+        InstallFunction(simd_object, "float64x2", FLOAT64x2_TYPE,
+                        Float64x2::kSize,
+                        isolate()->initial_object_prototype(),
+                        Builtins::kIllegal);
+    native_context()->set_float64x2_function(*float64x2_fun);
+
+    // --- i n t 3 2 x 4 ---
+    Handle<JSFunction> int32x4_fun =
+        InstallFunction(simd_object, "int32x4", INT32x4_TYPE,
+                        Int32x4::kSize,
+                        isolate()->initial_object_prototype(),
+                        Builtins::kIllegal);
+    native_context()->set_int32x4_function(*int32x4_fun);
+
+    // --- F l o a t 3 2 x 4 A r r a y---
+    Handle<JSFunction> fun;
+    Handle<Map> external_map;
+    InstallTypedArray(
+        "Float32x4Array", FLOAT32x4_ELEMENTS, &fun, &external_map);
+    native_context()->set_float32x4_array_fun(*fun);
+    native_context()->set_float32x4_array_external_map(*external_map);
+
+    // --- F l o a t 6 4 x 2 A r r a y---
+    InstallTypedArray(
+        "Float64x2Array", FLOAT64x2_ELEMENTS, &fun, &external_map);
+    native_context()->set_float64x2_array_fun(*fun);
+    native_context()->set_float64x2_array_external_map(*external_map);
+
+    // --- I n t 3 2 x 4 A r r a y---
+    InstallTypedArray(
+        "Int32x4Array", INT32x4_ELEMENTS, &fun, &external_map);
+    native_context()->set_int32x4_array_fun(*fun);
+    native_context()->set_int32x4_array_external_map(*external_map);
+  }
 }
 
 
@@ -2197,6 +2257,25 @@ bool Genesis::InstallExperimentalNatives() {
     HARMONY_STAGED(INSTALL_EXPERIMENTAL_NATIVES);
     HARMONY_SHIPPING(INSTALL_EXPERIMENTAL_NATIVES);
 #undef INSTALL_EXPERIMENTAL_NATIVES
+    if (FLAG_simd_object &&
+        strcmp(ExperimentalNatives::GetScriptName(i).start(),
+               "native simd128.js") == 0) {
+      if (!CompileExperimentalBuiltin(isolate(), i)) return false;
+      // Store the map for the float32x4, float64x2 and int32x4 function
+      // prototype after the float32x4 and int32x4 function has been set up.
+      JSObject* float32x4_function_prototype = JSObject::cast(
+          native_context()->float32x4_function()->instance_prototype());
+      native_context()->set_float32x4_function_prototype_map(
+          float32x4_function_prototype->map());
+      JSObject* float64x2_function_prototype = JSObject::cast(
+          native_context()->float64x2_function()->instance_prototype());
+      native_context()->set_float64x2_function_prototype_map(
+          float64x2_function_prototype->map());
+      JSObject* int32x4_function_prototype = JSObject::cast(
+          native_context()->int32x4_function()->instance_prototype());
+      native_context()->set_int32x4_function_prototype_map(
+          int32x4_function_prototype->map());
+    }
   }
 
   InstallExperimentalNativeFunctions();
@@ -2762,9 +2841,9 @@ Genesis::Genesis(Isolate* isolate,
     isolate->counters()->contexts_created_from_scratch()->Increment();
   }
 
+  InitializeExperimentalGlobal();
   // Install experimental natives.
   if (!InstallExperimentalNatives()) return;
-  InitializeExperimentalGlobal();
 
   // We can't (de-)serialize typed arrays currently, but we are lucky: The state
   // of the random number generator needs no initialization during snapshot
