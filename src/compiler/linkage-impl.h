@@ -260,6 +260,11 @@ class LinkageHelper {
       case Representation::kNone:
       case Representation::kNumRepresentations:
         break;
+      case Representation::kFloat32x4:
+      case Representation::kFloat64x2:
+      case Representation::kInt32x4:
+        // TODO(nhu): fix this in TF implementation.
+        break;
     }
     UNREACHABLE();
     return kMachNone;
