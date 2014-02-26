@@ -4337,6 +4337,15 @@ void MacroAssembler::AllocateHeapNumber(Register result,
 }
 
 
+void MacroAssembler::AllocateSIMDHeapObject(int size,
+                                            Register result,
+                                            Register scratch,
+                                            Label* gc_required,
+                                            Heap::RootListIndex map_index) {
+  UNREACHABLE();  // NOTIMPLEMENTED
+}
+
+
 void MacroAssembler::AllocateTwoByteString(Register result,
                                            Register length,
                                            Register scratch1,

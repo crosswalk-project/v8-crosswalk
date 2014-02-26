@@ -44,6 +44,11 @@ MachineType BufferAccess::machine_type() const {
       return kMachFloat32;
     case kExternalFloat64Array:
       return kMachFloat64;
+    case kExternalFloat32x4Array:
+    case kExternalInt32x4Array:
+    case kExternalFloat64x2Array:
+      // TODO(huningxin): fix this workaround.
+      return kMachNone;
   }
   UNREACHABLE();
   return kMachNone;

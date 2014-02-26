@@ -123,6 +123,11 @@ ElementAccess AccessBuilder::ForTypedArrayElement(ExternalArrayType type,
       return {taggedness, header_size, Type::Number(), kMachFloat32};
     case kExternalFloat64Array:
       return {taggedness, header_size, Type::Number(), kMachFloat64};
+    case kExternalFloat32x4Array:
+    case kExternalInt32x4Array:
+    case kExternalFloat64x2Array:
+      // TODO(ningxin): fix this workaround.
+      return {kUntaggedBase, 0, Type::None(), kMachNone};
   }
   UNREACHABLE();
   return {kUntaggedBase, 0, Type::None(), kMachNone};

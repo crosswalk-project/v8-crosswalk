@@ -1239,15 +1239,20 @@ class LInstanceOfKnownGlobal final : public LTemplateInstruction<1, 2, 1> {
 };
 
 
-class LBoundsCheck final : public LTemplateInstruction<0, 2, 0> {
+class LBoundsCheck final : public LTemplateInstruction<0, 2, 2> {
  public:
-  LBoundsCheck(LOperand* index, LOperand* length) {
+  LBoundsCheck(LOperand* index, LOperand* length,
+               LOperand* temp0, LOperand* temp1) {
     inputs_[0] = index;
     inputs_[1] = length;
+    temps_[0] = temp0;
+    temps_[1] = temp1;
   }
 
   LOperand* index() { return inputs_[0]; }
   LOperand* length() { return inputs_[1]; }
+  LOperand* temp0() { return temps_[0]; }
+  LOperand* temp1() { return temps_[1]; }
 
   DECLARE_CONCRETE_INSTRUCTION(BoundsCheck, "bounds-check")
   DECLARE_HYDROGEN_ACCESSOR(BoundsCheck)
@@ -1643,14 +1648,19 @@ class LLoadRoot final : public LTemplateInstruction<1, 0, 0> {
 };
 
 
-class LLoadKeyed final : public LTemplateInstruction<1, 2, 0> {
+class LLoadKeyed final : public LTemplateInstruction<1, 2, 2> {
  public:
-  LLoadKeyed(LOperand* elements, LOperand* key) {
+  LLoadKeyed(LOperand* elements, LOperand* key,
+             LOperand* temp0, LOperand* temp1) {
     inputs_[0] = elements;
     inputs_[1] = key;
+    temps_[0] = temp0;
+    temps_[1] = temp1;
   }
   LOperand* elements() { return inputs_[0]; }
   LOperand* key() { return inputs_[1]; }
+  LOperand* temp0() { return temps_[0]; }
+  LOperand* temp1() { return temps_[1]; }
   ElementsKind elements_kind() const {
     return hydrogen()->elements_kind();
   }
@@ -1675,19 +1685,30 @@ class LLoadKeyed final : public LTemplateInstruction<1, 2, 0> {
 };
 
 
+inline static bool ExternalArrayOpRequiresPreScale(
+    Representation key_representation,
+    ElementsKind kind) {
+  int shift_size = ElementsKindToShiftSize(kind);
+  return key_representation.IsSmi()
+      ? shift_size > static_cast<int>(maximal_scale_factor) + kSmiTagSize
+      : shift_size > static_cast<int>(maximal_scale_factor);
+}
+
+
 inline static bool ExternalArrayOpRequiresTemp(
     Representation key_representation,
     ElementsKind elements_kind) {
-  // Operations that require the key to be divided by two to be converted into
-  // an index cannot fold the scale operation into a load and need an extra
-  // temp register to do the work.
-  return key_representation.IsSmi() &&
-      (elements_kind == EXTERNAL_INT8_ELEMENTS ||
-       elements_kind == EXTERNAL_UINT8_ELEMENTS ||
-       elements_kind == EXTERNAL_UINT8_CLAMPED_ELEMENTS ||
-       elements_kind == UINT8_ELEMENTS ||
-       elements_kind == INT8_ELEMENTS ||
-       elements_kind == UINT8_CLAMPED_ELEMENTS);
+  // Operations that require the key to be scaled by a factor or divided by two
+  // to be converted into an index cannot fold the scale operation into a load
+  // and need an extra temp register to do the work.
+  return ExternalArrayOpRequiresPreScale(key_representation, elements_kind) ||
+      (key_representation.IsSmi() &&
+        (elements_kind == EXTERNAL_INT8_ELEMENTS ||
+         elements_kind == EXTERNAL_UINT8_ELEMENTS ||
+         elements_kind == EXTERNAL_UINT8_CLAMPED_ELEMENTS ||
+         elements_kind == UINT8_ELEMENTS ||
+         elements_kind == INT8_ELEMENTS ||
+         elements_kind == UINT8_CLAMPED_ELEMENTS));
 }
 
 
@@ -2211,12 +2232,15 @@ class LStoreNamedGeneric final : public LTemplateInstruction<0, 3, 0> {
 };
 
 
-class LStoreKeyed final : public LTemplateInstruction<0, 3, 0> {
+class LStoreKeyed final : public LTemplateInstruction<0, 3, 2> {
  public:
-  LStoreKeyed(LOperand* obj, LOperand* key, LOperand* val) {
+  LStoreKeyed(LOperand* obj, LOperand* key, LOperand* val,
+              LOperand* temp0, LOperand* temp1) {
     inputs_[0] = obj;
     inputs_[1] = key;
     inputs_[2] = val;
+    temps_[0] = temp0;
+    temps_[1] = temp1;
   }
 
   bool is_external() const { return hydrogen()->is_external(); }
@@ -2229,6 +2253,8 @@ class LStoreKeyed final : public LTemplateInstruction<0, 3, 0> {
   LOperand* elements() { return inputs_[0]; }
   LOperand* key() { return inputs_[1]; }
   LOperand* value() { return inputs_[2]; }
+  LOperand* temp0() { return temps_[0]; }
+  LOperand* temp1() { return temps_[1]; }
   ElementsKind elements_kind() const {
     return hydrogen()->elements_kind();
   }

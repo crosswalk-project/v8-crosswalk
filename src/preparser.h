@@ -1572,6 +1572,14 @@ class PreParserTraits {
     return false;
   }
 
+  bool BuildSIMD128LoadStoreExpression(
+      PreParserExpression* expression,
+      PreParserExpressionList arguments,
+      int pos,
+      PreParserFactory* factory) {
+    return false;
+  }
+
   PreParserExpression BuildUnaryExpression(PreParserExpression expression,
                                            Token::Value op, int pos,
                                            PreParserFactory* factory) {
@@ -3083,6 +3091,10 @@ ParserBase<Traits>::ParseLeftHandSideExpression(
         Scanner::Location spread_pos;
         typename Traits::Type::ExpressionList args =
             ParseArguments(&spread_pos, classifier, CHECK_OK);
+
+        if (this->BuildSIMD128LoadStoreExpression(
+            &result, args, pos, factory()))
+          break;
 
         // Keep track of eval() calls since they disable all local variable
         // optimizations.

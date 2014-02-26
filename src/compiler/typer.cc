@@ -101,6 +101,11 @@ class LazyTypeCache final : public ZoneObject {
 #undef TYPED_ARRAY_CASE
       case kNumLazyCachedTypes:
         break;
+      case kFloat32x4:
+      case kInt32x4:
+      case kFloat64x2:
+        // TODO(huningxin): fix this workaround.
+        return NULL;
     }
     UNREACHABLE();
     return NULL;

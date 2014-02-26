@@ -31,9 +31,12 @@
 //     - ExternalInt16ElementsAccessor
 //     - ExternalUint16ElementsAccessor
 //     - ExternalInt32ElementsAccessor
+//     - ExternalInt32x4ElementsAccessor
 //     - ExternalUint32ElementsAccessor
 //     - ExternalFloat32ElementsAccessor
+//     - ExternalFloat32x4ElementsAccessor
 //     - ExternalFloat64ElementsAccessor
+//     - ExternalFloat64x2ElementsAccessor
 //     - ExternalUint8ClampedElementsAccessor
 //     - FixedUint8ElementsAccessor
 //     - FixedInt8ElementsAccessor
@@ -41,8 +44,11 @@
 //     - FixedInt16ElementsAccessor
 //     - FixedUint32ElementsAccessor
 //     - FixedInt32ElementsAccessor
+//     - FixedInt32x4ElementsAccessor
 //     - FixedFloat32ElementsAccessor
+//     - FixedFloat32x4ElementsAccessor
 //     - FixedFloat64ElementsAccessor
+//     - FixedFloat64x2ElementsAccessor
 //     - FixedUint8ClampedElementsAccessor
 //   - DictionaryElementsAccessor
 //   - SloppyArgumentsElementsAccessor
@@ -84,12 +90,18 @@ static const int kPackedSizeNotKnown = -1;
     EXTERNAL_UINT16_ELEMENTS, ExternalUint16Array)                      \
   V(ExternalInt32ElementsAccessor, EXTERNAL_INT32_ELEMENTS,             \
     ExternalInt32Array)                                                 \
+  V(ExternalInt32x4ElementsAccessor, EXTERNAL_INT32x4_ELEMENTS,         \
+    ExternalInt32x4Array)                                               \
   V(ExternalUint32ElementsAccessor,                                     \
     EXTERNAL_UINT32_ELEMENTS, ExternalUint32Array)                      \
   V(ExternalFloat32ElementsAccessor,                                    \
     EXTERNAL_FLOAT32_ELEMENTS, ExternalFloat32Array)                    \
+  V(ExternalFloat32x4ElementsAccessor,                                  \
+    EXTERNAL_FLOAT32x4_ELEMENTS, ExternalFloat32x4Array)                \
   V(ExternalFloat64ElementsAccessor,                                    \
     EXTERNAL_FLOAT64_ELEMENTS, ExternalFloat64Array)                    \
+  V(ExternalFloat64x2ElementsAccessor,                                  \
+    EXTERNAL_FLOAT64x2_ELEMENTS, ExternalFloat64x2Array)                \
   V(ExternalUint8ClampedElementsAccessor,                               \
     EXTERNAL_UINT8_CLAMPED_ELEMENTS,                                    \
     ExternalUint8ClampedArray)                                          \
@@ -99,8 +111,13 @@ static const int kPackedSizeNotKnown = -1;
   V(FixedInt16ElementsAccessor, INT16_ELEMENTS, FixedInt16Array)        \
   V(FixedUint32ElementsAccessor, UINT32_ELEMENTS, FixedUint32Array)     \
   V(FixedInt32ElementsAccessor, INT32_ELEMENTS, FixedInt32Array)        \
+  V(FixedInt32x4ElementsAccessor, INT32x4_ELEMENTS, FixedInt32x4Array)  \
   V(FixedFloat32ElementsAccessor, FLOAT32_ELEMENTS, FixedFloat32Array)  \
+  V(FixedFloat32x4ElementsAccessor, FLOAT32x4_ELEMENTS,                 \
+    FixedFloat32x4Array)                                                \
   V(FixedFloat64ElementsAccessor, FLOAT64_ELEMENTS, FixedFloat64Array)  \
+  V(FixedFloat64x2ElementsAccessor, FLOAT64x2_ELEMENTS,                 \
+    FixedFloat64x2Array)                                                \
   V(FixedUint8ClampedElementsAccessor, UINT8_CLAMPED_ELEMENTS,          \
     FixedUint8ClampedArray)
 
