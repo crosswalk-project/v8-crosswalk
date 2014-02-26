@@ -92,6 +92,12 @@ void HeapObject::HeapObjectPrint(FILE* out) {
     case HEAP_NUMBER_TYPE:
       HeapNumber::cast(this)->HeapNumberPrint(out);
       break;
+    case FLOAT32x4_TYPE:
+      Float32x4::cast(this)->Float32x4Print(out);
+      break;
+    case INT32x4_TYPE:
+      Int32x4::cast(this)->Int32x4Print(out);
+      break;
     case FIXED_DOUBLE_ARRAY_TYPE:
       FixedDoubleArray::cast(this)->FixedDoubleArrayPrint(out);
       break;
@@ -301,6 +307,30 @@ static void DoPrintDoubleElements(FILE* out, Object* object) {
 }
 
 
+template<class T>
+static void DoPrintFloat32x4Elements(FILE* out, Object* object) {
+  T* p = T::cast(object);
+  for (int i = 0; i < p->length(); i++) {
+    float32x4_value_t value =  p->get_scalar(i);
+    PrintF(out, "   %d: (%f, %f, %f, %f)\n",
+           i, value.storage[0], value.storage[1],
+           value.storage[2], value.storage[3]);
+  }
+}
+
+
+template<class T>
+static void DoPrintInt32x4Elements(FILE* out, Object* object) {
+  T* p = T::cast(object);
+  for (int i = 0; i < p->length(); i++) {
+    int32x4_value_t value =  p->get_scalar(i);
+    PrintF(out, "   %d: (%d, %d, %d, %d)\n",
+           i, value.storage[0], value.storage[1],
+           value.storage[2], value.storage[3]);
+  }
+}
+
+
 void JSObject::PrintElements(FILE* out) {
   // Don't call GetElementsKind, its validation code can cause the printer to
   // fail when debugging.
@@ -348,6 +378,18 @@ void JSObject::PrintElements(FILE* out) {
       break;                                                                \
     }
 
+#define PRINT_FLOAT32x4_ELEMENTS(Kind, Type)                                \
+    case Kind: {                                                            \
+      DoPrintFloat32x4Elements<Type>(out, elements());                      \
+      break;                                                                \
+    }
+
+#define PRINT_INT32x4_ELEMENTS(Kind, Type)                                  \
+    case Kind: {                                                            \
+      DoPrintInt32x4Elements<Type>(out, elements());                        \
+      break;                                                                \
+    }
+
     PRINT_ELEMENTS(EXTERNAL_UINT8_CLAMPED_ELEMENTS, ExternalUint8ClampedArray)
     PRINT_ELEMENTS(EXTERNAL_INT8_ELEMENTS, ExternalInt8Array)
     PRINT_ELEMENTS(EXTERNAL_UINT8_ELEMENTS,
@@ -360,6 +402,9 @@ void JSObject::PrintElements(FILE* out) {
         ExternalUint32Array)
     PRINT_DOUBLE_ELEMENTS(EXTERNAL_FLOAT32_ELEMENTS, ExternalFloat32Array)
     PRINT_DOUBLE_ELEMENTS(EXTERNAL_FLOAT64_ELEMENTS, ExternalFloat64Array)
+    PRINT_FLOAT32x4_ELEMENTS(EXTERNAL_FLOAT32x4_ELEMENTS,
+        ExternalFloat32x4Array)
+    PRINT_INT32x4_ELEMENTS(EXTERNAL_INT32x4_ELEMENTS, ExternalInt32x4Array)
 
 
     PRINT_ELEMENTS(UINT8_ELEMENTS, FixedUint8Array)
@@ -371,6 +416,8 @@ void JSObject::PrintElements(FILE* out) {
     PRINT_ELEMENTS(INT32_ELEMENTS, FixedInt32Array)
     PRINT_DOUBLE_ELEMENTS(FLOAT32_ELEMENTS, FixedFloat32Array)
     PRINT_DOUBLE_ELEMENTS(FLOAT64_ELEMENTS, FixedFloat64Array)
+    PRINT_FLOAT32x4_ELEMENTS(FLOAT32x4_ELEMENTS, FixedFloat32x4Array)
+    PRINT_INT32x4_ELEMENTS(INT32x4_ELEMENTS, FixedInt32x4Array)
 
 #undef PRINT_DOUBLE_ELEMENTS
 #undef PRINT_ELEMENTS
