@@ -66,6 +66,12 @@ MaybeHandle<JSReceiver> Object::ToObject(Isolate* isolate,
   Handle<JSFunction> constructor;
   if (object->IsNumber()) {
     constructor = handle(native_context->number_function(), isolate);
+  } else if (object->IsFloat32x4()) {
+    constructor = handle(native_context->float32x4_function(), isolate);
+  } else if (object->IsFloat64x2()) {
+    constructor = handle(native_context->float64x2_function(), isolate);
+  } else if (object->IsInt32x4()) {
+    constructor = handle(native_context->int32x4_function(), isolate);
   } else if (object->IsBoolean()) {
     constructor = handle(native_context->boolean_function(), isolate);
   } else if (object->IsString()) {
@@ -112,6 +118,12 @@ void Object::Lookup(Handle<Name> name, LookupResult* result) {
     Context* native_context = result->isolate()->context()->native_context();
     if (IsNumber()) {
       holder = native_context->number_function()->instance_prototype();
+    } else if (IsFloat32x4()) {
+      holder = native_context->float32x4_function()->instance_prototype();
+    } else if (IsFloat64x2()) {
+      holder = native_context->float64x2_function()->instance_prototype();
+    } else if (IsInt32x4()) {
+      holder = native_context->int32x4_function()->instance_prototype();
     } else if (IsString()) {
       holder = native_context->string_function()->instance_prototype();
     } else if (IsSymbol()) {
@@ -817,6 +829,17 @@ MaybeHandle<Object> Object::GetElementWithReceiver(Isolate* isolate,
       if (holder->IsNumber()) {
         holder = Handle<Object>(
             native_context->number_function()->instance_prototype(), isolate);
+      } else if (holder->IsFloat32x4()) {
+        holder = Handle<Object>(
+            native_context->float32x4_function()->instance_prototype(),
+            isolate);
+      } else if (holder->IsFloat64x2()) {
+        holder = Handle<Object>(
+            native_context->float64x2_function()->instance_prototype(),
+            isolate);
+      } else if (holder->IsInt32x4()) {
+        holder = Handle<Object>(
+            native_context->int32x4_function()->instance_prototype(), isolate);
       } else if (holder->IsString()) {
         holder = Handle<Object>(
             native_context->string_function()->instance_prototype(), isolate);
@@ -886,6 +909,15 @@ Object* Object::GetPrototype(Isolate* isolate) {
 
   if (heap_object->IsHeapNumber()) {
     return context->number_function()->instance_prototype();
+  }
+  if (heap_object->IsFloat32x4()) {
+    return context->float32x4_function()->instance_prototype();
+  }
+  if (heap_object->IsFloat64x2()) {
+    return context->float64x2_function()->instance_prototype();
+  }
+  if (heap_object->IsInt32x4()) {
+    return context->int32x4_function()->instance_prototype();
   }
   if (heap_object->IsString()) {
     return context->string_function()->instance_prototype();
@@ -1555,6 +1587,21 @@ void HeapObject::HeapObjectShortPrint(StringStream* accumulator) {
       HeapNumber::cast(this)->HeapNumberPrint(accumulator);
       accumulator->Put('>');
       break;
+    case FLOAT32x4_TYPE:
+      accumulator->Add("<Float32x4: ");
+      Float32x4::cast(this)->Float32x4Print(accumulator);
+      accumulator->Put('>');
+      break;
+    case FLOAT64x2_TYPE:
+      accumulator->Add("<Float64x2: ");
+      Float64x2::cast(this)->Float64x2Print(accumulator);
+      accumulator->Put('>');
+      break;
+    case INT32x4_TYPE:
+      accumulator->Add("<Int32x4: ");
+      Int32x4::cast(this)->Int32x4Print(accumulator);
+      accumulator->Put('>');
+      break;
     case JS_PROXY_TYPE:
       accumulator->Add("<JSProxy>");
       break;
@@ -1680,6 +1727,9 @@ void HeapObject::IterateBody(InstanceType type, int object_size,
       break;
 
     case HEAP_NUMBER_TYPE:
+    case FLOAT32x4_TYPE:
+    case FLOAT64x2_TYPE:
+    case INT32x4_TYPE:
     case FILLER_TYPE:
     case BYTE_ARRAY_TYPE:
     case FREE_SPACE_TYPE:
@@ -1749,6 +1799,60 @@ void HeapNumber::HeapNumberPrint(StringStream* accumulator) {
   // there is no more space in the buffer).
   EmbeddedVector<char, 100> buffer;
   SNPrintF(buffer, "%.16g", Number());
+  accumulator->Add("%s", buffer.start());
+}
+
+
+void Float32x4::Float32x4Print(FILE* out) {
+  PrintF(out, "%.16g %.16g %.16g %.16g", x(), y(), z(), w());
+}
+
+
+void Float32x4::Float32x4Print(StringStream* accumulator) {
+  // The Windows version of vsnprintf can allocate when printing a %g string
+  // into a buffer that may not be big enough.  We don't want random memory
+  // allocation when producing post-crash stack traces, so we print into a
+  // buffer that is plenty big enough for any floating point number, then
+  // print that using vsnprintf (which may truncate but never allocate if
+  // there is no more space in the buffer).
+  EmbeddedVector<char, 100> buffer;
+  OS::SNPrintF(buffer, "%.16g %.16g %.16g %.16g", x(), y(), z(), w());
+  accumulator->Add("%s", buffer.start());
+}
+
+
+void Int32x4::Int32x4Print(FILE* out) {
+  PrintF(out, "%u %u %u %u", x(), y(), z(), w());
+}
+
+
+void Float64x2::Float64x2Print(FILE* out) {
+  PrintF(out, "%.16g %.16g", x(), y());
+}
+
+
+void Float64x2::Float64x2Print(StringStream* accumulator) {
+  // The Windows version of vsnprintf can allocate when printing a %g string
+  // into a buffer that may not be big enough.  We don't want random memory
+  // allocation when producing post-crash stack traces, so we print into a
+  // buffer that is plenty big enough for any floating point number, then
+  // print that using vsnprintf (which may truncate but never allocate if
+  // there is no more space in the buffer).
+  EmbeddedVector<char, 100> buffer;
+  OS::SNPrintF(buffer, "%.16g %.16g", x(), y());
+  accumulator->Add("%s", buffer.start());
+}
+
+
+void Int32x4::Int32x4Print(StringStream* accumulator) {
+  // The Windows version of vsnprintf can allocate when printing a %g string
+  // into a buffer that may not be big enough.  We don't want random memory
+  // allocation when producing post-crash stack traces, so we print into a
+  // buffer that is plenty big enough for any floating point number, then
+  // print that using vsnprintf (which may truncate but never allocate if
+  // there is no more space in the buffer).
+  EmbeddedVector<char, 100> buffer;
+  OS::SNPrintF(buffer, "%u %u %u %u", x(), y(), z(), w());
   accumulator->Add("%s", buffer.start());
 }
 
@@ -2028,6 +2132,9 @@ const char* Representation::Mnemonic() const {
     case kTagged: return "t";
     case kSmi: return "s";
     case kDouble: return "d";
+    case kFloat32x4: return "float32x4";
+    case kFloat64x2: return "float64x2";
+    case kInt32x4: return "int32x44";
     case kInteger32: return "i";
     case kHeapObject: return "h";
     case kExternal: return "x";
@@ -12835,7 +12942,10 @@ MaybeHandle<Object> JSObject::SetElement(Handle<JSObject> object,
 
   if (object->HasExternalArrayElements() ||
       object->HasFixedTypedArrayElements()) {
-    if (!value->IsNumber() && !value->IsUndefined()) {
+    // TODO(ningxin): Throw an error if setting a Float32x4Array element
+    // while the value is not Float32x4Object.
+    if (!value->IsNumber() && !value->IsFloat32x4() && !value->IsFloat64x2() &&
+        !value->IsInt32x4() && !value->IsUndefined()) {
       ASSIGN_RETURN_ON_EXCEPTION(
           isolate, value,
           Execution::ToNumber(isolate, value), Object);
@@ -15140,6 +15250,71 @@ Handle<Object> ExternalFloat64Array::SetValue(
     array->set(index, double_value);
   }
   return array->GetIsolate()->factory()->NewNumber(double_value);
+}
+
+
+Handle<Object> ExternalFloat32x4Array::SetValue(
+    Handle<ExternalFloat32x4Array> array,
+    uint32_t index,
+    Handle<Object> value) {
+  float32x4_value_t cast_value;
+  cast_value.storage[0] = static_cast<float>(OS::nan_value());
+  cast_value.storage[1] = static_cast<float>(OS::nan_value());
+  cast_value.storage[2] = static_cast<float>(OS::nan_value());
+  cast_value.storage[3] = static_cast<float>(OS::nan_value());
+  if (index < static_cast<uint32_t>(array->length())) {
+    if (value->IsFloat32x4()) {
+      cast_value = Handle<Float32x4>::cast(value)->value();
+    } else {
+      // Clamp undefined to NaN (default). All other types have been
+      // converted to a number type further up in the call chain.
+      ASSERT(value->IsUndefined());
+    }
+    array->set(index, cast_value);
+  }
+  return array->GetIsolate()->factory()->NewFloat32x4(cast_value);
+}
+
+
+Handle<Object> ExternalInt32x4Array::SetValue(
+    Handle<ExternalInt32x4Array> array, uint32_t index, Handle<Object> value) {
+  int32x4_value_t cast_value;
+  cast_value.storage[0] = 0;
+  cast_value.storage[1] = 0;
+  cast_value.storage[2] = 0;
+  cast_value.storage[3] = 0;
+  if (index < static_cast<uint32_t>(array->length())) {
+    if (value->IsInt32x4()) {
+      cast_value = Handle<Int32x4>::cast(value)->value();
+    } else {
+      // Clamp undefined to zero (default). All other types have been
+      // converted to a number type further up in the call chain.
+      ASSERT(value->IsUndefined());
+    }
+    array->set(index, cast_value);
+  }
+  return array->GetIsolate()->factory()->NewInt32x4(cast_value);
+}
+
+
+Handle<Object> ExternalFloat64x2Array::SetValue(
+    Handle<ExternalFloat64x2Array> array,
+    uint32_t index,
+    Handle<Object> value) {
+  float64x2_value_t cast_value;
+  cast_value.storage[0] = OS::nan_value();
+  cast_value.storage[1] = OS::nan_value();
+  if (index < static_cast<uint32_t>(array->length())) {
+    if (value->IsFloat64x2()) {
+      cast_value = Handle<Float64x2>::cast(value)->value();
+    } else {
+      // Clamp undefined to NaN (default). All other types have been
+      // converted to a number type further up in the call chain.
+      ASSERT(value->IsUndefined());
+    }
+    array->set(index, cast_value);
+  }
+  return array->GetIsolate()->factory()->NewFloat64x2(cast_value);
 }
 
 
