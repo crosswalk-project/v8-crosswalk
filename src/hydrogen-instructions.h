@@ -6431,6 +6431,13 @@ class HLoadKeyed V8_FINAL
           elements_kind == FLOAT32_ELEMENTS ||
           elements_kind == FLOAT64_ELEMENTS) {
         set_representation(Representation::Double());
+      } else if (elements_kind == EXTERNAL_FLOAT32x4_ELEMENTS ||
+                 elements_kind == FLOAT32x4_ELEMENTS ||
+                 elements_kind == EXTERNAL_INT32x4_ELEMENTS ||
+                 elements_kind == INT32x4_ELEMENTS) {
+        // TODO(haitao): Set the representation to Float32x4 or Int32x4 after
+        // SIMD instructions are added.
+        set_representation(Representation::Tagged());
       } else {
         set_representation(Representation::Integer32());
       }
@@ -6717,6 +6724,14 @@ class HStoreKeyed V8_FINAL
     if (IsDoubleOrFloatElementsKind(elements_kind())) {
       return Representation::Double();
     }
+    if (IsExternalFloat32x4ElementsKind(elements_kind()) ||
+        IsFixedFloat32x4ElementsKind(elements_kind()) ||
+        IsExternalInt32x4ElementsKind(elements_kind()) ||
+        IsFixedInt32x4ElementsKind(elements_kind())) {
+      // TODO(haitao): Set the required input representation to Float32x4 or
+      // Int32x4 after SIMD instructions are added.
+      return Representation::Tagged();
+    }
     if (SmiValuesAre32Bits() && store_mode_ == STORE_TO_INITIALIZED_ENTRY) {
       return Representation::Integer32();
     }
@@ -6748,6 +6763,14 @@ class HStoreKeyed V8_FINAL
     }
     if (IsDoubleOrFloatElementsKind(elements_kind())) {
       return Representation::Double();
+    }
+    if (IsExternalFloat32x4ElementsKind(elements_kind()) ||
+        IsFixedFloat32x4ElementsKind(elements_kind()) ||
+        IsExternalInt32x4ElementsKind(elements_kind()) ||
+        IsFixedInt32x4ElementsKind(elements_kind())) {
+      // TODO(haitao): Set the required input representation to Float32x4 or
+      // Int32x4 after SIMD instructions are added.
+      return Representation::Tagged();
     }
     if (SmiValuesAre32Bits() && store_mode_ == STORE_TO_INITIALIZED_ENTRY) {
       return Representation::Integer32();

@@ -525,7 +525,8 @@ void CallICBase::ReceiverToObjectIfRequired(Handle<Object> callee,
   }
 
   // And only wrap string, number or boolean.
-  if (object->IsString() || object->IsNumber() || object->IsBoolean()) {
+  if (object->IsString() || object->IsNumber() || object->IsBoolean() ||
+      object->IsFloat32x4() || object->IsInt32x4()) {
     // Change the receiver to the result of calling ToObject on it.
     const int argc = this->target()->arguments_count();
     StackFrameLocator locator(isolate());

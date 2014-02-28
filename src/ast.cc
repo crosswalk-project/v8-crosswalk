@@ -702,6 +702,12 @@ Handle<JSObject> Call::GetPrototypeForPrimitiveCheck(
     case NUMBER_CHECK:
       function = native_context->number_function();
       break;
+    case FLOAT32x4_CHECK:
+      function = native_context->float32x4_function();
+      break;
+    case INT32x4_CHECK:
+      function = native_context->int32x4_function();
+      break;
     case BOOLEAN_CHECK:
       function = native_context->boolean_function();
       break;

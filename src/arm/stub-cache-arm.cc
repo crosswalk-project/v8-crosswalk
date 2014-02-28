@@ -1741,6 +1741,24 @@ Register CallStubCompiler::HandlerFrontendHeader(Handle<Object> object,
           masm(), Context::NUMBER_FUNCTION_INDEX, r1, miss);
       break;
     }
+    case FLOAT32x4_CHECK: {
+      // Check that the object is a float32x4.
+      __ CompareObjectType(reg, r3, r3, FLOAT32x4_TYPE);
+      __ b(ne, miss);
+      // Check that the maps starting from the prototype haven't changed.
+      GenerateDirectLoadGlobalFunctionPrototype(
+          masm(), Context::FLOAT32x4_FUNCTION_INDEX, r1, miss);
+      break;
+    }
+    case INT32x4_CHECK: {
+      // Check that the object is a int32x4.
+      __ CompareObjectType(reg, r3, r3, INT32x4_TYPE);
+      __ b(ne, miss);
+      // Check that the maps starting from the prototype haven't changed.
+      GenerateDirectLoadGlobalFunctionPrototype(
+          masm(), Context::INT32x4_FUNCTION_INDEX, r1, miss);
+      break;
+    }
     case BOOLEAN_CHECK: {
       GenerateBooleanCheck(reg, miss);
 

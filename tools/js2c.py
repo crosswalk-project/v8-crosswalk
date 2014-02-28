@@ -358,9 +358,9 @@ def JS2C(source, target, env):
     debugger = filename.endswith('-debugger.js')
     lines = ReadFile(filename)
     lines = ExpandConstants(lines, consts)
+    lines = ExpandInlineMacros(lines, filename)
     lines = ExpandMacros(lines, macros)
     lines = RemoveCommentsAndTrailingWhitespace(lines)
-    lines = ExpandInlineMacros(lines, filename)
     Validate(lines, filename)
     lines = minifier.JSMinify(lines)
     id = (os.path.split(filename)[1])[:-3]
