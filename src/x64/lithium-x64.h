@@ -1526,11 +1526,12 @@ class LLoadExternalArrayPointer V8_FINAL
 };
 
 
-class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 0> {
+class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 1> {
  public:
-  LLoadKeyed(LOperand* elements, LOperand* key) {
+  LLoadKeyed(LOperand* elements, LOperand* key, LOperand* temp) {
     inputs_[0] = elements;
     inputs_[1] = key;
+    temps_[0] = temp;
   }
 
   DECLARE_CONCRETE_INSTRUCTION(LoadKeyed, "load-keyed")
@@ -1547,6 +1548,7 @@ class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 0> {
   }
   LOperand* elements() { return inputs_[0]; }
   LOperand* key() { return inputs_[1]; }
+  LOperand* temp() { return temps_[0]; }
   virtual void PrintDataTo(StringStream* stream) V8_OVERRIDE;
   uint32_t additional_index() const { return hydrogen()->index_offset(); }
   ElementsKind elements_kind() const {
