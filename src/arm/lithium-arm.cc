@@ -2174,10 +2174,12 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
          (instr->is_external() &&
           instr->elements()->representation().IsExternal()));
   LOperand* val = UseRegister(instr->value());
-  LOperand* key = UseRegisterOrConstantAtStart(instr->key());
   LOperand* backing_store = UseRegister(instr->elements());
   bool store_128bits_without_neon =
       IsSIMD128ElementsKind(instr->elements_kind());
+  LOperand* key = store_128bits_without_neon
+      ? UseRegisterOrConstant(instr->key())
+      : UseRegisterOrConstantAtStart(instr->key());
   LStoreKeyed* result =
       new(zone()) LStoreKeyed(backing_store, key, val,
           store_128bits_without_neon ? TempRegister() : NULL);

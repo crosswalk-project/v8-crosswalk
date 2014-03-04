@@ -2994,12 +2994,12 @@ void LCodeGen::DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr) {
 
   // Allocate a SIMD128 object on the heap.
   Register reg = ToRegister(instr->result());
+  Register tmp = ToRegister(instr->temp());
   DeferredSIMD128ToTagged* deferred =
       new(zone()) DeferredSIMD128ToTagged(this, instr,
           static_cast<Runtime::FunctionId>(T::kRuntimeAllocatorId()));
   if (FLAG_inline_new) {
-    __ AllocateSIMDHeapObject(Float32x4::kSize, reg, kScratchRegister,
-        deferred->entry(),
+    __ AllocateSIMDHeapObject(T::kSize, reg, tmp, deferred->entry(),
         static_cast<Heap::RootListIndex>(T::kMapRootIndex()));
   } else {
     __ jmp(deferred->entry());
@@ -3018,9 +3018,8 @@ void LCodeGen::DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr) {
         elements_kind,
         base_offset + offset,
         instr->additional_index()));
-    __ movp(kScratchRegister, operand);
-    __ movp(FieldOperand(reg, Float32x4::kValueOffset + offset),
-        kScratchRegister);
+    __ movp(tmp, operand);
+    __ movp(FieldOperand(reg, T::kValueOffset + offset), tmp);
   }
 }
 
