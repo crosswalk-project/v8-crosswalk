@@ -244,6 +244,11 @@ typedef byte* Address;
 
 struct float32x4_value_t { float storage[4]; };
 struct int32x4_value_t { int32_t storage[4]; };
+union simd128_value_t {
+  double d[2];
+  float32x4_value_t f4;
+  int32x4_value_t i4;
+};
 
 const int KB = 1024;
 const int MB = KB * KB;
@@ -270,6 +275,7 @@ const int kDoubleSize    = sizeof(double);               // NOLINT
 const int kFloatSize     = sizeof(float);                // NOLINT
 const int kFloat32x4Size = sizeof(float32x4_value_t);    // NOLINT
 const int kInt32x4Size   = sizeof(int32x4_value_t);      // NOLINT
+const int kSIMD128Size   = sizeof(simd128_value_t);      // NOLINT
 const int kIntptrSize    = sizeof(intptr_t);             // NOLINT
 const int kPointerSize   = sizeof(void*);                // NOLINT
 const int kRegisterSize  = kPointerSize;

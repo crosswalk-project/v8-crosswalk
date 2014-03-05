@@ -35,12 +35,16 @@
 namespace v8 {
 namespace internal {
 
-#define LITHIUM_OPERAND_LIST(V)               \
-  V(ConstantOperand, CONSTANT_OPERAND,  128)  \
-  V(StackSlot,       STACK_SLOT,        128)  \
-  V(DoubleStackSlot, DOUBLE_STACK_SLOT, 128)  \
-  V(Register,        REGISTER,          16)   \
-  V(DoubleRegister,  DOUBLE_REGISTER,   16)
+#define LITHIUM_OPERAND_LIST(V)                     \
+  V(ConstantOperand,    CONSTANT_OPERAND,     128)  \
+  V(StackSlot,          STACK_SLOT,           128)  \
+  V(DoubleStackSlot,    DOUBLE_STACK_SLOT,    128)  \
+  V(Float32x4StackSlot, FLOAT32x4_STACK_SLOT, 128)  \
+  V(Int32x4StackSlot,   INT32x4_STACK_SLOT,   128)  \
+  V(Register,           REGISTER,             16)   \
+  V(DoubleRegister,     DOUBLE_REGISTER,      16)   \
+  V(Float32x4Register,  FLOAT32x4_REGISTER,   16)   \
+  V(Int32x4Register,    INT32x4_REGISTER,     16)
 
 
 class LOperand : public ZoneObject {
@@ -51,8 +55,12 @@ class LOperand : public ZoneObject {
     CONSTANT_OPERAND,
     STACK_SLOT,
     DOUBLE_STACK_SLOT,
+    FLOAT32x4_STACK_SLOT,
+    INT32x4_STACK_SLOT,
     REGISTER,
-    DOUBLE_REGISTER
+    DOUBLE_REGISTER,
+    FLOAT32x4_REGISTER,
+    INT32x4_REGISTER
   };
 
   LOperand() : value_(KindField::encode(INVALID)) { }
@@ -65,7 +73,17 @@ class LOperand : public ZoneObject {
   LITHIUM_OPERAND_PREDICATE(Unallocated, UNALLOCATED, 0)
   LITHIUM_OPERAND_PREDICATE(Ignored, INVALID, 0)
 #undef LITHIUM_OPERAND_PREDICATE
-  bool Equals(LOperand* other) const { return value_ == other->value_; }
+  bool IsSIMD128Register() const {
+    return kind() == FLOAT32x4_REGISTER || kind() == INT32x4_REGISTER;
+  }
+  bool IsSIMD128StackSlot() const {
+    return kind() == FLOAT32x4_STACK_SLOT || kind() == INT32x4_STACK_SLOT;
+  }
+  bool Equals(LOperand* other) const {
+    return value_ == other->value_ || (index() == other->index() &&
+        ((IsSIMD128Register() && other->IsSIMD128Register()) ||
+         (IsSIMD128StackSlot() && other->IsSIMD128StackSlot())));
+  }
 
   void PrintTo(StringStream* stream);
   void ConvertTo(Kind kind, int index) {
@@ -79,7 +97,7 @@ class LOperand : public ZoneObject {
   static void TearDownCaches();
 
  protected:
-  static const int kKindFieldWidth = 3;
+  static const int kKindFieldWidth = 4;
   class KindField : public BitField<Kind, 0, kKindFieldWidth> { };
 
   LOperand(Kind kind, int index) { ConvertTo(kind, index); }
@@ -163,32 +181,32 @@ class LUnallocated : public LOperand {
   // because it accommodates a larger pay-load.
   //
   // For FIXED_SLOT policy:
-  //     +------------------------------------------+
-  //     |       slot_index      |  vreg  | 0 | 001 |
-  //     +------------------------------------------+
+  //     +-------------------------------------------+
+  //     |       slot_index      |  vreg  | 0 | 0001 |
+  //     +-------------------------------------------+
   //
   // For all other (extended) policies:
-  //     +------------------------------------------+
-  //     |  reg_index  | L | PPP |  vreg  | 1 | 001 |    L ... Lifetime
-  //     +------------------------------------------+    P ... Policy
+  //     +-------------------------------------------+
+  //     |  reg_index  | L | PPP |  vreg  | 1 | 0001 |    L ... Lifetime
+  //     +-------------------------------------------+    P ... Policy
   //
   // The slot index is a signed value which requires us to decode it manually
   // instead of using the BitField utility class.
 
   // The superclass has a KindField.
-  STATIC_ASSERT(kKindFieldWidth == 3);
+  STATIC_ASSERT(kKindFieldWidth == 4);
 
   // BitFields for all unallocated operands.
-  class BasicPolicyField     : public BitField<BasicPolicy,     3,  1> {};
-  class VirtualRegisterField : public BitField<unsigned,        4, 18> {};
+  class BasicPolicyField     : public BitField<BasicPolicy,     4,  1> {};
+  class VirtualRegisterField : public BitField<unsigned,        5, 18> {};
 
   // BitFields specific to BasicPolicy::FIXED_SLOT.
-  class FixedSlotIndexField  : public BitField<int,            22, 10> {};
+  class FixedSlotIndexField  : public BitField<int,            23,  9> {};
 
   // BitFields specific to BasicPolicy::EXTENDED_POLICY.
-  class ExtendedPolicyField  : public BitField<ExtendedPolicy, 22,  3> {};
-  class LifetimeField        : public BitField<Lifetime,       25,  1> {};
-  class FixedRegisterField   : public BitField<int,            26,  6> {};
+  class ExtendedPolicyField  : public BitField<ExtendedPolicy, 23,  3> {};
+  class LifetimeField        : public BitField<Lifetime,       26,  1> {};
+  class FixedRegisterField   : public BitField<int,            27,  5> {};
 
   static const int kMaxVirtualRegisters = VirtualRegisterField::kMax + 1;
   static const int kFixedSlotIndexWidth = FixedSlotIndexField::kSize;

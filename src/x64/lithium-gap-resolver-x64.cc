@@ -250,6 +250,23 @@ void LGapResolver::EmitMove(int index) {
       __ movsd(xmm0, src);
       __ movsd(cgen_->ToOperand(destination), xmm0);
     }
+  } else if (source->IsSIMD128Register()) {
+    XMMRegister src = cgen_->ToSIMD128Register(source);
+    if (destination->IsSIMD128Register()) {
+      __ movaps(cgen_->ToSIMD128Register(destination), src);
+    } else {
+      ASSERT(destination->IsSIMD128StackSlot());
+      __ movups(cgen_->ToOperand(destination), src);
+    }
+  } else if (source->IsSIMD128StackSlot()) {
+    Operand src = cgen_->ToOperand(source);
+    if (destination->IsSIMD128Register()) {
+      __ movups(cgen_->ToSIMD128Register(destination), src);
+    } else {
+      ASSERT(destination->IsSIMD128StackSlot());
+      __ movups(xmm0, src);
+      __ movups(cgen_->ToOperand(destination), xmm0);
+    }
   } else {
     UNREACHABLE();
   }
@@ -291,10 +308,31 @@ void LGapResolver::EmitSwap(int index) {
     __ movsd(dst, xmm0);
     __ movp(src, kScratchRegister);
 
+  } else if ((source->IsSIMD128StackSlot() &&
+              destination->IsSIMD128StackSlot())) {
+    // Swap two XMM stack slots.
+    STATIC_ASSERT(kSIMD128Size == 2 * kDoubleSize);
+    Operand src = cgen_->ToOperand(source);
+    Operand dst = cgen_->ToOperand(destination);
+    __ movups(xmm0, src);
+    __ movq(kScratchRegister, dst);
+    __ movq(src, kScratchRegister);
+    __ movq(kScratchRegister, Operand(dst, kDoubleSize));
+    __ movq(Operand(src, kDoubleSize), kScratchRegister);
+    __ movups(dst, xmm0);
+
   } else if (source->IsDoubleRegister() && destination->IsDoubleRegister()) {
     // Swap two double registers.
     XMMRegister source_reg = cgen_->ToDoubleRegister(source);
     XMMRegister destination_reg = cgen_->ToDoubleRegister(destination);
+    __ movaps(xmm0, source_reg);
+    __ movaps(source_reg, destination_reg);
+    __ movaps(destination_reg, xmm0);
+
+  } else if (source->IsSIMD128Register() && destination->IsSIMD128Register()) {
+    // Swap two XMM registers.
+    XMMRegister source_reg = cgen_->ToSIMD128Register(source);
+    XMMRegister destination_reg = cgen_->ToSIMD128Register(destination);
     __ movaps(xmm0, source_reg);
     __ movaps(source_reg, destination_reg);
     __ movaps(destination_reg, xmm0);
@@ -311,6 +349,22 @@ void LGapResolver::EmitSwap(int index) {
     Operand other_operand = cgen_->ToOperand(other);
     __ movsd(xmm0, other_operand);
     __ movsd(other_operand, reg);
+    __ movaps(reg, xmm0);
+
+  } else if (source->IsSIMD128Register() || destination->IsSIMD128Register()) {
+    // Swap a xmm register and a xmm stack slot.
+    ASSERT((source->IsSIMD128Register() &&
+            destination->IsSIMD128StackSlot()) ||
+           (source->IsSIMD128StackSlot() &&
+            destination->IsSIMD128Register()));
+    XMMRegister reg = cgen_->ToSIMD128Register(source->IsSIMD128Register()
+                                                   ? source
+                                                   : destination);
+    LOperand* other = source->IsSIMD128Register() ? destination : source;
+    ASSERT(other->IsSIMD128StackSlot());
+    Operand other_operand = cgen_->ToOperand(other);
+    __ movups(xmm0, other_operand);
+    __ movups(other_operand, reg);
     __ movaps(reg, xmm0);
 
   } else {

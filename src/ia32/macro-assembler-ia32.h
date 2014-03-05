@@ -644,6 +644,10 @@ class MacroAssembler: public Assembler {
                           Register scratch1,
                           Register scratch2,
                           Label* gc_required);
+
+  // Allocate a float32x4 or int32x4 object in new space with undefined value.
+  // Returns tagged pointer in result register, or jumps to gc_required if new
+  // space is full.
   void AllocateSIMDHeapObject(int size,
                               Register result,
                               Register scratch,
