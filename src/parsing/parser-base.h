@@ -2835,6 +2835,10 @@ ParserBase<Traits>::ParseLeftHandSideExpression(
 
         ArrowFormalParametersUnexpectedToken(classifier);
 
+        if (this->BuildSIMD128LoadStoreExpression(&result, args, pos,
+                                                  factory()))
+          break;
+
         // Keep track of eval() calls since they disable all local variable
         // optimizations.
         // The calls that need special treatment are the
