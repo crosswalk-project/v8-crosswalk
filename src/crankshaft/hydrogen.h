@@ -1391,20 +1391,17 @@ class HGraphBuilder {
                          HAllocationMode allocation_mode);
 
   HInstruction* BuildUncheckedMonomorphicElementAccess(
-      HValue* checked_object,
-      HValue* key,
-      HValue* val,
-      bool is_js_array,
-      ElementsKind elements_kind,
-      PropertyAccessType access_type,
-      LoadKeyedHoleMode load_mode,
-      KeyedAccessStoreMode store_mode);
+      HValue* checked_object, HValue* key, HValue* val, bool is_js_array,
+      ElementsKind elements_kind, PropertyAccessType access_type,
+      LoadKeyedHoleMode load_mode, KeyedAccessStoreMode store_mode,
+      BuiltinFunctionId id = kNumberOfBuiltinFunction);
 
   HInstruction* AddElementAccess(
       HValue* elements, HValue* checked_key, HValue* val, HValue* dependency,
       HValue* backing_store_owner, ElementsKind elements_kind,
       PropertyAccessType access_type,
-      LoadKeyedHoleMode load_mode = NEVER_RETURN_HOLE);
+      LoadKeyedHoleMode load_mode = NEVER_RETURN_HOLE,
+      BuiltinFunctionId id = kNumberOfBuiltinFunction);
 
   HInstruction* AddLoadStringInstanceType(HValue* string);
   HInstruction* AddLoadStringLength(HValue* string);
@@ -2836,6 +2833,9 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
                                           int argument_count);
 
   bool CanBeFunctionApplyArguments(Call* expr);
+
+  bool TryInlineSIMDBuiltinCall(Call* expr, BuiltinFunctionId id,
+                                int argument_count);
 
   // The translation state of the currently-being-translated function.
   FunctionState* function_state_;
