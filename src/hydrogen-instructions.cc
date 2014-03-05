@@ -316,6 +316,9 @@ const char* HType::ToString() {
     case kTaggedNumber: return "number";
     case kSmi: return "smi";
     case kHeapNumber: return "heap-number";
+    case kFloat32x4: return "float32x4";
+    case kFloat64x2: return "float64x2";
+    case kInt32x4: return "int32x4";
     case kString: return "string";
     case kBoolean: return "boolean";
     case kNonPrimitive: return "non-primitive";
@@ -333,6 +336,12 @@ HType HType::TypeFromValue(Handle<Object> value) {
     result = HType::Smi();
   } else if (value->IsHeapNumber()) {
     result = HType::HeapNumber();
+  } else if (value->IsFloat32x4()) {
+    result = HType::Float32x4();
+  } else if (value->IsFloat64x2()) {
+    result = HType::Float64x2();
+  } else if (value->IsInt32x4()) {
+    result = HType::Int32x4();
   } else if (value->IsString()) {
     result = HType::String();
   } else if (value->IsBoolean()) {
@@ -1370,7 +1379,23 @@ bool HTypeofIsAndBranch::KnownSuccessorBlock(HBasicBlock** block) {
         type_literal_.IsKnownGlobal(isolate()->heap()->number_string());
     *block = number_type ? FirstSuccessor() : SecondSuccessor();
     return true;
+  } else if (value()->representation().IsFloat32x4()) {
+    bool float32x4_type =
+        type_literal_.IsKnownGlobal(isolate()->heap()->float32x4_string());
+    *block = float32x4_type ? FirstSuccessor() : SecondSuccessor();
+    return true;
+  } else if (value()->representation().IsFloat64x2()) {
+    bool float64x2_type =
+        type_literal_.IsKnownGlobal(isolate()->heap()->float64x2_string());
+    *block = float64x2_type ? FirstSuccessor() : SecondSuccessor();
+    return true;
+  } else if (value()->representation().IsInt32x4()) {
+    bool int32x4_type =
+        type_literal_.IsKnownGlobal(isolate()->heap()->int32x4_string());
+    *block = int32x4_type ? FirstSuccessor() : SecondSuccessor();
+    return true;
   }
+
   *block = NULL;
   return false;
 }

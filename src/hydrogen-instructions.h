@@ -289,6 +289,9 @@ class HType V8_FINAL {
   static HType TaggedNumber() { return HType(kTaggedNumber); }
   static HType Smi() { return HType(kSmi); }
   static HType HeapNumber() { return HType(kHeapNumber); }
+  static HType Float32x4() { return HType(kFloat32x4); }
+  static HType Float64x2() { return HType(kFloat64x2); }
+  static HType Int32x4() { return HType(kInt32x4); }
   static HType String() { return HType(kString); }
   static HType Boolean() { return HType(kBoolean); }
   static HType NonPrimitive() { return HType(kNonPrimitive); }
@@ -324,12 +327,28 @@ class HType V8_FINAL {
     return ((type_ & kHeapNumber) == kHeapNumber);
   }
 
+  bool IsFloat32x4() const {
+    return ((type_ & kFloat32x4) == kFloat32x4);
+  }
+
+  bool IsFloat64x2() const {
+    return ((type_ & kFloat64x2) == kFloat64x2);
+  }
+
+  bool IsInt32x4() const {
+    return ((type_ & kInt32x4) == kInt32x4);
+  }
+
+  bool IsSIMD128() const {
+    return IsFloat32x4() || IsFloat64x2() || IsInt32x4();
+  }
+
   bool IsString() const {
     return ((type_ & kString) == kString);
   }
 
   bool IsNonString() const {
-    return IsTaggedPrimitive() || IsSmi() || IsHeapNumber() ||
+    return IsTaggedPrimitive() || IsSmi() || IsHeapNumber() || IsSIMD128() ||
         IsBoolean() || IsJSArray();
   }
 
@@ -350,7 +369,8 @@ class HType V8_FINAL {
   }
 
   bool IsHeapObject() const {
-    return IsHeapNumber() || IsString() || IsBoolean() || IsNonPrimitive();
+    return IsHeapNumber() || IsSIMD128() || IsString() ||
+        IsBoolean() || IsNonPrimitive();
   }
 
   bool ToStringOrToNumberCanBeObserved(Representation representation) {
@@ -359,6 +379,9 @@ class HType V8_FINAL {
       case kTaggedNumber:     // fallthru
       case kSmi:              // fallthru
       case kHeapNumber:       // fallthru
+      case kFloat32x4:        // fallthru
+      case kFloat64x2:        // fallthru
+      case kInt32x4:          // fallthru
       case kString:           // fallthru
       case kBoolean:
         return false;
@@ -383,11 +406,14 @@ class HType V8_FINAL {
     kTaggedNumber = 0xd,     // 0000 0000 0000 1101
     kSmi = 0x1d,             // 0000 0000 0001 1101
     kHeapNumber = 0x2d,      // 0000 0000 0010 1101
-    kString = 0x45,          // 0000 0000 0100 0101
-    kBoolean = 0x85,         // 0000 0000 1000 0101
-    kNonPrimitive = 0x101,   // 0000 0001 0000 0001
-    kJSObject = 0x301,       // 0000 0011 0000 0001
-    kJSArray = 0x701         // 0000 0111 0000 0001
+    kFloat32x4 = 0x45,       // 0000 0000 0100 0101
+    kFloat64x2 = 0x85,       // 0000 0000 1000 0101
+    kInt32x4 = 0x105,        // 0000 0001 0000 0101
+    kString = 0x205,         // 0000 0010 0000 0101
+    kBoolean = 0x405,        // 0000 0100 1000 0101
+    kNonPrimitive = 0x801,   // 0000 1000 0000 0001
+    kJSObject = 0x1801,      // 0001 1000 0000 0001
+    kJSArray = 0x3801        // 0011 1000 0000 0001
   };
 
   // Make sure type fits in int16.
@@ -706,6 +732,9 @@ class HValue : public ZoneObject {
       HType t = type();
       if (t.IsSmi()) return Representation::Smi();
       if (t.IsHeapNumber()) return Representation::Double();
+      if (t.IsFloat32x4()) return Representation::Float32x4();
+      if (t.IsFloat64x2()) return Representation::Float64x2();
+      if (t.IsInt32x4()) return Representation::Int32x4();
       if (t.IsHeapObject()) return r;
       return Representation::None();
     }
@@ -1734,7 +1763,15 @@ class HChange V8_FINAL : public HUnaryOperation {
     if (value->representation().IsSmi() || value->type().IsSmi()) {
       set_type(HType::Smi());
     } else {
-      set_type(HType::TaggedNumber());
+      if (to.IsFloat32x4()) {
+        set_type(HType::Float32x4());
+      } else if (to.IsFloat64x2()) {
+        set_type(HType::Float64x2());
+      } else if (to.IsInt32x4()) {
+        set_type(HType::Int32x4());
+      } else {
+        set_type(HType::TaggedNumber());
+      }
       if (to.IsTagged()) SetChangesFlag(kNewSpacePromotion);
     }
   }
@@ -6769,6 +6806,7 @@ class HStoreKeyed V8_FINAL
     }
 
     ASSERT_EQ(index, 2);
+
     if (IsDoubleOrFloatElementsKind(elements_kind())) {
       return Representation::Double();
     }
