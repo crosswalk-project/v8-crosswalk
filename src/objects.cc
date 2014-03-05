@@ -2310,6 +2310,9 @@ const char* Representation::Mnemonic() const {
     case kTagged: return "t";
     case kSmi: return "s";
     case kDouble: return "d";
+    case kFloat32x4: return "Float32x4";
+    case kInt32x4: return "Int32x4";
+    case kBool32x4: return "Bool32x4";
     case kInteger32: return "i";
     case kHeapObject: return "h";
     case kExternal: return "x";
@@ -3926,7 +3929,8 @@ Maybe<bool> Object::SetDataProperty(LookupIterator* it, Handle<Object> value) {
   Handle<Object> to_assign = value;
   // Convert the incoming value to a number for storing into typed arrays.
   if (it->IsElement() && receiver->HasFixedTypedArrayElements()) {
-    if (!value->IsNumber() && !value->IsUndefined()) {
+    if (!value->IsNumber() && !value->IsFloat32x4() && !value->IsInt32x4() &&
+        !value->IsBool32x4() && !value->IsUndefined()) {
       ASSIGN_RETURN_ON_EXCEPTION_VALUE(
           it->isolate(), to_assign, Object::ToNumber(value), Nothing<bool>());
       // ToNumber above might modify the receiver, causing the cached
@@ -13180,6 +13184,43 @@ void DeoptimizationInputData::DeoptimizationInputDataPrint(
           break;
         }
 
+        case Translation::FLOAT32x4_REGISTER: {
+          int reg_code = iterator.Next();
+#ifdef V8_TARGET_ARCH_ARM
+          os << "{input=" << reg_code << "on QwNeonRegister"
+             << "}";
+#else
+          os << "{input=" << SIMD128Register::from_code(reg_code).ToString()
+             << "}";
+#endif
+          break;
+        }
+
+        case Translation::BOOL32x4_REGISTER: {
+          int reg_code = iterator.Next();
+#ifdef V8_TARGET_ARCH_ARM
+          os << "{input=" << reg_code << "on QwNeonRegister"
+             << "}";
+#else
+          os << "{input=" << SIMD128Register::from_code(reg_code).ToString()
+             << "}";
+#endif
+          break;
+        }
+
+        case Translation::INT32x4_REGISTER: {
+          int reg_code = iterator.Next();
+#ifdef V8_TARGET_ARCH_ARM
+          os << "{input=" << reg_code << "on QwNeonRegister"
+             << "}";
+#else
+          os << "{input=" << SIMD128Register::from_code(reg_code).ToString()
+             << "}";
+#endif
+
+          break;
+        }
+
         case Translation::STACK_SLOT: {
           int input_slot_index = iterator.Next();
           os << "{input=" << input_slot_index << "}";
@@ -13205,6 +13246,24 @@ void DeoptimizationInputData::DeoptimizationInputDataPrint(
         }
 
         case Translation::DOUBLE_STACK_SLOT: {
+          int input_slot_index = iterator.Next();
+          os << "{input=" << input_slot_index << "}";
+          break;
+        }
+
+        case Translation::FLOAT32x4_STACK_SLOT: {
+          int input_slot_index = iterator.Next();
+          os << "{input=" << input_slot_index << "}";
+          break;
+        }
+
+        case Translation::BOOL32x4_STACK_SLOT: {
+          int input_slot_index = iterator.Next();
+          os << "{input=" << input_slot_index << "}";
+          break;
+        }
+
+        case Translation::INT32x4_STACK_SLOT: {
           int input_slot_index = iterator.Next();
           os << "{input=" << input_slot_index << "}";
           break;

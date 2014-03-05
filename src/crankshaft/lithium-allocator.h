@@ -115,6 +115,12 @@ class LifetimePosition {
 };
 
 
+inline bool IsSIMD128RegisterKind(RegisterKind kind) {
+  return kind == FLOAT32x4_REGISTERS || kind == BOOL32x4_REGISTERS ||
+         kind == INT32x4_REGISTERS;
+}
+
+
 // Representation of the non-empty interval [start,end[.
 class UseInterval: public ZoneObject {
  public:
@@ -527,11 +533,16 @@ class LAllocator BASE_EMBEDDED {
   ZoneList<LiveRange*> active_live_ranges_;
   ZoneList<LiveRange*> inactive_live_ranges_;
   ZoneList<LiveRange*> reusable_slots_;
+  // Slots reusable for float32x4, bool32x4 and int32x4 register spilling.
+  ZoneList<LiveRange*> reusable_simd128_slots_;
 
   // Next virtual register number to be assigned to temporaries.
   int next_virtual_register_;
   int first_artificial_register_;
   GrowableBitVector double_artificial_registers_;
+  GrowableBitVector float32x4_artificial_registers_;
+  GrowableBitVector bool32x4_artificial_registers_;
+  GrowableBitVector int32x4_artificial_registers_;
 
   RegisterKind mode_;
   int num_registers_;
