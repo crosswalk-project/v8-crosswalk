@@ -707,6 +707,14 @@ class PreParserTraits {
     return false;
   }
 
+  bool BuildSIMD128LoadStoreExpression(
+      PreParserExpression* expression,
+      PreParserExpressionList arguments,
+      int pos,
+      PreParserFactory* factory) {
+    return false;
+  }
+
   PreParserExpression BuildUnaryExpression(PreParserExpression expression,
                                            Token::Value op, int pos,
                                            PreParserFactory* factory) {
