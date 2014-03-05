@@ -17,6 +17,7 @@ namespace internal {
 // Forward declarations.
 class LCodeGen;
 
+<<<<<<< HEAD
 #define LITHIUM_CONCRETE_INSTRUCTION_LIST(V) \
   V(AccessArgumentsAt)                       \
   V(AddI)                                    \
@@ -159,6 +160,156 @@ class LCodeGen;
   V(TypeofIsAndBranch)                       \
   V(Uint32ToDouble)                          \
   V(UnknownOSRValue)                         \
+=======
+#define LITHIUM_CONCRETE_INSTRUCTION_LIST(V)    \
+  V(AccessArgumentsAt)                          \
+  V(AddI)                                       \
+  V(Allocate)                                   \
+  V(AllocateBlockContext)                       \
+  V(ApplyArguments)                             \
+  V(ArgumentsElements)                          \
+  V(ArgumentsLength)                            \
+  V(ArithmeticD)                                \
+  V(ArithmeticT)                                \
+  V(BitI)                                       \
+  V(BoundsCheck)                                \
+  V(Branch)                                     \
+  V(CallJSFunction)                             \
+  V(CallWithDescriptor)                         \
+  V(CallFunction)                               \
+  V(CallNew)                                    \
+  V(CallNewArray)                               \
+  V(CallRuntime)                                \
+  V(CallStub)                                   \
+  V(CheckInstanceType)                          \
+  V(CheckMaps)                                  \
+  V(CheckMapValue)                              \
+  V(CheckNonSmi)                                \
+  V(CheckSmi)                                   \
+  V(CheckValue)                                 \
+  V(ClampDToUint8)                              \
+  V(ClampIToUint8)                              \
+  V(ClampTToUint8)                              \
+  V(ClassOfTestAndBranch)                       \
+  V(CompareMinusZeroAndBranch)                  \
+  V(CompareNumericAndBranch)                    \
+  V(CmpObjectEqAndBranch)                       \
+  V(CmpHoleAndBranch)                           \
+  V(CmpMapAndBranch)                            \
+  V(CmpT)                                       \
+  V(ConstantD)                                  \
+  V(ConstantE)                                  \
+  V(ConstantI)                                  \
+  V(ConstantS)                                  \
+  V(ConstantT)                                  \
+  V(ConstructDouble)                            \
+  V(Context)                                    \
+  V(DateField)                                  \
+  V(DebugBreak)                                 \
+  V(DeclareGlobals)                             \
+  V(Deoptimize)                                 \
+  V(DivByConstI)                                \
+  V(DivByPowerOf2I)                             \
+  V(DivI)                                       \
+  V(DoubleBits)                                 \
+  V(DoubleToI)                                  \
+  V(DoubleToSmi)                                \
+  V(Drop)                                       \
+  V(DummyUse)                                   \
+  V(Dummy)                                      \
+  V(FlooringDivByConstI)                        \
+  V(FlooringDivByPowerOf2I)                     \
+  V(FlooringDivI)                               \
+  V(ForInCacheArray)                            \
+  V(ForInPrepareMap)                            \
+  V(FunctionLiteral)                            \
+  V(GetCachedArrayIndex)                        \
+  V(Goto)                                       \
+  V(HasCachedArrayIndexAndBranch)               \
+  V(HasInstanceTypeAndBranch)                   \
+  V(InnerAllocatedObject)                       \
+  V(InstanceOf)                                 \
+  V(InstanceOfKnownGlobal)                      \
+  V(InstructionGap)                             \
+  V(Integer32ToDouble)                          \
+  V(InvokeFunction)                             \
+  V(IsConstructCallAndBranch)                   \
+  V(IsObjectAndBranch)                          \
+  V(IsStringAndBranch)                          \
+  V(IsSmiAndBranch)                             \
+  V(IsUndetectableAndBranch)                    \
+  V(Label)                                      \
+  V(LazyBailout)                                \
+  V(LoadContextSlot)                            \
+  V(LoadRoot)                                   \
+  V(LoadFieldByIndex)                           \
+  V(LoadFunctionPrototype)                      \
+  V(LoadGlobalCell)                             \
+  V(LoadGlobalGeneric)                          \
+  V(LoadKeyed)                                  \
+  V(LoadKeyedGeneric)                           \
+  V(LoadNamedField)                             \
+  V(LoadNamedGeneric)                           \
+  V(MapEnumLength)                              \
+  V(MathAbs)                                    \
+  V(MathClz32)                                  \
+  V(MathExp)                                    \
+  V(MathFloor)                                  \
+  V(MathLog)                                    \
+  V(MathMinMax)                                 \
+  V(MathPowHalf)                                \
+  V(MathRound)                                  \
+  V(MathSqrt)                                   \
+  V(ModByConstI)                                \
+  V(ModByPowerOf2I)                             \
+  V(NullarySIMDOperation)                       \
+  V(UnarySIMDOperation)                         \
+  V(BinarySIMDOperation)                        \
+  V(TernarySIMDOperation)                       \
+  V(QuarternarySIMDOperation)                   \
+  V(ModI)                                       \
+  V(MulI)                                       \
+  V(NumberTagD)                                 \
+  V(SIMD128ToTagged)                            \
+  V(NumberTagI)                                 \
+  V(NumberTagU)                                 \
+  V(NumberUntagD)                               \
+  V(TaggedToSIMD128)                            \
+  V(OsrEntry)                                   \
+  V(Parameter)                                  \
+  V(Power)                                      \
+  V(PushArgument)                               \
+  V(RegExpLiteral)                              \
+  V(Return)                                     \
+  V(SeqStringGetChar)                           \
+  V(SeqStringSetChar)                           \
+  V(ShiftI)                                     \
+  V(SmiTag)                                     \
+  V(SmiUntag)                                   \
+  V(StackCheck)                                 \
+  V(StoreCodeEntry)                             \
+  V(StoreContextSlot)                           \
+  V(StoreFrameContext)                          \
+  V(StoreGlobalCell)                            \
+  V(StoreKeyed)                                 \
+  V(StoreKeyedGeneric)                          \
+  V(StoreNamedField)                            \
+  V(StoreNamedGeneric)                          \
+  V(StringAdd)                                  \
+  V(StringCharCodeAt)                           \
+  V(StringCharFromCode)                         \
+  V(StringCompareAndBranch)                     \
+  V(SubI)                                       \
+  V(TaggedToI)                                  \
+  V(ThisFunction)                               \
+  V(ToFastProperties)                           \
+  V(TransitionElementsKind)                     \
+  V(TrapAllocationMemento)                      \
+  V(Typeof)                                     \
+  V(TypeofIsAndBranch)                          \
+  V(Uint32ToDouble)                             \
+  V(UnknownOSRValue)                            \
+>>>>>>> 0b38499... Inline all SIMD operations and optimize the SIMD arrays load and store.
   V(WrapReceiver)
 
 
@@ -955,6 +1106,154 @@ class LMathPowHalf V8_FINAL : public LTemplateInstruction<1, 1, 0> {
 };
 
 
+class LNullarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 0, 0> {
+ public:
+  explicit LNullarySIMDOperation(BuiltinFunctionId op)
+    : op_(op) {
+  }
+
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const V8_OVERRIDE {
+    return LInstruction::kNullarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
+  virtual const char* Mnemonic() const V8_OVERRIDE;
+  static LNullarySIMDOperation* cast(LInstruction* instr) {
+    ASSERT(instr->IsNullarySIMDOperation());
+    return reinterpret_cast<LNullarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(NullarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
+};
+
+
+class LUnarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 1, 0> {
+ public:
+  LUnarySIMDOperation(LOperand* value, BuiltinFunctionId op)
+    : op_(op) {
+    inputs_[0] = value;
+  }
+
+  LOperand* value() { return inputs_[0]; }
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const V8_OVERRIDE {
+    return LInstruction::kUnarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
+  virtual const char* Mnemonic() const V8_OVERRIDE;
+  static LUnarySIMDOperation* cast(LInstruction* instr) {
+    ASSERT(instr->IsUnarySIMDOperation());
+    return reinterpret_cast<LUnarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(UnarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
+};
+
+
+class LBinarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 2, 0> {
+ public:
+  LBinarySIMDOperation(LOperand* left, LOperand* right, BuiltinFunctionId op)
+    : op_(op) {
+    inputs_[0] = left;
+    inputs_[1] = right;
+  }
+
+  LOperand* left() { return inputs_[0]; }
+  LOperand* right() { return inputs_[1]; }
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const V8_OVERRIDE {
+    return LInstruction::kBinarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
+  virtual const char* Mnemonic() const V8_OVERRIDE;
+  static LBinarySIMDOperation* cast(LInstruction* instr) {
+    ASSERT(instr->IsBinarySIMDOperation());
+    return reinterpret_cast<LBinarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(BinarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
+};
+
+
+class LTernarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 3, 0> {
+ public:
+  LTernarySIMDOperation(LOperand* first, LOperand* second, LOperand* third,
+                        BuiltinFunctionId op)
+    : op_(op) {
+    inputs_[0] = first;
+    inputs_[1] = second;
+    inputs_[2] = third;
+  }
+
+  LOperand* first() { return inputs_[0]; }
+  LOperand* second() { return inputs_[1]; }
+  LOperand* third() { return inputs_[2]; }
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const V8_OVERRIDE {
+    return LInstruction::kTernarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
+  virtual const char* Mnemonic() const V8_OVERRIDE;
+  static LTernarySIMDOperation* cast(LInstruction* instr) {
+    ASSERT(instr->IsTernarySIMDOperation());
+    return reinterpret_cast<LTernarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(TernarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
+};
+
+
+class LQuarternarySIMDOperation V8_FINAL
+  : public LTemplateInstruction<1, 4, 0> {
+ public:
+  LQuarternarySIMDOperation(LOperand* x, LOperand* y, LOperand* z,
+                            LOperand* w, BuiltinFunctionId op)
+    : op_(op) {
+    inputs_[0] = x;
+    inputs_[1] = y;
+    inputs_[2] = z;
+    inputs_[3] = w;
+  }
+
+  LOperand* x() { return inputs_[0]; }
+  LOperand* y() { return inputs_[1]; }
+  LOperand* z() { return inputs_[2]; }
+  LOperand* w() { return inputs_[3]; }
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const V8_OVERRIDE {
+    return LInstruction::kQuarternarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
+  virtual const char* Mnemonic() const V8_OVERRIDE;
+  static LQuarternarySIMDOperation* cast(LInstruction* instr) {
+    ASSERT(instr->IsQuarternarySIMDOperation());
+    return reinterpret_cast<LQuarternarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(QuarternarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
+};
+
+
 class LCmpObjectEqAndBranch V8_FINAL : public LControlInstruction<2, 0> {
  public:
   LCmpObjectEqAndBranch(LOperand* left, LOperand* right) {
@@ -1627,8 +1926,13 @@ class LLoadRoot V8_FINAL : public LTemplateInstruction<1, 0, 0> {
 };
 
 
-inline static bool ExternalArrayOpRequiresPreScale(ElementsKind kind) {
-  return ElementsKindToShiftSize(kind) > static_cast<int>(maximal_scale_factor);
+inline static bool ExternalArrayOpRequiresPreScale(
+    Representation key_representation,
+    ElementsKind kind) {
+  int shift_size = ElementsKindToShiftSize(kind);
+  return SmiValuesAre31Bits() && key_representation.IsSmi()
+      ? shift_size > static_cast<int>(maximal_scale_factor) + kSmiTagSize
+      : shift_size > static_cast<int>(maximal_scale_factor);
 }
 
 
@@ -1638,24 +1942,22 @@ inline static bool ExternalArrayOpRequiresTemp(
   // Operations that require the key to be divided by two to be converted into
   // an index cannot fold the scale operation into a load and need an extra
   // temp register to do the work.
-  return SmiValuesAre31Bits() && key_representation.IsSmi() &&
+  return ExternalArrayOpRequiresPreScale(key_representation, elements_kind) ||
+      (SmiValuesAre31Bits() && key_representation.IsSmi() &&
       (elements_kind == EXTERNAL_INT8_ELEMENTS ||
        elements_kind == EXTERNAL_UINT8_ELEMENTS ||
        elements_kind == EXTERNAL_UINT8_CLAMPED_ELEMENTS ||
        elements_kind == UINT8_ELEMENTS ||
        elements_kind == INT8_ELEMENTS ||
-       elements_kind == UINT8_CLAMPED_ELEMENTS);
+       elements_kind == UINT8_CLAMPED_ELEMENTS));
 }
 
 
-class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 2> {
+class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 0> {
  public:
-  LLoadKeyed(LOperand* elements, LOperand* key,
-             LOperand* temp0, LOperand* temp1) {
+  LLoadKeyed(LOperand* elements, LOperand* key) {
     inputs_[0] = elements;
     inputs_[1] = key;
-    temps_[0] = temp0;
-    temps_[1] = temp1;
   }
 
   DECLARE_CONCRETE_INSTRUCTION(LoadKeyed, "load-keyed")
@@ -1672,8 +1974,6 @@ class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 2> {
   }
   LOperand* elements() { return inputs_[0]; }
   LOperand* key() { return inputs_[1]; }
-  LOperand* temp0() { return temps_[0]; }
-  LOperand* temp1() { return temps_[1]; }
   virtual void PrintDataTo(StringStream* stream) V8_OVERRIDE;
   uint32_t base_offset() const { return hydrogen()->base_offset(); }
   ElementsKind elements_kind() const {
@@ -2081,6 +2381,21 @@ class LNumberTagD V8_FINAL : public LTemplateInstruction<1, 1, 1> {
 };
 
 
+class LSIMD128ToTagged V8_FINAL : public LTemplateInstruction<1, 1, 1> {
+ public:
+  explicit LSIMD128ToTagged(LOperand* value, LOperand* temp) {
+    inputs_[0] = value;
+    temps_[0] = temp;
+  }
+
+  LOperand* value() { return inputs_[0]; }
+  LOperand* temp() { return temps_[0]; }
+
+  DECLARE_CONCRETE_INSTRUCTION(SIMD128ToTagged, "simd128-tag")
+  DECLARE_HYDROGEN_ACCESSOR(Change)
+};
+
+
 // Sometimes truncating conversion from a tagged value to an int32.
 class LDoubleToI V8_FINAL : public LTemplateInstruction<1, 1, 0> {
  public:
@@ -2154,6 +2469,26 @@ class LNumberUntagD V8_FINAL : public LTemplateInstruction<1, 1, 0> {
 };
 
 
+class LTaggedToSIMD128 V8_FINAL : public LTemplateInstruction<1, 1, 1> {
+ public:
+  explicit LTaggedToSIMD128(LOperand* value, LOperand* temp,
+                            Representation representation)
+      : representation_(representation) {
+    inputs_[0] = value;
+    temps_[0] = temp;
+  }
+
+  LOperand* value() { return inputs_[0]; }
+  LOperand* temp() { return temps_[0]; }
+  Representation representation() const { return representation_; }
+
+  DECLARE_CONCRETE_INSTRUCTION(TaggedToSIMD128, "simd128-untag")
+  DECLARE_HYDROGEN_ACCESSOR(Change);
+ private:
+  Representation representation_;
+};
+
+
 class LSmiUntag V8_FINAL : public LTemplateInstruction<1, 1, 0> {
  public:
   LSmiUntag(LOperand* value, bool needs_check)
@@ -2216,15 +2551,12 @@ class LStoreNamedGeneric V8_FINAL : public LTemplateInstruction<0, 3, 0> {
 };
 
 
-class LStoreKeyed V8_FINAL : public LTemplateInstruction<0, 3, 2> {
+class LStoreKeyed V8_FINAL : public LTemplateInstruction<0, 3, 0> {
  public:
-  LStoreKeyed(LOperand* object, LOperand* key, LOperand* value,
-              LOperand* temp0, LOperand* temp1) {
+  LStoreKeyed(LOperand* object, LOperand* key, LOperand* value) {
     inputs_[0] = object;
     inputs_[1] = key;
     inputs_[2] = value;
-    temps_[0] = temp0;
-    temps_[1] = temp1;
   }
 
   bool is_external() const { return hydrogen()->is_external(); }
@@ -2237,8 +2569,6 @@ class LStoreKeyed V8_FINAL : public LTemplateInstruction<0, 3, 2> {
   LOperand* elements() { return inputs_[0]; }
   LOperand* key() { return inputs_[1]; }
   LOperand* value() { return inputs_[2]; }
-  LOperand* temp0() { return temps_[0]; }
-  LOperand* temp1() { return temps_[1]; }
   ElementsKind elements_kind() const { return hydrogen()->elements_kind(); }
 
   DECLARE_CONCRETE_INSTRUCTION(StoreKeyed, "store-keyed")
