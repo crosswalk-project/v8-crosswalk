@@ -61,13 +61,19 @@ void HeapObject::HeapObjectPrint(OStream& os) {  // NOLINT
       os << ">";
       break;
     case FLOAT32x4_TYPE:
-      Float32x4::cast(this)->Float32x4Print(out);
+      os << "<Float32x4: ";
+      Float32x4::cast(this)->Float32x4Print(os);
+      os << '>';
       break;
     case FLOAT64x2_TYPE:
-      Float64x2::cast(this)->Float64x2Print(out);
+      os << "<Float64x2: ";
+      Float64x2::cast(this)->Float64x2Print(os);
+      os << '>';
       break;
     case INT32x4_TYPE:
-      Int32x4::cast(this)->Int32x4Print(out);
+      os << "<Int32x4: ";
+      Int32x4::cast(this)->Int32x4Print(os);
+      os << '>';
       break;
     case FIXED_DOUBLE_ARRAY_TYPE:
       FixedDoubleArray::cast(this)->FixedDoubleArrayPrint(os);
@@ -273,35 +279,36 @@ static void DoPrintElements(OStream& os, Object* object) {  // NOLINT
 
 
 template<class T>
-static void DoPrintFloat32x4Elements(FILE* out, Object* object) {
+static void DoPrintFloat32x4Elements(OStream& os, Object* object) {
   T* p = T::cast(object);
   for (int i = 0; i < p->length(); i++) {
     float32x4_value_t value =  p->get_scalar(i);
-    PrintF(out, "   %d: (%f, %f, %f, %f)\n",
-           i, value.storage[0], value.storage[1],
-           value.storage[2], value.storage[3]);
+    os << "   " << i << ": (" << value.storage[0] << ", "
+       << value.storage[1] << ", " << value.storage[2] << ", "
+       << value.storage[3] << ")\n";
   }
 }
 
 
 template<class T>
-static void DoPrintFloat64x2Elements(FILE* out, Object* object) {
+static void DoPrintFloat64x2Elements(OStream& os, Object* object) {
   T* p = T::cast(object);
   for (int i = 0; i < p->length(); i++) {
     float64x2_value_t value =  p->get_scalar(i);
-    PrintF(out, "   %d: (%f, %f)\n", i, value.storage[0], value.storage[1]);
+    os << "   " << i << ": (" << value.storage[0] << ", "
+       << value.storage[1] << ")\n";
   }
 }
 
 
 template<class T>
-static void DoPrintInt32x4Elements(FILE* out, Object* object) {
+static void DoPrintInt32x4Elements(OStream& os, Object* object) {
   T* p = T::cast(object);
   for (int i = 0; i < p->length(); i++) {
     int32x4_value_t value =  p->get_scalar(i);
-    PrintF(out, "   %d: (%d, %d, %d, %d)\n",
-           i, value.storage[0], value.storage[1],
-           value.storage[2], value.storage[3]);
+    os << "   " << i << ": (" << value.storage[0] << ", "
+       << value.storage[1] << ", " << value.storage[2] << ", "
+       << value.storage[3] << ")\n";
   }
 }
 
@@ -348,19 +355,19 @@ void JSObject::PrintElements(OStream& os) {  // NOLINT
 
 #define PRINT_FLOAT32x4_ELEMENTS(Kind, Type)                                \
     case Kind: {                                                            \
-      DoPrintFloat32x4Elements<Type>(out, elements());                      \
+      DoPrintFloat32x4Elements<Type>(os, elements());                      \
       break;                                                                \
     }
 
 #define PRINT_FLOAT64x2_ELEMENTS(Kind, Type)                                \
     case Kind: {                                                            \
-      DoPrintFloat64x2Elements<Type>(out, elements());                      \
+      DoPrintFloat64x2Elements<Type>(os, elements());                      \
       break;                                                                \
     }
 
 #define PRINT_INT32x4_ELEMENTS(Kind, Type)                                  \
     case Kind: {                                                            \
-      DoPrintInt32x4Elements<Type>(out, elements());                        \
+      DoPrintInt32x4Elements<Type>(os, elements());                        \
       break;                                                                \
     }
 
