@@ -506,6 +506,9 @@ namespace internal {
   F(StoreLookupSlot_Strict, 2, 1)
 
 #define FOR_EACH_INTRINSIC_SIMD(F)     \
+  F(AllocateFloat32x4, 0, 1)           \
+  F(AllocateInt32x4, 0, 1)             \
+  F(AllocateBool32x4, 0, 1)            \
   F(IsSimdValue, 1, 1)                 \
   F(CreateFloat32x4, 4, 1)             \
   F(CreateInt32x4, 4, 1)               \
@@ -558,6 +561,14 @@ namespace internal {
   F(Float32x4Store1, 3, 1)             \
   F(Float32x4Store2, 3, 1)             \
   F(Float32x4Store3, 3, 1)             \
+  F(Float32x4LoadX, 2, 1)              \
+  F(Float32x4LoadXY, 2, 1)             \
+  F(Float32x4LoadXYZ, 2, 1)            \
+  F(Float32x4LoadXYZW, 2, 1)           \
+  F(Float32x4StoreX, 3, 1)             \
+  F(Float32x4StoreXY, 3, 1)            \
+  F(Float32x4StoreXYZ, 3, 1)           \
+  F(Float32x4StoreXYZW, 3, 1)          \
   F(Int32x4Check, 1, 1)                \
   F(Int32x4ExtractLane, 2, 1)          \
   F(Int32x4ReplaceLane, 3, 1)          \
@@ -598,6 +609,14 @@ namespace internal {
   F(Int32x4Store1, 3, 1)               \
   F(Int32x4Store2, 3, 1)               \
   F(Int32x4Store3, 3, 1)               \
+  F(Int32x4LoadX, 2, 1)                \
+  F(Int32x4LoadXY, 2, 1)               \
+  F(Int32x4LoadXYZ, 2, 1)              \
+  F(Int32x4LoadXYZW, 2, 1)             \
+  F(Int32x4StoreX, 3, 1)               \
+  F(Int32x4StoreXY, 3, 1)              \
+  F(Int32x4StoreXYZ, 3, 1)             \
+  F(Int32x4StoreXYZW, 3, 1)            \
   F(Uint32x4Check, 1, 1)               \
   F(Uint32x4ExtractLane, 2, 1)         \
   F(Uint32x4ReplaceLane, 3, 1)         \

@@ -2052,6 +2052,9 @@ void Deoptimizer::DoComputeCompiledStubFrame(TranslatedFrame* translated_frame,
   // Copy the double registers from the input into the output frame.
   CopyDoubleRegisters(output_frame);
 
+  // Copy the simd128 registers from the input into the output frame.
+  CopySIMD128Registers(output_frame);
+
   // Fill registers containing handler and number of parameters.
   SetPlatformCompiledStubRegisters(output_frame, &descriptor);
 
@@ -2457,6 +2460,10 @@ void Translation::StoreDoubleRegister(DoubleRegister reg) {
   buffer_->Add(reg.code(), zone());
 }
 
+void Translation::StoreSIMD128Register(SIMD128Register reg, Opcode opcode) {
+  buffer_->Add(opcode, zone());
+  buffer_->Add(reg.code(), zone());
+}
 
 void Translation::StoreStackSlot(int index) {
   buffer_->Add(STACK_SLOT, zone());
@@ -2487,6 +2494,10 @@ void Translation::StoreDoubleStackSlot(int index) {
   buffer_->Add(index, zone());
 }
 
+void Translation::StoreSIMD128StackSlot(int index, Opcode opcode) {
+  buffer_->Add(opcode, zone());
+  buffer_->Add(index, zone());
+}
 
 void Translation::StoreLiteral(int literal_id) {
   buffer_->Add(LITERAL, zone());
@@ -2522,11 +2533,17 @@ int Translation::NumberOfOperandsFor(Opcode opcode) {
     case UINT32_REGISTER:
     case BOOL_REGISTER:
     case DOUBLE_REGISTER:
+    case FLOAT32x4_REGISTER:
+    case INT32x4_REGISTER:
+    case BOOL32x4_REGISTER:
     case STACK_SLOT:
     case INT32_STACK_SLOT:
     case UINT32_STACK_SLOT:
     case BOOL_STACK_SLOT:
     case DOUBLE_STACK_SLOT:
+    case FLOAT32x4_STACK_SLOT:
+    case INT32x4_STACK_SLOT:
+    case BOOL32x4_STACK_SLOT:
     case LITERAL:
     case COMPILED_STUB_FRAME:
     case TAIL_CALLER_FRAME:
@@ -2825,6 +2842,30 @@ TranslatedValue TranslatedValue::NewDouble(TranslatedState* container,
 
 
 // static
+TranslatedValue TranslatedValue::NewFloat32x4(TranslatedState* container,
+                                              float32x4_value_t value) {
+  TranslatedValue slot(container, kFloat32x4);
+  slot.float32x4_value_ = value;
+  return slot;
+}
+
+// static
+TranslatedValue TranslatedValue::NewInt32x4(TranslatedState* container,
+                                            int32x4_value_t value) {
+  TranslatedValue slot(container, kInt32x4);
+  slot.int32x4_value_ = value;
+  return slot;
+}
+
+// static
+TranslatedValue TranslatedValue::NewBool32x4(TranslatedState* container,
+                                             bool32x4_value_t value) {
+  TranslatedValue slot(container, kBool32x4);
+  slot.bool32x4_value_ = value;
+  return slot;
+}
+
+// static
 TranslatedValue TranslatedValue::NewInt32(TranslatedState* container,
                                           int32_t value) {
   TranslatedValue slot(container, kInt32);
@@ -2892,6 +2933,20 @@ double TranslatedValue::double_value() const {
   return double_value_;
 }
 
+float32x4_value_t TranslatedValue::float32x4_value() const {
+  DCHECK_EQ(kFloat32x4, kind());
+  return float32x4_value_;
+}
+
+int32x4_value_t TranslatedValue::int32x4_value() const {
+  DCHECK_EQ(kInt32x4, kind());
+  return int32x4_value_;
+}
+
+bool32x4_value_t TranslatedValue::bool32x4_value() const {
+  DCHECK_EQ(kBool32x4, kind());
+  return bool32x4_value_;
+}
 
 int TranslatedValue::object_length() const {
   DCHECK(kind() == kArgumentsObject || kind() == kCapturedObject);
@@ -2964,7 +3019,10 @@ Handle<Object> TranslatedValue::GetValue() {
     case TranslatedValue::kInt32:
     case TranslatedValue::kUInt32:
     case TranslatedValue::kBoolBit:
-    case TranslatedValue::kDouble: {
+    case TranslatedValue::kDouble:
+    case TranslatedValue::kFloat32x4:
+    case TranslatedValue::kInt32x4:
+    case TranslatedValue::kBool32x4: {
       MaterializeSimple();
       return value_.ToHandleChecked();
     }
@@ -3009,6 +3067,28 @@ void TranslatedValue::MaterializeSimple() {
       value_ = Handle<Object>(isolate()->factory()->NewNumber(double_value()));
       return;
 
+    case kFloat32x4:
+      value_ = Handle<Object>(
+          isolate()->factory()->NewFloat32x4(float32x4_value().storage));
+      return;
+    case kInt32x4:
+      value_ = Handle<Object>(
+          isolate()->factory()->NewInt32x4(int32x4_value().storage));
+      return;
+    case kBool32x4:
+      bool input[4];
+      for (int i = 0; i < 4; i++) {
+        switch (bool32x4_value().storage[i]) {
+          case 0:
+            input[i] = false;
+            break;
+          case -1:
+            input[i] = true;
+            break;
+        }
+      }
+      value_ = Handle<Object>(isolate()->factory()->NewBool32x4(input));
+      return;
     case kCapturedObject:
     case kDuplicatedObject:
     case kArgumentsObject:
@@ -3282,11 +3362,17 @@ TranslatedFrame TranslatedState::CreateNextTranslatedFrame(
     case Translation::UINT32_REGISTER:
     case Translation::BOOL_REGISTER:
     case Translation::DOUBLE_REGISTER:
+    case Translation::FLOAT32x4_REGISTER:
+    case Translation::INT32x4_REGISTER:
+    case Translation::BOOL32x4_REGISTER:
     case Translation::STACK_SLOT:
     case Translation::INT32_STACK_SLOT:
     case Translation::UINT32_STACK_SLOT:
     case Translation::BOOL_STACK_SLOT:
     case Translation::DOUBLE_STACK_SLOT:
+    case Translation::FLOAT32x4_STACK_SLOT:
+    case Translation::INT32x4_STACK_SLOT:
+    case Translation::BOOL32x4_STACK_SLOT:
     case Translation::LITERAL:
       break;
   }
@@ -3423,6 +3509,55 @@ TranslatedValue TranslatedState::CreateNextTranslatedValue(
       return TranslatedValue::NewDouble(this, value);
     }
 
+    case Translation::FLOAT32x4_REGISTER:
+    case Translation::BOOL32x4_REGISTER:
+    case Translation::INT32x4_REGISTER: {
+      int input_reg = iterator->Next();
+      if (registers == nullptr) return TranslatedValue::NewInvalid(this);
+      simd128_value_t value = registers->GetSIMD128Register(input_reg);
+      if (trace_file != nullptr) {
+        if (opcode == Translation::FLOAT32x4_REGISTER) {
+          float32x4_value_t x4 = value.f4;
+          PrintF(trace_file, "float32x4(%e, %e, %e, %e) ; %s\n", x4.storage[0],
+                 x4.storage[1], x4.storage[2], x4.storage[3],
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+                 SIMD128Register::from_code(input_reg).ToString());
+#else
+                 "Target hasn't no method toString()");
+#endif
+        } else if (opcode == Translation::BOOL32x4_REGISTER) {
+          bool32x4_value_t x4 = value.b4;
+          PrintF(trace_file, "bool32x4(%u, %u, %u, %u) ; %s\n", x4.storage[0],
+                 x4.storage[1], x4.storage[2], x4.storage[3],
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+                 SIMD128Register::from_code(input_reg).ToString());
+#else
+                 "Target hasn't no method toString()");
+#endif
+        } else {
+          DCHECK(opcode == Translation::INT32x4_REGISTER);
+          int32x4_value_t x4 = value.i4;
+          PrintF(trace_file, "int32x4(%u, %u, %u, %u) ; %s\n", x4.storage[0],
+                 x4.storage[1], x4.storage[2], x4.storage[3],
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+                 SIMD128Register::from_code(input_reg).ToString());
+#else
+                 "Target hasn't no method toString()");
+#endif
+        }
+      }
+      if (opcode == Translation::FLOAT32x4_REGISTER) {
+        float32x4_value_t x4 = value.f4;
+        return TranslatedValue::NewFloat32x4(this, x4);
+      } else if (opcode == Translation::BOOL32x4_REGISTER) {
+        bool32x4_value_t x4 = value.b4;
+        return TranslatedValue::NewBool32x4(this, x4);
+      } else {
+        int32x4_value_t x4 = value.i4;
+        return TranslatedValue::NewInt32x4(this, x4);
+      }
+    }
+
     case Translation::STACK_SLOT: {
       int slot_offset =
           OptimizedFrame::StackSlotOffsetRelativeToFp(iterator->Next());
@@ -3478,6 +3613,43 @@ TranslatedValue TranslatedState::CreateNextTranslatedValue(
                slot_offset < 0 ? '-' : '+', std::abs(slot_offset));
       }
       return TranslatedValue::NewDouble(this, value);
+    }
+
+    case Translation::FLOAT32x4_STACK_SLOT:
+    case Translation::BOOL32x4_STACK_SLOT:
+    case Translation::INT32x4_STACK_SLOT: {
+      int slot_offset =
+          OptimizedFrame::StackSlotOffsetRelativeToFp(iterator->Next());
+      simd128_value_t value = read_simd128_value(fp, slot_offset);
+      if (trace_file != nullptr) {
+        if (opcode == Translation::FLOAT32x4_STACK_SLOT) {
+          float32x4_value_t x4 = value.f4;
+          PrintF(trace_file, "float32x4(%e, %e, %e, %e) ; [sp + %d]\n",
+                 x4.storage[0], x4.storage[1], x4.storage[2], x4.storage[3],
+                 slot_offset);
+        } else if (opcode == Translation::BOOL32x4_STACK_SLOT) {
+          bool32x4_value_t x4 = value.b4;
+          PrintF(trace_file, "bool32x4(%u, %u, %u, %u) ; [sp + %d]\n",
+                 x4.storage[0], x4.storage[1], x4.storage[2], x4.storage[3],
+                 slot_offset);
+        } else {
+          DCHECK(opcode == Translation::INT32x4_STACK_SLOT);
+          int32x4_value_t x4 = value.i4;
+          PrintF(trace_file, "int32x4(%u, %u, %u, %u) ; [sp + %d]\n",
+                 x4.storage[0], x4.storage[1], x4.storage[2], x4.storage[3],
+                 slot_offset);
+        }
+      }
+      if (opcode == Translation::FLOAT32x4_STACK_SLOT) {
+        float32x4_value_t x4 = value.f4;
+        return TranslatedValue::NewFloat32x4(this, x4);
+      } else if (opcode == Translation::BOOL32x4_STACK_SLOT) {
+        bool32x4_value_t x4 = value.b4;
+        return TranslatedValue::NewBool32x4(this, x4);
+      } else {
+        int32x4_value_t x4 = value.i4;
+        return TranslatedValue::NewInt32x4(this, x4);
+      }
     }
 
     case Translation::LITERAL: {
@@ -3616,7 +3788,10 @@ Handle<Object> TranslatedState::MaterializeAt(int frame_index,
     case TranslatedValue::kInt32:
     case TranslatedValue::kUInt32:
     case TranslatedValue::kBoolBit:
-    case TranslatedValue::kDouble: {
+    case TranslatedValue::kDouble:
+    case TranslatedValue::kFloat32x4:
+    case TranslatedValue::kBool32x4:
+    case TranslatedValue::kInt32x4: {
       slot->MaterializeSimple();
       Handle<Object> value = slot->GetValue();
       if (value->IsMutableHeapNumber()) {
