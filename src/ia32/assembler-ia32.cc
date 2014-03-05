@@ -267,6 +267,52 @@ Operand::Operand(Register index,
 }
 
 
+Operand::Operand(const Operand& operand, int32_t offset) {
+  ASSERT(operand.len_ >= 1);
+  // Operand encodes REX ModR/M [SIB] [Disp].
+  byte modrm = operand.buf_[0];
+  ASSERT(modrm < 0xC0);  // Disallow mode 3 (register target).
+  bool has_sib = ((modrm & 0x07) == 0x04);
+  byte mode = modrm & 0xC0;
+  int disp_offset = has_sib ? 2 : 1;
+  int base_reg = (has_sib ? operand.buf_[1] : modrm) & 0x07;
+  // Mode 0 with rbp/r13 as ModR/M or SIB base register always has a 32-bit
+  // displacement.
+  bool is_baseless = (mode == 0) && (base_reg == 0x05);  // No base or RIP base.
+  int32_t disp_value = 0;
+  if (mode == 0x80 || is_baseless) {
+    // Mode 2 or mode 0 with rbp/r13 as base: Word displacement.
+    disp_value = *BitCast<const int32_t*>(&operand.buf_[disp_offset]);
+  } else if (mode == 0x40) {
+    // Mode 1: Byte displacement.
+    disp_value = static_cast<signed char>(operand.buf_[disp_offset]);
+  }
+
+  // Write new operand with same registers, but with modified displacement.
+  ASSERT(offset >= 0 ? disp_value + offset >= disp_value
+                     : disp_value + offset < disp_value);  // No overflow.
+  disp_value += offset;
+  if (!is_int8(disp_value) || is_baseless) {
+    // Need 32 bits of displacement, mode 2 or mode 1 with register rbp/r13.
+    buf_[0] = (modrm & 0x3f) | (is_baseless ? 0x00 : 0x80);
+    len_ = disp_offset + 4;
+    Memory::int32_at(&buf_[disp_offset]) = disp_value;
+  } else if (disp_value != 0 || (base_reg == 0x05)) {
+    // Need 8 bits of displacement.
+    buf_[0] = (modrm & 0x3f) | 0x40;  // Mode 1.
+    len_ = disp_offset + 1;
+    buf_[disp_offset] = static_cast<byte>(disp_value);
+  } else {
+    // Need no displacement.
+    buf_[0] = (modrm & 0x3f);  // Mode 0.
+    len_ = disp_offset;
+  }
+  if (has_sib) {
+    buf_[1] = operand.buf_[1];
+  }
+}
+
+
 bool Operand::is_reg(Register reg) const {
   return ((buf_[0] & 0xF8) == 0xC0)  // addressing mode is register only.
       && ((buf_[0] & 0x07) == reg.code());  // register codes match.
@@ -2242,6 +2288,24 @@ void Assembler::movaps(XMMRegister dst, XMMRegister src) {
   EMIT(0x0F);
   EMIT(0x28);
   emit_sse_operand(dst, src);
+}
+
+
+void Assembler::movups(XMMRegister dst, const Operand& src) {
+  ASSERT(IsEnabled(SSE2));
+  EnsureSpace ensure_space(this);
+  EMIT(0x0F);
+  EMIT(0x10);
+  emit_sse_operand(dst, src);
+}
+
+
+void Assembler::movups(const Operand& dst, XMMRegister src) {
+  ASSERT(IsEnabled(SSE2));
+  EnsureSpace ensure_space(this);
+  EMIT(0x0F);
+  EMIT(0x11);
+  emit_sse_operand(src, dst);
 }
 
 
