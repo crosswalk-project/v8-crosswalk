@@ -587,6 +587,25 @@ class MacroAssembler: public Assembler {
   void AllocateHeapNumber(Register result, Register scratch1, Register scratch2,
                           Label* gc_required, MutableMode mode = IMMUTABLE);
 
+  // Allocate a float32x4, bool32x4 and int32x4 object in new space with
+  // undefined value.
+  // Returns tagged pointer in result register, or jumps to gc_required if new
+  // space is full.
+  void AllocateFloat32x4(Register result,
+                         Register scratch1,
+                         Register scratch2,
+                         Label* gc_required);
+
+  void AllocateBool32x4(Register result,
+                         Register scratch1,
+                         Register scratch2,
+                         Label* gc_required);
+
+  void AllocateInt32x4(Register result,
+                       Register scratch1,
+                       Register scratch2,
+                       Label* gc_required);
+
   // Allocate a sequential string. All the header fields of the string object
   // are initialized.
   void AllocateTwoByteString(Register result, Register length,
@@ -826,6 +845,15 @@ class MacroAssembler: public Assembler {
   void set_has_frame(bool value) { has_frame_ = value; }
   bool has_frame() { return has_frame_; }
   inline bool AllowThisStubCall(CodeStub* stub);
+
+  // ---------------------------------------------------------------------------
+  // SIMD macros.
+  void absps(XMMRegister dst);
+  void abspd(XMMRegister dst);
+  void negateps(XMMRegister dst);
+  void negatepd(XMMRegister dst);
+  void notps(XMMRegister dst);
+  void pnegd(XMMRegister dst);
 
   // ---------------------------------------------------------------------------
   // String utilities.

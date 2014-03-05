@@ -428,6 +428,11 @@ XMMRegister LCodeGen::ToDoubleRegister(int index) const {
 }
 
 
+XMMRegister LCodeGen::ToSIMD128Register(int index) const {
+  return XMMRegister::from_code(index);
+}
+
+
 Register LCodeGen::ToRegister(LOperand* op) const {
   DCHECK(op->IsRegister());
   return ToRegister(op->index());
@@ -437,6 +442,31 @@ Register LCodeGen::ToRegister(LOperand* op) const {
 XMMRegister LCodeGen::ToDoubleRegister(LOperand* op) const {
   DCHECK(op->IsDoubleRegister());
   return ToDoubleRegister(op->index());
+}
+
+
+XMMRegister LCodeGen::ToFloat32x4Register(LOperand* op) const {
+  DCHECK(op->IsFloat32x4Register());
+  return ToSIMD128Register(op->index());
+}
+
+
+XMMRegister LCodeGen::ToBool32x4Register(LOperand* op) const {
+  DCHECK(op->IsBool32x4Register());
+  return ToSIMD128Register(op->index());
+}
+
+
+XMMRegister LCodeGen::ToInt32x4Register(LOperand* op) const {
+  DCHECK(op->IsInt32x4Register());
+  return ToSIMD128Register(op->index());
+}
+
+
+XMMRegister LCodeGen::ToSIMD128Register(LOperand* op) const {
+  DCHECK(op->IsFloat32x4Register() || op->IsBool32x4Register() ||
+         op->IsInt32x4Register());
+  return ToSIMD128Register(op->index());
 }
 
 
@@ -512,7 +542,9 @@ static int ArgumentsOffsetWithoutFrame(int index) {
 Operand LCodeGen::ToOperand(LOperand* op) const {
   // Does not handle registers. In X64 assembler, plain registers are not
   // representable as an Operand.
-  DCHECK(op->IsStackSlot() || op->IsDoubleStackSlot());
+  DCHECK(op->IsStackSlot() || op->IsDoubleStackSlot() ||
+         op->IsFloat32x4StackSlot() || op->IsBool32x4StackSlot() ||
+         op->IsInt32x4StackSlot());
   if (NeedsEagerFrame()) {
     return Operand(rbp, StackSlotOffset(op->index()));
   } else {
@@ -598,6 +630,27 @@ void LCodeGen::AddToTranslation(LEnvironment* environment,
       index += StandardFrameConstants::kFixedFrameSize / kPointerSize;
     }
     translation->StoreDoubleStackSlot(index);
+  } else if (op->IsFloat32x4StackSlot()) {
+    int index = op->index();
+    if (index >= 0) {
+      index += StandardFrameConstants::kFixedFrameSize / kPointerSize;
+    }
+    translation->StoreSIMD128StackSlot(index,
+                                       Translation::FLOAT32x4_STACK_SLOT);
+  } else if (op->IsBool32x4StackSlot()) {
+    int index = op->index();
+    if (index >= 0) {
+      index += StandardFrameConstants::kFixedFrameSize / kPointerSize;
+    }
+    translation->StoreSIMD128StackSlot(index,
+                                       Translation::BOOL32x4_STACK_SLOT);
+  } else if (op->IsInt32x4StackSlot()) {
+    int index = op->index();
+    if (index >= 0) {
+      index += StandardFrameConstants::kFixedFrameSize / kPointerSize;
+    }
+    translation->StoreSIMD128StackSlot(index,
+                                       Translation::INT32x4_STACK_SLOT);
   } else if (op->IsRegister()) {
     Register reg = ToRegister(op);
     if (is_tagged) {
@@ -610,6 +663,15 @@ void LCodeGen::AddToTranslation(LEnvironment* environment,
   } else if (op->IsDoubleRegister()) {
     XMMRegister reg = ToDoubleRegister(op);
     translation->StoreDoubleRegister(reg);
+  } else if (op->IsFloat32x4Register()) {
+    XMMRegister reg = ToFloat32x4Register(op);
+    translation->StoreSIMD128Register(reg, Translation::FLOAT32x4_REGISTER);
+  } else if (op->IsBool32x4Register()) {
+    XMMRegister reg = ToBool32x4Register(op);
+    translation->StoreSIMD128Register(reg, Translation::BOOL32x4_REGISTER);
+  } else if (op->IsInt32x4Register()) {
+    XMMRegister reg = ToInt32x4Register(op);
+    translation->StoreSIMD128Register(reg, Translation::INT32x4_REGISTER);
   } else if (op->IsConstantOperand()) {
     HConstant* constant = chunk()->LookupConstant(LConstantOperand::cast(op));
     int src_index = DefineDeoptimizationLiteral(constant->handle(isolate()));
@@ -2027,6 +2089,9 @@ void LCodeGen::DoBranch(LBranch* instr) {
     __ Xorpd(xmm_scratch, xmm_scratch);
     __ Ucomisd(reg, xmm_scratch);
     EmitBranch(instr, not_equal);
+  } else if (r.IsSIMD128()) {
+    DCHECK(!info()->IsStub());
+    EmitBranch(instr, no_condition);
   } else {
     DCHECK(r.IsTagged());
     Register reg = ToRegister(instr->value());
@@ -2845,6 +2910,22 @@ void LCodeGen::DoAccessArgumentsAt(LAccessArgumentsAt* instr) {
 }
 
 
+bool LCodeGen::HandleExternalArrayOpRequiresPreScale(
+    LOperand* key,
+    Representation key_representation,
+    ElementsKind elements_kind) {
+  Register key_reg = ToRegister(key);
+  if (ExternalArrayOpRequiresPreScale(key_representation, elements_kind)) {
+    int pre_shift_size = ElementsKindToShiftSize(elements_kind) -
+        static_cast<int>(maximal_scale_factor);
+    DCHECK(pre_shift_size > 0);
+    __ shll(key_reg, Immediate(pre_shift_size));
+    return true;
+  }
+  return false;
+}
+
+
 void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
   ElementsKind elements_kind = instr->elements_kind();
   LOperand* key = instr->key();
@@ -2853,13 +2934,22 @@ void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
     Representation key_representation =
         instr->hydrogen()->key()->representation();
     if (ExternalArrayOpRequiresTemp(key_representation, elements_kind)) {
-      __ SmiToInteger64(key_reg, key_reg);
+      if (!HandleExternalArrayOpRequiresPreScale(
+          key, key_representation, elements_kind))
+        __ SmiToInteger64(key_reg, key_reg);
     } else if (instr->hydrogen()->IsDehoisted()) {
       // Sign extend key because it could be a 32 bit negative value
       // and the dehoisted address computation happens in 64 bits
       __ movsxlq(key_reg, key_reg);
     }
+  } else if (kPointerSize == kInt64Size && !key->IsConstantOperand()) {
+    Representation key_representation =
+        instr->hydrogen()->key()->representation();
+    if (ExternalArrayOpRequiresTemp(key_representation, elements_kind))
+      HandleExternalArrayOpRequiresPreScale(
+          key, key_representation, elements_kind);
   }
+
   Operand operand(BuildFastArrayOperand(
       instr->elements(),
       key,
@@ -2872,6 +2962,8 @@ void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
     __ Cvtss2sd(result, operand);
   } else if (elements_kind == FLOAT64_ELEMENTS) {
     __ Movsd(ToDoubleRegister(instr->result()), operand);
+  } else if (IsSIMD128ElementsKind(elements_kind)) {
+    __ movups(ToSIMD128Register(instr->result()), operand);
   } else {
     Register result(ToRegister(instr->result()));
     switch (elements_kind) {
@@ -3039,6 +3131,7 @@ Operand LCodeGen::BuildFastArrayOperand(
     if (constant_value & 0xF0000000) {
       Abort(kArrayIndexConstantValueTooBig);
     }
+
     return Operand(elements_pointer_reg,
                    (constant_value << shift_size) + offset);
   } else {
@@ -3636,6 +3729,1010 @@ void LCodeGen::DoMathPowHalf(LMathPowHalf* instr) {
 }
 
 
+void LCodeGen::DoNullarySIMDOperation(LNullarySIMDOperation* instr) {
+  switch (instr->op()) {
+    case kFloat32x4Zero: {
+      XMMRegister result_reg = ToFloat32x4Register(instr->result());
+      __ xorps(result_reg, result_reg);
+      return;
+    }
+    case kInt32x4Zero: {
+      XMMRegister result_reg = ToInt32x4Register(instr->result());
+      __ xorps(result_reg, result_reg);
+      return;
+    }
+    default:
+      UNREACHABLE();
+      return;
+  }
+}
+
+
+void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
+  uint8_t select = 0;
+  switch (instr->op()) {
+    case kFloat32x4Check: {
+      XMMRegister input_reg = ToFloat32x4Register(instr->value());
+      XMMRegister result_reg = ToFloat32x4Register(instr->result());
+      if (!result_reg.is(input_reg)) {
+        __ movaps(result_reg, input_reg);
+      }
+      return;
+    }
+    case kInt32x4Check: {
+      XMMRegister input_reg = ToInt32x4Register(instr->value());
+      XMMRegister result_reg = ToInt32x4Register(instr->result());
+      if (!result_reg.is(input_reg)) {
+        __ movaps(result_reg, input_reg);
+      }
+      return;
+    }
+    case kSIMD128Change: {
+      Comment(";;; deoptimize: can not perform representation change"
+              "for float32x4 or int32x4");
+      DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+      return;
+    }
+    case kFloat32x4Abs:
+    case kFloat32x4Neg:
+    case kFloat32x4RecipApprox:
+    case kFloat32x4RecipSqrtApprox:
+    case kFloat32x4Sqrt: {
+      DCHECK(instr->value()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat32x4());
+      XMMRegister input_reg = ToFloat32x4Register(instr->value());
+      switch (instr->op()) {
+        case kFloat32x4Abs:
+          __ absps(input_reg);
+          break;
+        case kFloat32x4Neg:
+          __ negateps(input_reg);
+          break;
+        case kFloat32x4RecipApprox:
+          __ rcpps(input_reg, input_reg);
+          break;
+        case kFloat32x4RecipSqrtApprox:
+          __ rsqrtps(input_reg, input_reg);
+          break;
+        case kFloat32x4Sqrt:
+          __ sqrtps(input_reg, input_reg);
+          break;
+        default:
+          UNREACHABLE();
+          break;
+        }
+      return;
+    }
+    case kInt32x4Not:
+    case kInt32x4Neg: {
+      DCHECK(instr->hydrogen()->value()->representation().IsInt32x4());
+      XMMRegister input_reg = ToInt32x4Register(instr->value());
+      switch (instr->op()) {
+        case kInt32x4Not:
+          __ notps(input_reg);
+          break;
+        case kInt32x4Neg:
+          __ pnegd(input_reg);
+          break;
+        default:
+          UNREACHABLE();
+          break;
+      }
+      return;
+    }
+    case kFloat32x4BitsToInt32x4:
+    case kFloat32x4ToInt32x4: {
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat32x4());
+      XMMRegister input_reg = ToFloat32x4Register(instr->value());
+      XMMRegister result_reg = ToInt32x4Register(instr->result());
+      if (instr->op() == kFloat32x4BitsToInt32x4) {
+        if (!result_reg.is(input_reg)) {
+          __ movaps(result_reg, input_reg);
+        }
+      } else {
+        DCHECK(instr->op() == kFloat32x4ToInt32x4);
+        __ cvtps2dq(result_reg, input_reg);
+      }
+      return;
+    }
+    case kInt32x4BitsToFloat32x4:
+    case kInt32x4ToFloat32x4: {
+      DCHECK(instr->hydrogen()->value()->representation().IsInt32x4());
+      XMMRegister input_reg = ToInt32x4Register(instr->value());
+      XMMRegister result_reg = ToFloat32x4Register(instr->result());
+      if (instr->op() == kInt32x4BitsToFloat32x4) {
+        if (!result_reg.is(input_reg)) {
+          __ movaps(result_reg, input_reg);
+        }
+      } else {
+        DCHECK(instr->op() == kInt32x4ToFloat32x4);
+        __ cvtdq2ps(result_reg, input_reg);
+      }
+      return;
+    }
+    case kFloat32x4Splat: {
+      DCHECK(instr->hydrogen()->value()->representation().IsDouble());
+      XMMRegister input_reg = ToDoubleRegister(instr->value());
+      XMMRegister result_reg = ToFloat32x4Register(instr->result());
+      XMMRegister xmm_scratch = xmm0;
+      __ xorps(xmm_scratch, xmm_scratch);
+      __ cvtsd2ss(xmm_scratch, input_reg);
+      __ shufps(xmm_scratch, xmm_scratch, 0x0);
+      __ movaps(result_reg, xmm_scratch);
+      return;
+    }
+    case kInt32x4Splat: {
+      DCHECK(instr->hydrogen()->value()->representation().IsInteger32());
+      Register input_reg = ToRegister(instr->value());
+      XMMRegister result_reg = ToInt32x4Register(instr->result());
+      __ movd(result_reg, input_reg);
+      __ shufps(result_reg, result_reg, 0x0);
+      return;
+    }
+    case kInt32x4GetSignMask: {
+      DCHECK(instr->hydrogen()->value()->representation().IsInt32x4());
+      XMMRegister input_reg = ToInt32x4Register(instr->value());
+      Register result = ToRegister(instr->result());
+      __ movmskps(result, input_reg);
+      return;
+    }
+    case kFloat32x4GetSignMask: {
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat32x4());
+      XMMRegister input_reg = ToFloat32x4Register(instr->value());
+      Register result = ToRegister(instr->result());
+      __ movmskps(result, input_reg);
+      return;
+    }
+    case kFloat32x4GetW:
+      select++;
+    case kFloat32x4GetZ:
+      select++;
+    case kFloat32x4GetY:
+      select++;
+    case kFloat32x4GetX: {
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat32x4());
+      XMMRegister input_reg = ToFloat32x4Register(instr->value());
+      XMMRegister result = ToDoubleRegister(instr->result());
+      XMMRegister xmm_scratch = result.is(input_reg) ? xmm0 : result;
+
+      if (select == 0x0) {
+        __ xorps(xmm_scratch, xmm_scratch);
+        __ cvtss2sd(xmm_scratch, input_reg);
+        if (!xmm_scratch.is(result)) {
+          __ movaps(result, xmm_scratch);
+        }
+      } else {
+        __ pshufd(xmm_scratch, input_reg, select);
+        if (!xmm_scratch.is(result)) {
+           __ xorps(result, result);
+        }
+        __ cvtss2sd(result, xmm_scratch);
+      }
+      return;
+    }
+    case kInt32x4GetX:
+    case kInt32x4GetY:
+    case kInt32x4GetZ:
+    case kInt32x4GetW:
+    case kInt32x4GetFlagX:
+    case kInt32x4GetFlagY:
+    case kInt32x4GetFlagZ:
+    case kInt32x4GetFlagW: {
+      DCHECK(instr->hydrogen()->value()->representation().IsInt32x4());
+      bool flag = false;
+      switch (instr->op()) {
+        case kInt32x4GetFlagX:
+          flag = true;
+        case kInt32x4GetX:
+          break;
+        case kInt32x4GetFlagY:
+          flag = true;
+        case kInt32x4GetY:
+          select = 0x1;
+          break;
+        case kInt32x4GetFlagZ:
+          flag = true;
+        case kInt32x4GetZ:
+          select = 0x2;
+          break;
+        case kInt32x4GetFlagW:
+          flag = true;
+        case kInt32x4GetW:
+          select = 0x3;
+          break;
+        default:
+          UNREACHABLE();
+      }
+
+      XMMRegister input_reg = ToInt32x4Register(instr->value());
+      Register result = ToRegister(instr->result());
+      if (select == 0x0) {
+        __ movd(result, input_reg);
+      } else {
+        if (CpuFeatures::IsSupported(SSE4_1)) {
+          CpuFeatureScope scope(masm(), SSE4_1);
+          __ extractps(result, input_reg, select);
+        } else {
+          XMMRegister xmm_scratch = xmm0;
+          __ pshufd(xmm_scratch, input_reg, select);
+          __ movd(result, xmm_scratch);
+        }
+      }
+
+      if (flag) {
+        Label false_value, done;
+        __ testl(result, result);
+        __ j(zero, &false_value, Label::kNear);
+        __ LoadRoot(result, Heap::kTrueValueRootIndex);
+        __ jmp(&done, Label::kNear);
+        __ bind(&false_value);
+        __ LoadRoot(result, Heap::kFalseValueRootIndex);
+        __ bind(&done);
+      }
+      return;
+    }
+    default:
+      UNREACHABLE();
+      return;
+  }
+}
+
+
+#define DCHECK_EXTRACTLANE(TYPE)                               \
+  DCHECK(instr->hydrogen()->left()->representation().Is##TYPE());           \
+  DCHECK(instr->hydrogen()->right()->representation().IsInteger32());
+
+
+void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
+  uint8_t imm8 = 0;  // for with operation
+  switch (instr->op()) {
+    case kFloat32x4ExtractLane: {
+      DCHECK_EXTRACTLANE(Float32x4)
+      if (instr->hydrogen()->right()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
+        uint32_t right = ToInteger32(LConstantOperand::cast(instr->right()));
+        DCHECK((right >= 0) && (right <= 3));
+        XMMRegister left_reg = ToFloat32x4Register(instr->left());;
+        XMMRegister result = ToDoubleRegister(instr->result());
+        XMMRegister xmm_scratch = xmm0;
+        imm8 = right;
+        if (imm8 == 0x0) {
+          __ xorps(xmm_scratch, xmm_scratch);
+          __ cvtss2sd(xmm_scratch, left_reg);
+          __ movaps(result, xmm_scratch);
+        } else {
+          __ pshufd(xmm_scratch, left_reg, imm8);
+          __ cvtss2sd(result, xmm_scratch);
+        }
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for extractLane");
+        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+        return;
+      }
+    }
+    case kInt32x4ExtractLane: {
+      DCHECK_EXTRACTLANE(Int32x4)
+      if (instr->hydrogen()->right()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
+        uint32_t right = ToInteger32(LConstantOperand::cast(instr->right()));
+        DCHECK((right >= 0) && (right <= 3));
+        XMMRegister left_reg = ToInt32x4Register(instr->left());
+        Register result = ToRegister(instr->result());
+        imm8 = right;
+        if (imm8 == 0x0) {
+          __ movd(result, left_reg);
+        } else {
+          if (CpuFeatures::IsSupported(SSE4_1)) {
+            CpuFeatureScope scope(masm(), SSE4_1);
+            __ extractps(result, left_reg, imm8);
+          } else {
+            XMMRegister xmm_scratch = xmm0;
+            __ pshufd(xmm_scratch, left_reg, imm8);
+            __ movd(result, xmm_scratch);
+          }
+        }
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for extractLane");
+        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+        return;
+      }
+    }
+    case kFloat32x4Add:
+    case kFloat32x4Sub:
+    case kFloat32x4Mul:
+    case kFloat32x4Div:
+    case kFloat32x4Min:
+    case kFloat32x4Max: {
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->right()->representation().IsFloat32x4());
+      XMMRegister left_reg = ToFloat32x4Register(instr->left());
+      XMMRegister right_reg = ToFloat32x4Register(instr->right());
+      switch (instr->op()) {
+        case kFloat32x4Add:
+          __ addps(left_reg, right_reg);
+          break;
+        case kFloat32x4Sub:
+          __ subps(left_reg, right_reg);
+          break;
+        case kFloat32x4Mul:
+          __ mulps(left_reg, right_reg);
+          break;
+        case kFloat32x4Div:
+          __ divps(left_reg, right_reg);
+          break;
+        case kFloat32x4Min:
+          __ minps(left_reg, right_reg);
+          break;
+        case kFloat32x4Max:
+          __ maxps(left_reg, right_reg);
+          break;
+        default:
+          UNREACHABLE();
+          break;
+      }
+      return;
+    }
+    case kFloat32x4Shuffle: {
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat32x4());
+      if (instr->hydrogen()->right()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
+        int32_t value = ToInteger32(LConstantOperand::cast(instr->right()));
+        uint8_t select = static_cast<uint8_t>(value & 0xFF);
+        XMMRegister left_reg = ToFloat32x4Register(instr->left());
+        __ shufps(left_reg, left_reg, select);
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for shuffle");
+        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+        return;
+      }
+    }
+    case kInt32x4Shuffle: {
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsInt32x4());
+      if (instr->hydrogen()->right()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
+        int32_t value = ToInteger32(LConstantOperand::cast(instr->right()));
+        uint8_t select = static_cast<uint8_t>(value & 0xFF);
+        XMMRegister left_reg = ToInt32x4Register(instr->left());
+        __ pshufd(left_reg, left_reg, select);
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for shuffle");
+        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+        return;
+      }
+    }
+    case kInt32x4ShiftLeft:
+    case kInt32x4ShiftRightArithmetic: {
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsInt32x4());
+      if (instr->hydrogen()->right()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
+        int32_t value = ToInteger32(LConstantOperand::cast(instr->right()));
+        uint8_t shift = static_cast<uint8_t>(value & 0xFF);
+        XMMRegister left_reg = ToInt32x4Register(instr->left());
+        switch (instr->op()) {
+          case kInt32x4ShiftLeft:
+            __ pslld(left_reg, shift);
+            break;
+          case kInt32x4ShiftRightArithmetic:
+            __ psrad(left_reg, shift);
+            break;
+          default:
+            UNREACHABLE();
+        }
+        return;
+      } else {
+        XMMRegister left_reg = ToInt32x4Register(instr->left());
+        Register shift = ToRegister(instr->right());
+        XMMRegister xmm_scratch = double_scratch0();
+        __ movd(xmm_scratch, shift);
+        switch (instr->op()) {
+          case kInt32x4ShiftLeft:
+            __ pslld(left_reg, xmm_scratch);
+            break;
+          case kInt32x4ShiftRightArithmetic:
+            __ psrad(left_reg, xmm_scratch);
+            break;
+          default:
+            UNREACHABLE();
+        }
+        return;
+      }
+    }
+    case kFloat32x4LessThan:
+    case kFloat32x4LessThanOrEqual:
+    case kFloat32x4Equal:
+    case kFloat32x4NotEqual:
+    case kFloat32x4GreaterThanOrEqual:
+    case kFloat32x4GreaterThan: {
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->right()->representation().IsFloat32x4());
+      XMMRegister left_reg = ToFloat32x4Register(instr->left());
+      XMMRegister right_reg = ToFloat32x4Register(instr->right());
+      XMMRegister result_reg = ToInt32x4Register(instr->result());
+      switch (instr->op()) {
+        case kFloat32x4LessThan:
+          if (result_reg.is(left_reg)) {
+            __ cmpltps(result_reg, right_reg);
+          } else if (result_reg.is(right_reg)) {
+            __ cmpnltps(result_reg, left_reg);
+          } else {
+            __ movaps(result_reg, left_reg);
+            __ cmpltps(result_reg, right_reg);
+          }
+          break;
+        case kFloat32x4LessThanOrEqual:
+          if (result_reg.is(left_reg)) {
+            __ cmpleps(result_reg, right_reg);
+          } else if (result_reg.is(right_reg)) {
+            __ cmpnleps(result_reg, left_reg);
+          } else {
+            __ movaps(result_reg, left_reg);
+            __ cmpleps(result_reg, right_reg);
+          }
+          break;
+        case kFloat32x4Equal:
+          if (result_reg.is(left_reg)) {
+            __ cmpeqps(result_reg, right_reg);
+          } else if (result_reg.is(right_reg)) {
+            __ cmpeqps(result_reg, left_reg);
+          } else {
+            __ movaps(result_reg, left_reg);
+            __ cmpeqps(result_reg, right_reg);
+          }
+          break;
+        case kFloat32x4NotEqual:
+          if (result_reg.is(left_reg)) {
+            __ cmpneqps(result_reg, right_reg);
+          } else if (result_reg.is(right_reg)) {
+            __ cmpneqps(result_reg, left_reg);
+          } else {
+            __ movaps(result_reg, left_reg);
+            __ cmpneqps(result_reg, right_reg);
+          }
+          break;
+        case kFloat32x4GreaterThanOrEqual:
+          if (result_reg.is(left_reg)) {
+            __ cmpnltps(result_reg, right_reg);
+          } else if (result_reg.is(right_reg)) {
+            __ cmpltps(result_reg, left_reg);
+          } else {
+            __ movaps(result_reg, left_reg);
+            __ cmpnltps(result_reg, right_reg);
+          }
+          break;
+        case kFloat32x4GreaterThan:
+          if (result_reg.is(left_reg)) {
+            __ cmpnleps(result_reg, right_reg);
+          } else if (result_reg.is(right_reg)) {
+            __ cmpleps(result_reg, left_reg);
+          } else {
+            __ movaps(result_reg, left_reg);
+            __ cmpnleps(result_reg, right_reg);
+          }
+          break;
+        default:
+          UNREACHABLE();
+          break;
+      }
+      return;
+    }
+    case kInt32x4And:
+    case kInt32x4Or:
+    case kInt32x4Xor:
+    case kInt32x4Add:
+    case kInt32x4Sub:
+    case kInt32x4Mul:
+    case kInt32x4GreaterThan:
+    case kInt32x4Equal:
+    case kInt32x4LessThan: {
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->right()->representation().IsInt32x4());
+      XMMRegister left_reg = ToInt32x4Register(instr->left());
+      XMMRegister right_reg = ToInt32x4Register(instr->right());
+      switch (instr->op()) {
+        case kInt32x4And:
+          __ andps(left_reg, right_reg);
+          break;
+        case kInt32x4Or:
+          __ orps(left_reg, right_reg);
+          break;
+        case kInt32x4Xor:
+          __ xorps(left_reg, right_reg);
+          break;
+        case kInt32x4Add:
+          __ paddd(left_reg, right_reg);
+          break;
+        case kInt32x4Sub:
+          __ psubd(left_reg, right_reg);
+          break;
+        case kInt32x4Mul:
+          if (CpuFeatures::IsSupported(SSE4_1)) {
+            CpuFeatureScope scope(masm(), SSE4_1);
+            __ pmulld(left_reg, right_reg);
+          } else {
+            // The algorithm is from http://stackoverflow.com/questions/10500766/sse-multiplication-of-4-32-bit-integers
+            XMMRegister xmm_scratch = xmm0;
+            __ movaps(xmm_scratch, left_reg);
+            __ pmuludq(left_reg, right_reg);
+            __ psrldq(xmm_scratch, 4);
+            __ psrldq(right_reg, 4);
+            __ pmuludq(xmm_scratch, right_reg);
+            __ pshufd(left_reg, left_reg, 8);
+            __ pshufd(xmm_scratch, xmm_scratch, 8);
+            __ punpackldq(left_reg, xmm_scratch);
+          }
+          break;
+        case kInt32x4GreaterThan:
+          __ pcmpgtd(left_reg, right_reg);
+          break;
+        case kInt32x4Equal:
+          __ pcmpeqd(left_reg, right_reg);
+          break;
+        case kInt32x4LessThan: {
+          XMMRegister xmm_scratch = xmm0;
+          __ movaps(xmm_scratch, right_reg);
+          __ pcmpgtd(xmm_scratch, left_reg);
+          __ movaps(left_reg, xmm_scratch);
+          break;
+        }
+        default:
+          UNREACHABLE();
+          break;
+      }
+      return;
+    }
+    default:
+      UNREACHABLE();
+      return;
+  }
+}
+
+
+void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
+  uint8_t imm8 = 0;
+  switch (instr->op()) {
+    case kFloat32x4Select: {
+      DCHECK(instr->hydrogen()->first()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->second()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->third()->representation().IsFloat32x4());
+
+      XMMRegister mask_reg = ToInt32x4Register(instr->first());
+      XMMRegister left_reg = ToFloat32x4Register(instr->second());
+      XMMRegister right_reg = ToFloat32x4Register(instr->third());
+      XMMRegister result_reg = ToFloat32x4Register(instr->result());
+      XMMRegister temp_reg = xmm0;
+
+      // Copy mask.
+      __ movaps(temp_reg, mask_reg);
+      // Invert it.
+      __ notps(temp_reg);
+      // temp_reg = temp_reg & falseValue.
+      __ andps(temp_reg, right_reg);
+
+      if (!result_reg.is(mask_reg)) {
+        if (result_reg.is(left_reg)) {
+          // result_reg = result_reg & trueValue.
+          __ andps(result_reg, mask_reg);
+          // out = result_reg | temp_reg.
+          __ orps(result_reg, temp_reg);
+        } else {
+          __ movaps(result_reg, mask_reg);
+          // result_reg = result_reg & trueValue.
+          __ andps(result_reg, left_reg);
+          // out = result_reg | temp_reg.
+          __ orps(result_reg, temp_reg);
+        }
+      } else {
+        // result_reg = result_reg & trueValue.
+        __ andps(result_reg, left_reg);
+        // out = result_reg | temp_reg.
+        __ orps(result_reg, temp_reg);
+      }
+      return;
+    }
+    case kInt32x4Select: {
+      DCHECK(instr->hydrogen()->first()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->second()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->third()->representation().IsInt32x4());
+
+      XMMRegister mask_reg = ToInt32x4Register(instr->first());
+      XMMRegister left_reg = ToInt32x4Register(instr->second());
+      XMMRegister right_reg = ToInt32x4Register(instr->third());
+      XMMRegister result_reg = ToInt32x4Register(instr->result());
+      XMMRegister temp_reg = xmm0;
+
+      // Copy mask.
+      __ movaps(temp_reg, mask_reg);
+      // Invert it.
+      __ notps(temp_reg);
+      // temp_reg = temp_reg & falseValue.
+      __ andps(temp_reg, right_reg);
+
+      if (!result_reg.is(mask_reg)) {
+        if (result_reg.is(left_reg)) {
+          // result_reg = result_reg & trueValue.
+          __ andps(result_reg, mask_reg);
+          // out = result_reg | temp_reg.
+          __ orps(result_reg, temp_reg);
+        } else {
+          __ movaps(result_reg, mask_reg);
+          // result_reg = result_reg & trueValue.
+          __ andps(result_reg, left_reg);
+          // out = result_reg | temp_reg.
+          __ orps(result_reg, temp_reg);
+        }
+      } else {
+        // result_reg = result_reg & trueValue.
+        __ andps(result_reg, left_reg);
+        // out = result_reg | temp_reg.
+        __ orps(result_reg, temp_reg);
+      }
+      return;
+    }
+    case kFloat32x4ReplaceLane: {
+      DCHECK(instr->first()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->first()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->second()->representation().IsInteger32());
+      DCHECK(instr->hydrogen()->third()->representation().IsDouble());
+      if (instr->hydrogen()->second()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->second())->HasInteger32Value()) {
+        int32_t x = ToInteger32(LConstantOperand::cast(instr->second()));
+        DCHECK((x >= 0) && (x <= 3));
+        switch (x) {
+          case 3: imm8++;
+          case 2: imm8++;
+          case 1: imm8++;
+          case 0: break;
+        }
+        XMMRegister result_reg = ToFloat32x4Register(instr->first());
+        XMMRegister value_reg = ToDoubleRegister(instr->third());
+        XMMRegister xmm_scratch = xmm0;
+        __ xorps(xmm_scratch, xmm_scratch);
+        __ cvtsd2ss(xmm_scratch, value_reg);
+        if (CpuFeatures::IsSupported(SSE4_1)) {
+          imm8 = imm8 << 4;
+          CpuFeatureScope scope(masm(), SSE4_1);
+          __ insertps(result_reg, xmm_scratch, imm8);
+        } else {
+          __ subq(rsp, Immediate(kFloat32x4Size));
+          __ movups(Operand(rsp, 0), result_reg);
+          __ movss(Operand(rsp, imm8 * kFloatSize), xmm_scratch);
+          __ movups(result_reg, Operand(rsp, 0));
+          __ addq(rsp, Immediate(kFloat32x4Size));
+        }
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for replacetLane");
+        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+        return;
+      }
+    }
+    case kInt32x4ReplaceLane: {
+      DCHECK(instr->first()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->first()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->second()->representation().IsInteger32());
+      DCHECK(instr->hydrogen()->third()->representation().IsInteger32());
+      if (instr->hydrogen()->second()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->second())->HasInteger32Value()) {
+        int32_t x = ToInteger32(LConstantOperand::cast(instr->second()));
+        DCHECK((x >= 0) && (x <= 4));
+        switch (x) {
+          case 3: imm8++;
+          case 2: imm8++;
+          case 1: imm8++;
+          case 0: break;
+        }
+        XMMRegister result_reg = ToInt32x4Register(instr->first());
+        Register value_reg = ToRegister(instr->third());
+        if (CpuFeatures::IsSupported(SSE4_1)) {
+          CpuFeatureScope scope(masm(), SSE4_1);
+          __ pinsrd(result_reg, value_reg, imm8);
+        } else {
+          __ subq(rsp, Immediate(kInt32x4Size));
+          __ movdqu(Operand(rsp, 0), result_reg);
+          __ movl(Operand(rsp, imm8 * kFloatSize), value_reg);
+          __ movdqu(result_reg, Operand(rsp, 0));
+          __ addq(rsp, Immediate(kInt32x4Size));
+        }
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for replacetLane");
+        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+        return;
+      }
+    }
+    default:
+      UNREACHABLE();
+      return;
+  }
+}
+
+
+void LCodeGen::DoQuarternarySIMDOperation(LQuarternarySIMDOperation* instr) {
+  switch (instr->op()) {
+    case kFloat32x4Constructor: {
+      DCHECK(instr->hydrogen()->x()->representation().IsDouble());
+      DCHECK(instr->hydrogen()->y()->representation().IsDouble());
+      DCHECK(instr->hydrogen()->z()->representation().IsDouble());
+      DCHECK(instr->hydrogen()->w()->representation().IsDouble());
+      XMMRegister x_reg = ToDoubleRegister(instr->x());
+      XMMRegister y_reg = ToDoubleRegister(instr->y());
+      XMMRegister z_reg = ToDoubleRegister(instr->z());
+      XMMRegister w_reg = ToDoubleRegister(instr->w());
+      XMMRegister result_reg = ToFloat32x4Register(instr->result());
+      __ subq(rsp, Immediate(kFloat32x4Size));
+      __ xorps(xmm0, xmm0);
+      __ cvtsd2ss(xmm0, x_reg);
+      __ movss(Operand(rsp, 0 * kFloatSize), xmm0);
+      __ xorps(xmm0, xmm0);
+      __ cvtsd2ss(xmm0, y_reg);
+      __ movss(Operand(rsp, 1 * kFloatSize), xmm0);
+      __ xorps(xmm0, xmm0);
+      __ cvtsd2ss(xmm0, z_reg);
+      __ movss(Operand(rsp, 2 * kFloatSize), xmm0);
+      __ xorps(xmm0, xmm0);
+      __ cvtsd2ss(xmm0, w_reg);
+      __ movss(Operand(rsp, 3 * kFloatSize), xmm0);
+      __ movups(result_reg, Operand(rsp, 0 * kFloatSize));
+      __ addq(rsp, Immediate(kFloat32x4Size));
+      return;
+    }
+    case kInt32x4Constructor: {
+      DCHECK(instr->hydrogen()->x()->representation().IsInteger32());
+      DCHECK(instr->hydrogen()->y()->representation().IsInteger32());
+      DCHECK(instr->hydrogen()->z()->representation().IsInteger32());
+      DCHECK(instr->hydrogen()->w()->representation().IsInteger32());
+      Register x_reg = ToRegister(instr->x());
+      Register y_reg = ToRegister(instr->y());
+      Register z_reg = ToRegister(instr->z());
+      Register w_reg = ToRegister(instr->w());
+      XMMRegister result_reg = ToInt32x4Register(instr->result());
+      __ subq(rsp, Immediate(kInt32x4Size));
+      __ movl(Operand(rsp, 0 * kInt32Size), x_reg);
+      __ movl(Operand(rsp, 1 * kInt32Size), y_reg);
+      __ movl(Operand(rsp, 2 * kInt32Size), z_reg);
+      __ movl(Operand(rsp, 3 * kInt32Size), w_reg);
+      __ movups(result_reg, Operand(rsp, 0 * kInt32Size));
+      __ addq(rsp, Immediate(kInt32x4Size));
+      return;
+    }
+    default:
+      UNREACHABLE();
+      return;
+  }
+}
+
+
+static uint8_t ComputeShuffleSelect(uint32_t x, uint32_t y,
+                                  uint32_t z, uint32_t w) {
+  DCHECK(x < 4 && y < 4 && z < 4 && w < 4);
+  uint32_t r = static_cast<uint8_t>(
+      ((w << 6) | (z << 4) | (y << 2) | (x << 0)) & 0xFF);
+  return r;
+}
+
+
+void LCodeGen::DoQuinarySIMDOperation(LQuinarySIMDOperation* instr) {
+  switch (instr->op()) {
+    case kFloat32x4Swizzle: {
+      DCHECK(instr->a0()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->a0()->representation().IsFloat32x4());
+      if ((instr->hydrogen()->a1()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a1())->HasInteger32Value()) &&
+          (instr->hydrogen()->a2()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a2())->HasInteger32Value()) &&
+          (instr->hydrogen()->a3()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a3())->HasInteger32Value()) &&
+          (instr->hydrogen()->a4()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a4())->HasInteger32Value())) {
+        int32_t x = ToInteger32(LConstantOperand::cast(instr->a1()));
+        int32_t y = ToInteger32(LConstantOperand::cast(instr->a2()));
+        int32_t z = ToInteger32(LConstantOperand::cast(instr->a3()));
+        int32_t w = ToInteger32(LConstantOperand::cast(instr->a4()));
+        uint8_t select = ComputeShuffleSelect(x, y, z, w);
+        XMMRegister left_reg = ToFloat32x4Register(instr->a0());
+        __ shufps(left_reg, left_reg, select);
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for swizzle");
+        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+        return;
+      }
+    }
+    case kInt32x4Swizzle: {
+      DCHECK(instr->a0()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->a0()->representation().IsInt32x4());
+      if ((instr->hydrogen()->a1()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a1())->HasInteger32Value()) &&
+          (instr->hydrogen()->a2()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a2())->HasInteger32Value()) &&
+          (instr->hydrogen()->a3()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a3())->HasInteger32Value()) &&
+          (instr->hydrogen()->a4()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a4())->HasInteger32Value())) {
+        int32_t x = ToInteger32(LConstantOperand::cast(instr->a1()));
+        int32_t y = ToInteger32(LConstantOperand::cast(instr->a2()));
+        int32_t z = ToInteger32(LConstantOperand::cast(instr->a3()));
+        int32_t w = ToInteger32(LConstantOperand::cast(instr->a4()));
+        uint8_t select = ComputeShuffleSelect(x, y, z, w);
+        XMMRegister left_reg = ToInt32x4Register(instr->a0());
+        __ pshufd(left_reg, left_reg, select);
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for shuffle");
+        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+        return;
+      }
+    }
+    default:
+      UNREACHABLE();
+      return;
+  }
+}
+
+
+void LCodeGen::DoSenarySIMDOperation(LSenarySIMDOperation* instr) {
+  switch (instr->op()) {
+    case kFloat32x4Shuffle:
+    case kInt32x4Shuffle: {
+      DCHECK(instr->a0()->Equals(instr->result()));
+      if (instr->op() == kFloat32x4Shuffle) {
+        DCHECK(instr->hydrogen()->a0()->representation().IsFloat32x4());
+        DCHECK(instr->hydrogen()->a1()->representation().IsFloat32x4());
+      } else {
+        DCHECK(instr->hydrogen()->a0()->representation().IsInt32x4());
+        DCHECK(instr->hydrogen()->a1()->representation().IsInt32x4());
+      }
+
+      if ((instr->hydrogen()->a2()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a2())->HasInteger32Value()) &&
+          (instr->hydrogen()->a3()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a3())->HasInteger32Value()) &&
+          (instr->hydrogen()->a4()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a4())->HasInteger32Value()) &&
+          (instr->hydrogen()->a5()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a5())->HasInteger32Value())) {
+        int32_t x = ToInteger32(LConstantOperand::cast(instr->a2()));
+        int32_t y = ToInteger32(LConstantOperand::cast(instr->a3()));
+        int32_t z = ToInteger32(LConstantOperand::cast(instr->a4()));
+        int32_t w = ToInteger32(LConstantOperand::cast(instr->a5()));
+         XMMRegister lhs, rhs;
+        if (instr->op() == kFloat32x4Shuffle) {
+          lhs = ToFloat32x4Register(instr->a0());
+          rhs = ToFloat32x4Register(instr->a1());
+        } else {
+          lhs = ToInt32x4Register(instr->a0());
+          rhs = ToInt32x4Register(instr->a1());
+        }
+        XMMRegister temp = xmm0;
+
+        uint32_t num_lanes_from_lhs = (x < 4) + (y < 4) + (z < 4) + (w < 4);
+        if (num_lanes_from_lhs == 4) {
+          uint8_t select = ComputeShuffleSelect(x, y, z, w);
+          __ shufps(lhs, lhs, select);
+          return;
+        } else if (num_lanes_from_lhs == 0) {
+          x -= 4;
+          y -= 4;
+          z -= 4;
+          w -= 4;
+          uint8_t select = ComputeShuffleSelect(x, y, z, w);
+          __ movaps(lhs, rhs);
+          __ shufps(lhs, lhs, select);
+          return;
+        } else if (num_lanes_from_lhs == 3) {
+          uint8_t first_select = 0xFF;
+          uint8_t second_select = 0xFF;
+          if (x < 4 && y < 4) {
+            if (w >= 4) {
+                w -= 4;
+                // T = (Rw Rw Lz Lz) = shufps(firstMask, lhs, rhs)
+                first_select = ComputeShuffleSelect(w, w, z, z);
+                // (Lx Ly Lz Rw) = (Lx Ly Tz Tx) = shufps(secondMask, T, lhs)
+                second_select = ComputeShuffleSelect(x, y, 2, 0);
+            } else {
+                DCHECK(z >= 4);
+                z -= 4;
+                // T = (Rz Rz Lw Lw) = shufps(firstMask, lhs, rhs)
+                first_select = ComputeShuffleSelect(z, z, w, w);
+                // (Lx Ly Rz Lw) = (Lx Ly Tx Tz) = shufps(secondMask, T, lhs)
+                second_select = ComputeShuffleSelect(x, y, 0, 2);
+            }
+
+            __ movaps(temp, rhs);
+            __ shufps(temp, lhs, first_select);
+            __ shufps(lhs, temp, second_select);
+            return;
+          }
+
+          DCHECK(z < 4 && w < 4);
+
+          if (y >= 4) {
+              y -= 4;
+              // T = (Ry Ry Lx Lx) = shufps(firstMask, lhs, rhs)
+              first_select = ComputeShuffleSelect(y, y, x, x);
+              // (Lx Ry Lz Lw) = (Tz Tx Lz Lw) = shufps(secondMask, lhs, T)
+              second_select = ComputeShuffleSelect(2, 0, z, w);
+          } else {
+              DCHECK(x >= 4);
+              x -= 4;
+              // T = (Rx Rx Ly Ly) = shufps(firstMask, lhs, rhs)
+              first_select = ComputeShuffleSelect(x, x, y, y);
+              // (Rx Ly Lz Lw) = (Tx Tz Lz Lw) = shufps(secondMask, lhs, T)
+              second_select = ComputeShuffleSelect(0, 2, z, w);
+          }
+
+          __ movaps(temp, rhs);
+          __ shufps(temp, lhs, first_select);
+          __ shufps(temp, lhs, second_select);
+          __ movaps(lhs, temp);
+          return;
+        } else if (num_lanes_from_lhs == 2) {
+          if (x < 4 && y < 4) {
+            uint8_t select = ComputeShuffleSelect(x, y, z % 4, w % 4);
+            __ shufps(lhs, rhs, select);
+            return;
+          } else if (z < 4 && w < 4) {
+            uint8_t select = ComputeShuffleSelect(x % 4, y % 4, z, w);
+            __ movaps(temp, rhs);
+            __ shufps(temp, lhs, select);
+            __ movaps(lhs, temp);
+            return;
+          }
+
+          // In two shufps, for the most generic case:
+          uint8_t first_select[4], second_select[4];
+          uint32_t i = 0, j = 2, k = 0;
+
+#define COMPUTE_SELECT(lane)            \
+          if (lane >= 4) {              \
+            first_select[j] = lane % 4; \
+            second_select[k++] = j++;   \
+          } else {                      \
+            first_select[i] = lane;     \
+            second_select[k++] = i++;   \
+          }
+
+          COMPUTE_SELECT(x)
+          COMPUTE_SELECT(y)
+          COMPUTE_SELECT(z)
+          COMPUTE_SELECT(w)
+#undef COMPUTE_SELECT
+
+          DCHECK(i == 2 && j == 4 && k == 4);
+
+          int8_t select;
+          select = ComputeShuffleSelect(first_select[0], first_select[1],
+                                        first_select[2], first_select[3]);
+          __ shufps(lhs, rhs, select);
+
+          select = ComputeShuffleSelect(second_select[0], second_select[1],
+                                        second_select[2], second_select[3]);
+          __ shufps(lhs, lhs, select);
+        }
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for shuffle");
+        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+        return;
+      }
+    }
+
+    default:
+      UNREACHABLE();
+      return;
+  }
+}
+
+
 void LCodeGen::DoPower(LPower* instr) {
   Representation exponent_type = instr->hydrogen()->right()->representation();
   // Having marked this as a call, we can use any registers.
@@ -4060,12 +5157,20 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
     Representation key_representation =
         instr->hydrogen()->key()->representation();
     if (ExternalArrayOpRequiresTemp(key_representation, elements_kind)) {
-      __ SmiToInteger64(key_reg, key_reg);
+      if (!HandleExternalArrayOpRequiresPreScale(
+          key, key_representation, elements_kind))
+        __ SmiToInteger64(key_reg, key_reg);
     } else if (instr->hydrogen()->IsDehoisted()) {
       // Sign extend key because it could be a 32 bit negative value
       // and the dehoisted address computation happens in 64 bits
       __ movsxlq(key_reg, key_reg);
     }
+  } else if (kPointerSize == kInt64Size && !key->IsConstantOperand()) {
+    Representation key_representation =
+        instr->hydrogen()->key()->representation();
+    if (ExternalArrayOpRequiresTemp(key_representation, elements_kind))
+      HandleExternalArrayOpRequiresPreScale(
+          key, key_representation, elements_kind);
   }
   Operand operand(BuildFastArrayOperand(
       instr->elements(),
@@ -4080,6 +5185,8 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
     __ Movss(operand, value);
   } else if (elements_kind == FLOAT64_ELEMENTS) {
     __ Movsd(operand, ToDoubleRegister(instr->value()));
+  } else if (IsSIMD128ElementsKind(elements_kind)) {
+    __ movups(operand, ToSIMD128Register(instr->value()));
   } else {
     Register value(ToRegister(instr->value()));
     switch (elements_kind) {
@@ -4700,6 +5807,86 @@ void LCodeGen::DoDeferredNumberTagD(LNumberTagD* instr) {
 }
 
 
+void LCodeGen::DoDeferredSIMD128ToTagged(LSIMD128ToTagged* instr,
+                                         Runtime::FunctionId id) {
+  // TODO(3095996): Get rid of this. For now, we need to make the
+  // result register contain a valid pointer because it is already
+  // contained in the register pointer map.
+  Register reg = ToRegister(instr->result());
+  __ Move(reg, Smi::FromInt(0));
+
+  {
+    PushSafepointRegistersScope scope(this);
+    __ movp(rsi, Operand(rbp, StandardFrameConstants::kContextOffset));
+    __ CallRuntimeSaveDoubles(id);
+    RecordSafepointWithRegisters(
+        instr->pointer_map(), 0, Safepoint::kNoLazyDeopt);
+    __ movp(kScratchRegister, rax);
+  }
+  __ movp(reg, kScratchRegister);
+}
+
+
+template<InstanceType I, class T, Runtime::FunctionId D>
+void LCodeGen::HandleSIMD128ToTagged(LSIMD128ToTagged* instr) {
+  class DeferredSIMD128ToTagged final : public LDeferredCode {
+   public:
+    DeferredSIMD128ToTagged(LCodeGen* codegen,
+                            LSIMD128ToTagged* instr,
+                            Runtime::FunctionId id)
+        : LDeferredCode(codegen), instr_(instr), id_(id) { }
+    void Generate() override {
+      codegen()->DoDeferredSIMD128ToTagged(instr_, id_);
+    }
+    LInstruction* instr() override { return instr_; }
+   private:
+    LSIMD128ToTagged* instr_;
+    Runtime::FunctionId id_;
+  };
+
+  XMMRegister input_reg = ToSIMD128Register(instr->value());
+  Register reg = ToRegister(instr->result());
+  Register tmp = ToRegister(instr->temp());
+  Register tmp2 = ToRegister(instr->temp2());
+  Register tmp3 = ToRegister(instr->temp3());
+
+  DeferredSIMD128ToTagged* deferred =
+      new(zone()) DeferredSIMD128ToTagged(this, instr,
+          static_cast<Runtime::FunctionId>(D));
+  if (FLAG_inline_new) {
+    if (I == FLOAT32x4_TYPE) {
+      __ AllocateFloat32x4(reg, tmp, tmp2, tmp3, deferred->entry());
+    } else if (I == BOOL32x4_TYPE) {
+      __ AllocateBool32x4(reg, tmp, tmp2, tmp3, deferred->entry());
+    } else if (I == INT32x4_TYPE) {
+      __ AllocateInt32x4(reg, tmp, tmp2, tmp3, deferred->entry());
+    }
+  } else {
+    __ jmp(deferred->entry());
+  }
+  __ bind(deferred->exit());
+
+  // load the value to SIMD object.
+  __ movups(FieldOperand(reg, T::kValueOffset), input_reg);
+}
+
+
+void LCodeGen::DoSIMD128ToTagged(LSIMD128ToTagged* instr) {
+  if (instr->value()->IsFloat32x4Register()) {
+    HandleSIMD128ToTagged<FLOAT32x4_TYPE,
+                          Float32x4, Runtime::kAllocateFloat32x4>(instr);
+  } else if (instr->value()->IsBool32x4Register()) {
+    DCHECK(instr->value()->IsBool32x4Register());
+    HandleSIMD128ToTagged<BOOL32x4_TYPE,
+                          Bool32x4, Runtime::kAllocateBool32x4>(instr);
+  } else {
+    DCHECK(instr->value()->IsInt32x4Register());
+    HandleSIMD128ToTagged<INT32x4_TYPE,
+                          Int32x4, Runtime::kAllocateInt32x4>(instr);
+  }
+}
+
+
 void LCodeGen::DoSmiTag(LSmiTag* instr) {
   HChange* hchange = instr->hydrogen();
   Register input = ToRegister(instr->value());
@@ -4886,6 +6073,39 @@ void LCodeGen::DoNumberUntagD(LNumberUntagD* instr) {
       ? NUMBER_CANDIDATE_IS_SMI : NUMBER_CANDIDATE_IS_ANY_TAGGED;
 
   EmitNumberUntagD(instr, input_reg, result_reg, mode);
+}
+
+
+template<InstanceType I, class T>
+void LCodeGen::HandleTaggedToSIMD128(LTaggedToSIMD128* instr) {
+  LOperand* input = instr->value();
+  DCHECK(input->IsRegister());
+  LOperand* result = instr->result();
+  DCHECK(result->IsSIMD128Register());
+
+  Register input_reg = ToRegister(input);
+  XMMRegister result_reg = ToSIMD128Register(result);
+
+  __ testp(input_reg, Immediate(kSmiTagMask));
+  DeoptimizeIf(zero, instr, Deoptimizer::kSmi);
+  __ CmpObjectType(input_reg, I, kScratchRegister);
+  DeoptimizeIf(not_equal, instr, Deoptimizer::kNotASIMD128);
+
+  // Load value to SIMD register.
+  __ movups(result_reg, FieldOperand(input_reg, T::kValueOffset));
+}
+
+
+void LCodeGen::DoTaggedToSIMD128(LTaggedToSIMD128* instr) {
+  if (instr->representation().IsFloat32x4()) {
+    HandleTaggedToSIMD128<FLOAT32x4_TYPE, Float32x4>(instr);
+  } else if (instr->representation().IsBool32x4()) {
+    DCHECK(instr->representation().IsBool32x4());
+    HandleTaggedToSIMD128<BOOL32x4_TYPE, Bool32x4>(instr);
+  } else {
+    DCHECK(instr->representation().IsInt32x4());
+    HandleTaggedToSIMD128<INT32x4_TYPE, Int32x4>(instr);
+  }
 }
 
 

@@ -60,6 +60,10 @@ class LCodeGen: public LCodeGenBase {
   Operand ToOperand(LOperand* op) const;
   Register ToRegister(LOperand* op) const;
   XMMRegister ToDoubleRegister(LOperand* op) const;
+  XMMRegister ToFloat32x4Register(LOperand* op) const;
+  XMMRegister ToBool32x4Register(LOperand* op) const;
+  XMMRegister ToInt32x4Register(LOperand* op) const;
+  XMMRegister ToSIMD128Register(LOperand* op) const;
 
   bool IsInteger32(LConstantOperand* op) const;
   bool IsSmi(LConstantOperand* op) const;
@@ -93,6 +97,8 @@ class LCodeGen: public LCodeGenBase {
                              IntegerSignedness signedness);
 
   void DoDeferredTaggedToI(LTaggedToI* instr, Label* done);
+  void DoDeferredFloat32x4ToTagged(LInstruction* instr);
+  void DoDeferredInt32x4ToTagged(LInstruction* instr);
   void DoDeferredMathAbsTaggedHeapNumber(LMathAbs* instr);
   void DoDeferredStackCheck(LStackCheck* instr);
   void DoDeferredMaybeGrowElements(LMaybeGrowElements* instr);
@@ -103,6 +109,12 @@ class LCodeGen: public LCodeGenBase {
   void DoDeferredLoadMutableDouble(LLoadFieldByIndex* instr,
                                    Register object,
                                    Register index);
+  void DoDeferredSIMD128ToTagged(LInstruction* instr, Runtime::FunctionId id);
+
+  template<InstanceType I, class T>
+  void HandleTaggedToSIMD128(LTaggedToSIMD128* instr);
+  template<InstanceType I, class T, Runtime::FunctionId F>
+  void HandleSIMD128ToTagged(LSIMD128ToTagged* instr);
 
   // Parallel move support.
   void DoParallelMove(LParallelMove* move);
@@ -220,6 +232,10 @@ class LCodeGen: public LCodeGenBase {
 
   Register ToRegister(int index) const;
   XMMRegister ToDoubleRegister(int index) const;
+  XMMRegister ToFloat32x4Register(int index) const;
+  XMMRegister ToBool32x4Register(int index) const;
+  XMMRegister ToInt32x4Register(int index) const;
+  XMMRegister ToSIMD128Register(int index) const;
   int32_t ToRepresentation(LConstantOperand* op, const Representation& r) const;
   int32_t ToInteger32(LConstantOperand* op) const;
   ExternalReference ToExternalReference(LConstantOperand* op) const;
@@ -285,6 +301,9 @@ class LCodeGen: public LCodeGenBase {
 
   void EnsureSpaceForLazyDeopt(int space_needed) override;
   void DoLoadKeyedExternalArray(LLoadKeyed* instr);
+  void HandleExternalArrayOpRequiresTemp(LOperand* key,
+                                         Representation key_representation,
+                                         ElementsKind elements_kind);
   void DoLoadKeyedFixedDoubleArray(LLoadKeyed* instr);
   void DoLoadKeyedFixedArray(LLoadKeyed* instr);
   void DoStoreKeyedExternalArray(LStoreKeyed* instr);
