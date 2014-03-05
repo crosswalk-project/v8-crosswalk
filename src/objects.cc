@@ -10793,6 +10793,27 @@ void DeoptimizationInputData::DeoptimizationInputDataPrint(
           break;
         }
 
+        case Translation::FLOAT32x4_REGISTER: {
+          int reg_code = iterator.Next();
+          os << "{input=" << SIMD128Register::AllocationIndexToString(reg_code)
+             << "}";
+          break;
+        }
+
+        case Translation::FLOAT64x2_REGISTER: {
+          int reg_code = iterator.Next();
+          os << "{input=" << SIMD128Register::AllocationIndexToString(reg_code)
+             << "}";
+          break;
+        }
+
+        case Translation::INT32x4_REGISTER: {
+          int reg_code = iterator.Next();
+          os << "{input=" << SIMD128Register::AllocationIndexToString(reg_code)
+             << "}";
+          break;
+        }
+
         case Translation::STACK_SLOT: {
           int input_slot_index = iterator.Next();
           os << "{input=" << input_slot_index << "}";
@@ -10812,6 +10833,24 @@ void DeoptimizationInputData::DeoptimizationInputDataPrint(
         }
 
         case Translation::DOUBLE_STACK_SLOT: {
+          int input_slot_index = iterator.Next();
+          os << "{input=" << input_slot_index << "}";
+          break;
+        }
+
+        case Translation::FLOAT32x4_STACK_SLOT: {
+          int input_slot_index = iterator.Next();
+          os << "{input=" << input_slot_index << "}";
+          break;
+        }
+
+        case Translation::FLOAT64x2_STACK_SLOT: {
+          int input_slot_index = iterator.Next();
+          os << "{input=" << input_slot_index << "}";
+          break;
+        }
+
+        case Translation::INT32x4_STACK_SLOT: {
           int input_slot_index = iterator.Next();
           os << "{input=" << input_slot_index << "}";
           break;
