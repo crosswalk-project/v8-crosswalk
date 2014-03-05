@@ -4371,9 +4371,9 @@ void LCodeGen::DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr) {
   Register temp2 = ToRegister(instr->temp2());
   Register input_reg = ToRegister(instr->value());
   __ SmiTst(input_reg);
-  DeoptimizeIf(eq, instr);
+  DeoptimizeIf(eq, instr, "input is smi");
   __ CompareObjectType(input_reg, temp, no_reg, T::kInstanceType);
-  DeoptimizeIf(ne, instr);
+  DeoptimizeIf(ne, instr, "input is not SIMD128");
 
   STATIC_ASSERT(T::kValueSize % kPointerSize == 0);
   Register external_pointer = ToRegister(instr->elements());
