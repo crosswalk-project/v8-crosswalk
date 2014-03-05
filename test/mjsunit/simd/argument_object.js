@@ -26,7 +26,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Flags: --simd-object --allow-natives-syntax --use-escape-analysis
-
+/*
 function testArgumentsObjectwithFloat32x4Field() {
   "use strict";
   var forceDeopt = { deopt:false };
@@ -122,3 +122,4 @@ function testArgumentsObjectwithInt32x4Field() {
 }
 
 testArgumentsObjectwithInt32x4Field();
+*/
