@@ -36,8 +36,20 @@ void HRepresentationChangesPhase::InsertRepresentationChangeForUse(
   }
 
   if (new_value == NULL) {
-    new_value = new(graph()->zone()) HChange(
-        value, to, is_truncating_to_smi, is_truncating_to_int);
+    if (((to.IsFloat32x4() || to.IsBool32x4() || to.IsInt32x4()) &&
+         !value->representation().IsTagged()) ||
+        ((value->representation().IsFloat32x4() ||
+          value->representation().IsBool32x4() ||
+          value->representation().IsInt32x4()) &&
+         !to.IsTagged())) {
+      new_value = HUnarySIMDOperation::New(
+          graph()->isolate(), graph()->zone(),
+          graph()->entry_block()->last_environment()->context(),
+          value, kSIMD128Change, to);
+    } else {
+      new_value = new(graph()->zone()) HChange(
+          value, to, is_truncating_to_smi, is_truncating_to_int);
+    }
     if (!use_value->operand_position(use_index).IsUnknown()) {
       new_value->set_position(use_value->operand_position(use_index));
     } else {

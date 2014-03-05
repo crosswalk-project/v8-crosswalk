@@ -15,6 +15,7 @@ namespace internal {
 
 
 bool CpuFeatures::SupportsCrankshaft() { return true; }
+bool CpuFeatures::SupportsSIMD128InCrankshaft() { return false; }
 
 
 void RelocInfo::apply(intptr_t delta) {
