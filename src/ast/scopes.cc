@@ -1337,7 +1337,7 @@ void Scope::ResolveVariable(ParseInfo* info, VariableProxy* proxy,
 void Scope::ResolveTo(ParseInfo* info, BindingKind binding_kind,
                       VariableProxy* proxy, Variable* var) {
 #ifdef DEBUG
-  if (info->script_is_native()) {
+  if (info->script_is_native() && var != 0x0) {
     // To avoid polluting the global object in native scripts
     //  - Variables must not be allocated to the global scope.
     CHECK_NOT_NULL(outer_scope());

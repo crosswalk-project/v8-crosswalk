@@ -225,6 +225,7 @@ class CpuFeatures : public AllStatic {
   }
 
   static inline bool SupportsCrankshaft();
+  static inline bool SupportsSIMD128InCrankshaft();
 
   static inline bool SupportsSimd128();
 

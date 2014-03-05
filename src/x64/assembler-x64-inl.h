@@ -17,6 +17,7 @@ namespace internal {
 bool CpuFeatures::SupportsCrankshaft() { return true; }
 
 bool CpuFeatures::SupportsSimd128() { return false; }
+bool CpuFeatures::SupportsSIMD128InCrankshaft() { return true; }
 
 // -----------------------------------------------------------------------------
 // Implementation of Assembler

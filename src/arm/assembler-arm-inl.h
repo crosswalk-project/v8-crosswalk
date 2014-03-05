@@ -49,6 +49,7 @@ namespace internal {
 bool CpuFeatures::SupportsCrankshaft() { return IsSupported(VFP3); }
 
 bool CpuFeatures::SupportsSimd128() { return false; }
+bool CpuFeatures::SupportsSIMD128InCrankshaft() { return false; }
 
 int DoubleRegister::NumRegisters() {
   return CpuFeatures::IsSupported(VFP32DREGS) ? 32 : 16;
