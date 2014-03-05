@@ -1052,6 +1052,19 @@ int DisassemblerIA32::InstructionDecode(v8::internal::Vector<char> out_buffer,
                            NameOfXMMRegister(regop),
                            NameOfXMMRegister(rm));
             data++;
+          } else if (f0byte == 0x10) {
+            data += 2;
+            int mod, regop, rm;
+            get_modrm(*data, &mod, &regop, &rm);
+            AppendToBuffer("movups %s,", NameOfXMMRegister(regop));
+            data += PrintRightXMMOperand(data);
+          } else if (f0byte == 0x11) {
+            AppendToBuffer("movups ");
+            data += 2;
+            int mod, regop, rm;
+            get_modrm(*data, &mod, &regop, &rm);
+            data += PrintRightXMMOperand(data);
+            AppendToBuffer(",%s", NameOfXMMRegister(regop));
           } else if (f0byte >= 0x53 && f0byte <= 0x5F) {
             const char* const pseudo_op[] = {
               "rcpps",

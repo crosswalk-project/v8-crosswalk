@@ -279,6 +279,7 @@ const XMMRegister xmm15 = { 15 };
 
 
 typedef XMMRegister DoubleRegister;
+typedef XMMRegister SIMD128Register;
 
 
 enum Condition {
@@ -1097,6 +1098,8 @@ class Assembler : public AssemblerBase {
 
   // SSE instructions
   void movaps(XMMRegister dst, XMMRegister src);
+  void movups(XMMRegister dst, const Operand& src);
+  void movups(const Operand& dst, XMMRegister src);
   void movss(XMMRegister dst, const Operand& src);
   void movss(const Operand& dst, XMMRegister src);
   void shufps(XMMRegister dst, XMMRegister src, byte imm8);

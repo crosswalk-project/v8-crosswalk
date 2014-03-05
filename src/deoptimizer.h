@@ -55,6 +55,9 @@ static inline double read_double_value(Address p) {
 #endif  // V8_HOST_CAN_READ_UNALIGNED
 }
 
+static inline simd128_value_t read_simd128_value(Address p) {
+  return *reinterpret_cast<simd128_value_t*>(p);
+}
 
 class FrameDescription;
 class TranslationIterator;
@@ -72,6 +75,21 @@ class HeapNumberMaterializationDescriptor BASE_EMBEDDED {
  private:
   T destination_;
   double value_;
+};
+
+
+template<typename T>
+class SIMD128MaterializationDescriptor BASE_EMBEDDED {
+ public:
+  SIMD128MaterializationDescriptor(T destination, simd128_value_t value)
+      : destination_(destination), value_(value) { }
+
+  T destination() const { return destination_; }
+  simd128_value_t value() const { return value_; }
+
+ private:
+  T destination_;
+  simd128_value_t value_;
 };
 
 
@@ -349,7 +367,10 @@ class Deoptimizer : public Malloced {
   void AddObjectDuplication(intptr_t slot, int object_index);
   void AddObjectTaggedValue(intptr_t value);
   void AddObjectDoubleValue(double value);
+  void AddObjectSIMD128Value(simd128_value_t value, int translation_opcode);
   void AddDoubleValue(intptr_t slot_address, double value);
+  void AddSIMD128Value(intptr_t slot_address, simd128_value_t value,
+                       int translation_opcode);
 
   bool ArgumentsObjectIsAdapted(int object_index) {
     ObjectMaterializationDescriptor desc = deferred_objects_.at(object_index);
@@ -398,9 +419,9 @@ class Deoptimizer : public Malloced {
   void SetPlatformCompiledStubRegisters(FrameDescription* output_frame,
                                         CodeStubInterfaceDescriptor* desc);
 
-  // Fill the given output frame's double registers with the original values
-  // from the input frame's double registers.
-  void CopyDoubleRegisters(FrameDescription* output_frame);
+  // Fill the given output frame's simd128 registers with the original values
+  // from the input frame's simd128 registers.
+  void CopySIMD128Registers(FrameDescription* output_frame);
 
   // Determines whether the input frame contains alignment padding by looking
   // at the dynamic alignment state slot inside the frame.
@@ -432,8 +453,14 @@ class Deoptimizer : public Malloced {
   List<Object*> deferred_objects_tagged_values_;
   List<HeapNumberMaterializationDescriptor<int> >
       deferred_objects_double_values_;
+  List<SIMD128MaterializationDescriptor<int> >
+      deferred_objects_float32x4_values_;
+  List<SIMD128MaterializationDescriptor<int> >
+      deferred_objects_int32x4_values_;
   List<ObjectMaterializationDescriptor> deferred_objects_;
   List<HeapNumberMaterializationDescriptor<Address> > deferred_heap_numbers_;
+  List<SIMD128MaterializationDescriptor<Address> > deferred_float32x4s_;
+  List<SIMD128MaterializationDescriptor<Address> > deferred_int32x4s_;
 
   // Key for lookup of previously materialized objects
   Address stack_fp_;
@@ -500,6 +527,11 @@ class FrameDescription {
     return read_double_value(reinterpret_cast<Address>(ptr));
   }
 
+  simd128_value_t GetSIMD128FrameSlot(unsigned offset) {
+    intptr_t* ptr = GetFrameSlotPointer(offset);
+    return read_simd128_value(reinterpret_cast<Address>(ptr));
+  }
+
   void SetFrameSlot(unsigned offset, intptr_t value) {
     *GetFrameSlotPointer(offset) = value;
   }
@@ -523,9 +555,11 @@ class FrameDescription {
     return registers_[n];
   }
 
-  double GetDoubleRegister(unsigned n) const {
-    ASSERT(n < ARRAY_SIZE(double_registers_));
-    return double_registers_[n];
+  double GetDoubleRegister(unsigned n) const;
+
+  simd128_value_t GetSIMD128Register(unsigned n) const {
+    ASSERT(n < ARRAY_SIZE(simd128_registers_));
+    return simd128_registers_[n];
   }
 
   void SetRegister(unsigned n, intptr_t value) {
@@ -533,9 +567,11 @@ class FrameDescription {
     registers_[n] = value;
   }
 
-  void SetDoubleRegister(unsigned n, double value) {
-    ASSERT(n < ARRAY_SIZE(double_registers_));
-    double_registers_[n] = value;
+  void SetDoubleRegister(unsigned n, double value);
+
+  void SetSIMD128Register(unsigned n, simd128_value_t value) {
+    ASSERT(n < ARRAY_SIZE(simd128_registers_));
+    simd128_registers_[n] = value;
   }
 
   intptr_t GetTop() const { return top_; }
@@ -579,8 +615,8 @@ class FrameDescription {
     return OFFSET_OF(FrameDescription, registers_);
   }
 
-  static int double_registers_offset() {
-    return OFFSET_OF(FrameDescription, double_registers_);
+  static int simd128_registers_offset() {
+    return OFFSET_OF(FrameDescription, simd128_registers_);
   }
 
   static int frame_size_offset() {
@@ -612,7 +648,7 @@ class FrameDescription {
   uintptr_t frame_size_;  // Number of bytes.
   JSFunction* function_;
   intptr_t registers_[Register::kNumRegisters];
-  double double_registers_[DoubleRegister::kMaxNumRegisters];
+  simd128_value_t simd128_registers_[SIMD128Register::kMaxNumRegisters];
   intptr_t top_;
   intptr_t pc_;
   intptr_t fp_;
@@ -715,10 +751,14 @@ class TranslationIterator BASE_EMBEDDED {
   V(INT32_REGISTER)                                                            \
   V(UINT32_REGISTER)                                                           \
   V(DOUBLE_REGISTER)                                                           \
+  V(FLOAT32x4_REGISTER)                                                        \
+  V(INT32x4_REGISTER)                                                          \
   V(STACK_SLOT)                                                                \
   V(INT32_STACK_SLOT)                                                          \
   V(UINT32_STACK_SLOT)                                                         \
   V(DOUBLE_STACK_SLOT)                                                         \
+  V(FLOAT32x4_STACK_SLOT)                                                      \
+  V(INT32x4_STACK_SLOT)                                                        \
   V(LITERAL)
 
 
@@ -757,10 +797,12 @@ class Translation BASE_EMBEDDED {
   void StoreInt32Register(Register reg);
   void StoreUint32Register(Register reg);
   void StoreDoubleRegister(DoubleRegister reg);
+  void StoreSIMD128Register(SIMD128Register reg, Opcode opcode);
   void StoreStackSlot(int index);
   void StoreInt32StackSlot(int index);
   void StoreUint32StackSlot(int index);
   void StoreDoubleStackSlot(int index);
+  void StoreSIMD128StackSlot(int index, Opcode opcode);
   void StoreLiteral(int literal_id);
   void StoreArgumentsObject(bool args_known, int args_index, int args_length);
 
@@ -790,6 +832,8 @@ class SlotRef BASE_EMBEDDED {
     INT32,
     UINT32,
     DOUBLE,
+    FLOAT32x4,
+    INT32x4,
     LITERAL,
     DEFERRED_OBJECT,   // Object captured by the escape analysis.
                        // The number of nested objects can be obtained
