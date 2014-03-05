@@ -48,6 +48,7 @@ namespace internal {
 
 
 bool CpuFeatures::SupportsCrankshaft() { return IsSupported(FPU); }
+bool CpuFeatures::SupportsSIMD128InCrankshaft() { return false; }
 
 
 // -----------------------------------------------------------------------------
