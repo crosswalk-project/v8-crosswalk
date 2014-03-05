@@ -107,6 +107,8 @@ class CPU V8_FINAL BASE_EMBEDDED {
 
   static bool SupportsCrankshaft();
 
+  static bool SupportsSIMD128InCrankshaft();
+
   // Flush instruction cache.
   static void FlushICache(void* start, size_t size);
 
