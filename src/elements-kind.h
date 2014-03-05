@@ -124,6 +124,11 @@ inline bool IsDoubleOrFloatElementsKind(ElementsKind kind) {
 }
 
 
+inline bool IsSIMD128ElementsKind(ElementsKind kind) {
+  return false;
+}
+
+
 inline bool IsFastSmiOrObjectElementsKind(ElementsKind kind) {
   return kind == FAST_SMI_ELEMENTS ||
       kind == FAST_HOLEY_SMI_ELEMENTS ||
