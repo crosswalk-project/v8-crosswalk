@@ -2694,6 +2694,46 @@ LInstruction* LChunkBuilder::DoStoreFrameContext(HStoreFrameContext* instr) {
   return new(zone()) LStoreFrameContext(context);
 }
 
+LInstruction* LChunkBuilder::DoNullarySIMDOperation(
+    HNullarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+LInstruction* LChunkBuilder::DoUnarySIMDOperation(HUnarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+LInstruction* LChunkBuilder::DoBinarySIMDOperation(
+    HBinarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+LInstruction* LChunkBuilder::DoTernarySIMDOperation(
+    HTernarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+LInstruction* LChunkBuilder::DoQuarternarySIMDOperation(
+    HQuarternarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+LInstruction* LChunkBuilder::DoQuinarySIMDOperation(
+    HQuinarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+LInstruction* LChunkBuilder::DoSenarySIMDOperation(
+    HSenarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
 
 }  // namespace internal
 }  // namespace v8

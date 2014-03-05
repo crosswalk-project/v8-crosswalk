@@ -221,6 +221,11 @@ Type::bitset BitsetType::Lub(i::Map* map) {
     case JS_BOUND_FUNCTION_TYPE:
       if (map->is_undetectable()) return kUndetectable;
       return kOtherObject;
+    case FLOAT32x4_TYPE:
+    case INT32x4_TYPE:
+    case BOOL32x4_TYPE:
+      if (map->is_undetectable()) return kUndetectable;
+      return kOtherObject;
     case JS_FUNCTION_TYPE:
       if (map->is_undetectable()) return kUndetectable;
       return kFunction;
