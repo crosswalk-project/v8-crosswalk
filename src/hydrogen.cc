@@ -11512,6 +11512,15 @@ void HTracer::TraceLiveRange(LiveRange* range, const char* type,
       if (op->IsDoubleRegister()) {
         trace_.Add(" \"%s\"",
                    DoubleRegister::AllocationIndexToString(assigned_reg));
+      } else if (op->IsFloat32x4Register()) {
+        trace_.Add(" \"%s\"",
+                   SIMD128Register::AllocationIndexToString(assigned_reg));
+      } else if (op->IsFloat64x2Register()) {
+        trace_.Add(" \"%s\"",
+                   SIMD128Register::AllocationIndexToString(assigned_reg));
+      } else if (op->IsInt32x4Register()) {
+        trace_.Add(" \"%s\"",
+                   SIMD128Register::AllocationIndexToString(assigned_reg));
       } else {
         ASSERT(op->IsRegister());
         trace_.Add(" \"%s\"", Register::AllocationIndexToString(assigned_reg));
@@ -11520,6 +11529,12 @@ void HTracer::TraceLiveRange(LiveRange* range, const char* type,
       LOperand* op = range->TopLevel()->GetSpillOperand();
       if (op->IsDoubleStackSlot()) {
         trace_.Add(" \"double_stack:%d\"", op->index());
+      } else if (op->IsFloat32x4StackSlot()) {
+        trace_.Add(" \"float32x4_stack:%d\"", op->index());
+      } else if (op->IsFloat64x2StackSlot()) {
+        trace_.Add(" \"float64x2_stack:%d\"", op->index());
+      } else if (op->IsInt32x4StackSlot()) {
+        trace_.Add(" \"int32x4_stack:%d\"", op->index());
       } else {
         ASSERT(op->IsStackSlot());
         trace_.Add(" \"stack:%d\"", op->index());

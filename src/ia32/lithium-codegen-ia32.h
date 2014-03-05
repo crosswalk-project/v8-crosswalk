@@ -67,6 +67,10 @@ class LCodeGen: public LCodeGenBase {
   Operand ToOperand(LOperand* op) const;
   Register ToRegister(LOperand* op) const;
   XMMRegister ToDoubleRegister(LOperand* op) const;
+  XMMRegister ToFloat32x4Register(LOperand* op) const;
+  XMMRegister ToFloat64x2Register(LOperand* op) const;
+  XMMRegister ToInt32x4Register(LOperand* op) const;
+  XMMRegister ToSIMD128Register(LOperand* op) const;
   X87Register ToX87Register(LOperand* op) const;
 
   bool IsInteger32(LConstantOperand* op) const;
@@ -144,6 +148,11 @@ class LCodeGen: public LCodeGenBase {
                                    Register object,
                                    Register index);
   void DoDeferredSIMD128ToTagged(LInstruction* instr, Runtime::FunctionId id);
+
+  template<class T>
+  void HandleTaggedToSIMD128(LTaggedToSIMD128* instr);
+  template<class T>
+  void HandleSIMD128ToTagged(LSIMD128ToTagged* instr);
 
   // Parallel move support.
   void DoParallelMove(LParallelMove* move);
@@ -266,6 +275,10 @@ class LCodeGen: public LCodeGenBase {
 
   Register ToRegister(int index) const;
   XMMRegister ToDoubleRegister(int index) const;
+  XMMRegister ToFloat32x4Register(int index) const;
+  XMMRegister ToFloat64x2Register(int index) const;
+  XMMRegister ToInt32x4Register(int index) const;
+  XMMRegister ToSIMD128Register(int index) const;
   X87Register ToX87Register(int index) const;
   int32_t ToRepresentation(LConstantOperand* op, const Representation& r) const;
   int32_t ToInteger32(LConstantOperand* op) const;
