@@ -373,6 +373,7 @@ class CallSite {
   T(TypedArraySetSourceTooLarge, "Source is too large")                        \
   T(UnsupportedTimeZone, "Unsupported time zone specified %")                  \
   T(ValueOutOfRange, "Value % out of range for % options property %")          \
+  T(InvalidOffset, "invalid_offset")                                           \
   /* SyntaxError */                                                            \
   T(BadGetterArity, "Getter must not have any formal parameters.")             \
   T(BadSetterArity, "Setter must have exactly one formal parameter.")          \

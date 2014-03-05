@@ -185,6 +185,7 @@ DOUBLE_REGISTERS(DECLARE_REGISTER)
 const DoubleRegister no_double_reg = {DoubleRegister::kCode_no_reg};
 
 typedef DoubleRegister XMMRegister;
+typedef DoubleRegister SIMD128Register;
 
 enum Condition {
   // any value < 0 is considered no_condition
@@ -302,6 +303,7 @@ enum ScaleFactor {
   times_2 = 1,
   times_4 = 2,
   times_8 = 3,
+  maximal_scale_factor = times_8,
   times_int_size = times_4,
   times_half_pointer_size = times_2,
   times_pointer_size = times_4,
@@ -344,6 +346,11 @@ class Operand BASE_EMBEDDED {
     return Operand(index, scale, reinterpret_cast<int32_t>(table),
                    RelocInfo::INTERNAL_REFERENCE);
   }
+
+  // Offset from existing memory operand.
+  // Offset is added to existing displacement as 32-bit signed values and
+  // this must not overflow.
+  Operand(const Operand& base, int32_t offset);
 
   static Operand StaticVariable(const ExternalReference& ext) {
     return Operand(reinterpret_cast<int32_t>(ext.address()),
@@ -926,7 +933,12 @@ class Assembler : public AssemblerBase {
   void ucomiss(XMMRegister dst, XMMRegister src) { ucomiss(dst, Operand(src)); }
   void ucomiss(XMMRegister dst, const Operand& src);
   void movaps(XMMRegister dst, XMMRegister src);
+  void movlhps(XMMRegister dst, XMMRegister src);
+  void movhlps(XMMRegister dst, XMMRegister src);
+  void movups(XMMRegister dst, const Operand& src);
+  void movups(const Operand& dst, XMMRegister src);
   void shufps(XMMRegister dst, XMMRegister src, byte imm8);
+  void shufpd(XMMRegister dst, XMMRegister src, byte imm8);
 
   void maxss(XMMRegister dst, XMMRegister src) { maxss(dst, Operand(src)); }
   void maxss(XMMRegister dst, const Operand& src);
@@ -948,6 +960,63 @@ class Assembler : public AssemblerBase {
   void mulps(XMMRegister dst, XMMRegister src) { mulps(dst, Operand(src)); }
   void divps(XMMRegister dst, const Operand& src);
   void divps(XMMRegister dst, XMMRegister src) { divps(dst, Operand(src)); }
+  void minps(XMMRegister dst, XMMRegister src) { minps(dst, Operand(src)); }
+  void minps(XMMRegister dst, const Operand& src);
+  void maxps(XMMRegister dst, XMMRegister src) { maxps(dst, Operand(src)); }
+  void maxps(XMMRegister dst, const Operand& src);
+  void rcpps(XMMRegister dst, XMMRegister src) { rcpps(dst, Operand(src)); }
+  void rcpps(XMMRegister dst, const Operand& src);
+  void rsqrtps(XMMRegister dst, XMMRegister src) { rsqrtps(dst, Operand(src)); }
+  void rsqrtps(XMMRegister dst, const Operand& src);
+  void sqrtps(XMMRegister dst, XMMRegister src) { sqrtps(dst, Operand(src)); }
+  void sqrtps(XMMRegister dst, const Operand& src);
+  void sqrtpd(XMMRegister dst, XMMRegister src) { sqrtpd(dst, Operand(src)); }
+  void sqrtpd(XMMRegister dst, const Operand& src);
+
+  void addpd(XMMRegister dst, const Operand& src);
+  void addpd(XMMRegister dst, XMMRegister src) { addpd(dst, Operand(src)); }
+  void subpd(XMMRegister dst, const Operand& src);
+  void subpd(XMMRegister dst, XMMRegister src) { subpd(dst, Operand(src)); }
+  void mulpd(XMMRegister dst, const Operand& src);
+  void mulpd(XMMRegister dst, XMMRegister src) { mulpd(dst, Operand(src)); }
+  void divpd(XMMRegister dst, const Operand& src);
+  void divpd(XMMRegister dst, XMMRegister src) { divpd(dst, Operand(src)); }
+  void minpd(XMMRegister dst, XMMRegister src) { minpd(dst, Operand(src)); }
+  void minpd(XMMRegister dst, const Operand& src);
+  void maxpd(XMMRegister dst, XMMRegister src) { maxpd(dst, Operand(src)); }
+  void maxpd(XMMRegister dst, const Operand& src);
+
+  void cvtdq2ps(XMMRegister dst, const Operand& src);
+  void cmpps(XMMRegister dst, XMMRegister src, int8_t cmp);
+  void cmpeqps(XMMRegister dst, XMMRegister src);
+  void cmpltps(XMMRegister dst, XMMRegister src);
+  void cmpleps(XMMRegister dst, XMMRegister src);
+  void cmpneqps(XMMRegister dst, XMMRegister src);
+  void cmpnltps(XMMRegister dst, XMMRegister src);
+  void cmpnleps(XMMRegister dst, XMMRegister src);
+
+  // SSE 2, introduced by SIMD
+  void paddd(XMMRegister dst, XMMRegister src) { paddd(dst, Operand(src)); }
+  void paddd(XMMRegister dst, const Operand& src);
+  void psubd(XMMRegister dst, XMMRegister src) { psubd(dst, Operand(src)); }
+  void psubd(XMMRegister dst, const Operand& src);
+  void pmuludq(XMMRegister dst, XMMRegister src) { pmuludq(dst, Operand(src)); }
+  void pmuludq(XMMRegister dst, const Operand& src);
+  void punpackldq(XMMRegister dst, XMMRegister src) {
+    punpackldq(dst, Operand(src));
+  }
+  void punpackldq(XMMRegister dst, const Operand& src);
+  void cvtps2dq(XMMRegister dst, XMMRegister src) {
+    cvtps2dq(dst, Operand(src));
+  }
+  void cvtps2dq(XMMRegister dst, const Operand& src);
+  void cvtdq2ps(XMMRegister dst, XMMRegister src) {
+    cvtdq2ps(dst, Operand(src));
+  }
+  // SSE 4.1, introduced by SIMD
+  void insertps(XMMRegister dst, XMMRegister src, byte imm8);
+  void pmulld(XMMRegister dst, XMMRegister src) { pmulld(dst, Operand(src)); }
+  void pmulld(XMMRegister dst, const Operand& src);
 
   // SSE2 instructions
   void cvttss2si(Register dst, const Operand& src);
@@ -979,10 +1048,12 @@ class Assembler : public AssemblerBase {
   void divsd(XMMRegister dst, XMMRegister src) { divsd(dst, Operand(src)); }
   void divsd(XMMRegister dst, const Operand& src);
   void xorpd(XMMRegister dst, XMMRegister src);
+  void xorpd(XMMRegister dst, const Operand& src);
   void sqrtsd(XMMRegister dst, XMMRegister src) { sqrtsd(dst, Operand(src)); }
   void sqrtsd(XMMRegister dst, const Operand& src);
 
   void andpd(XMMRegister dst, XMMRegister src);
+  void andpd(XMMRegister dst, const Operand& src);
   void orpd(XMMRegister dst, XMMRegister src);
 
   void ucomisd(XMMRegister dst, XMMRegister src) { ucomisd(dst, Operand(src)); }
@@ -996,6 +1067,7 @@ class Assembler : public AssemblerBase {
 
   void cmpltsd(XMMRegister dst, XMMRegister src);
   void pcmpeqd(XMMRegister dst, XMMRegister src);
+  void pcmpgtd(XMMRegister dst, XMMRegister src);
 
   void punpckldq(XMMRegister dst, XMMRegister src);
   void punpckhdq(XMMRegister dst, XMMRegister src);
@@ -1029,6 +1101,8 @@ class Assembler : public AssemblerBase {
   void movss(XMMRegister dst, const Operand& src);
   void movss(const Operand& dst, XMMRegister src);
   void movss(XMMRegister dst, XMMRegister src) { movss(dst, Operand(src)); }
+  void movq(XMMRegister dst, const Operand& src);
+  void movq(const Operand& dst, XMMRegister src);
   void extractps(Register dst, XMMRegister src, byte imm8);
 
   void pand(XMMRegister dst, XMMRegister src);
@@ -1040,8 +1114,13 @@ class Assembler : public AssemblerBase {
   void psrld(XMMRegister reg, int8_t shift);
   void psllq(XMMRegister reg, int8_t shift);
   void psllq(XMMRegister dst, XMMRegister src);
+  void pslld(XMMRegister dst, XMMRegister src);
+  void psrld(XMMRegister dst, XMMRegister src);
+  void psrad(XMMRegister reg, int8_t shift);
+  void psrad(XMMRegister dst, XMMRegister src);
   void psrlq(XMMRegister reg, int8_t shift);
   void psrlq(XMMRegister dst, XMMRegister src);
+  void psrldq(XMMRegister dst, int8_t shift);
   void pshufd(XMMRegister dst, XMMRegister src, uint8_t shuffle);
   void pextrd(Register dst, XMMRegister src, int8_t offset) {
     pextrd(Operand(dst), src, offset);
