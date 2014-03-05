@@ -943,13 +943,13 @@ void MacroAssembler::EnterExitFramePrologue() {
 void MacroAssembler::EnterExitFrameEpilogue(int argc, bool save_doubles) {
   // Optionally save all XMM registers.
   if (save_doubles) {
-    int space = XMMRegister::kMaxNumRegisters * kDoubleSize +
+    int space = XMMRegister::kMaxNumRegisters * kSIMD128Size +
                 argc * kPointerSize;
     sub(esp, Immediate(space));
     const int offset = -2 * kPointerSize;
     for (int i = 0; i < XMMRegister::kMaxNumRegisters; i++) {
       XMMRegister reg = XMMRegister::from_code(i);
-      movsd(Operand(ebp, offset - ((i + 1) * kDoubleSize)), reg);
+      movups(Operand(ebp, offset - ((i + 1) * kSIMD128Size)), reg);
     }
   } else {
     sub(esp, Immediate(argc * kPointerSize));
@@ -992,7 +992,7 @@ void MacroAssembler::LeaveExitFrame(bool save_doubles, bool pop_arguments) {
     const int offset = -2 * kPointerSize;
     for (int i = 0; i < XMMRegister::kMaxNumRegisters; i++) {
       XMMRegister reg = XMMRegister::from_code(i);
-      movsd(reg, Operand(ebp, offset - ((i + 1) * kDoubleSize)));
+      movups(reg, Operand(ebp, offset - ((i + 1) * kSIMD128Size)));
     }
   }
 
@@ -1526,6 +1526,28 @@ void MacroAssembler::AllocateHeapNumber(Register result,
   // Set the map.
   mov(FieldOperand(result, HeapObject::kMapOffset), Immediate(map));
 }
+
+
+#define SIMD128_HEAP_ALLOCATE_FUNCTIONS(V) \
+  V(Float32x4, float32x4)                  \
+  V(Int32x4, int32x4)                      \
+  V(Bool32x4, bool32x4)
+
+#define DECLARE_SIMD_HEAP_ALLOCATE_FUNCTION(Type, type)                  \
+void MacroAssembler::Allocate##Type(Register result,                     \
+                                    Register scratch1,                   \
+                                    Register scratch2,                   \
+                                    Label* gc_required) {                \
+  /* Allocate SIMD128 object */                                          \
+  Allocate(Type::kSize, result, scratch1, no_reg, gc_required,           \
+           TAG_OBJECT);                                                  \
+  Handle<Map> map = isolate()->factory()->type##_map();                  \
+                                                                         \
+  /*set the map*/                                                        \
+  mov(FieldOperand(result, HeapObject::kMapOffset), Immediate(map));     \
+}
+
+SIMD128_HEAP_ALLOCATE_FUNCTIONS(DECLARE_SIMD_HEAP_ALLOCATE_FUNCTION)
 
 
 void MacroAssembler::AllocateTwoByteString(Register result,
@@ -3116,6 +3138,90 @@ void MacroAssembler::TruncatingDiv(Register dividend, int32_t divisor) {
   mov(eax, dividend);
   shr(eax, 31);
   add(edx, eax);
+}
+
+
+void MacroAssembler::absps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_absolute_constant =
+      { 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF };
+  andps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_absolute_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::abspd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } double_absolute_constant =
+      { 0xFFFFFFFF, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFF };
+  andps(dst,
+        Operand(reinterpret_cast<int32_t>(&double_absolute_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::notps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_not_constant =
+      { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+  xorps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_not_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::negateps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_negate_constant =
+      { 0x80000000, 0x80000000, 0x80000000, 0x80000000 };
+  xorps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_negate_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::negatepd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } double_negate_constant =
+      { 0x00000000, 0x80000000, 0x00000000, 0x80000000 };
+  xorpd(dst,
+        Operand(reinterpret_cast<int32_t>(&double_negate_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::pnegd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } int32_one_constant = { 0x1, 0x1, 0x1, 0x1 };
+  notps(dst);
+  paddd(dst,
+        Operand(reinterpret_cast<int32_t>(&int32_one_constant),
+                RelocInfo::NONE32));
 }
 
 
