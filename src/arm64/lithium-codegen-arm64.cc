@@ -3496,8 +3496,14 @@ void LCodeGen::DoLoadKeyedExternal(LLoadKeyedExternal* instr) {
         break;
       case FLOAT32_ELEMENTS:
       case FLOAT64_ELEMENTS:
+      case INT32x4_ELEMENTS:
+      case FLOAT32x4_ELEMENTS:
+      case FLOAT64x2_ELEMENTS:
       case EXTERNAL_FLOAT32_ELEMENTS:
       case EXTERNAL_FLOAT64_ELEMENTS:
+      case EXTERNAL_INT32x4_ELEMENTS:
+      case EXTERNAL_FLOAT32x4_ELEMENTS:
+      case EXTERNAL_FLOAT64x2_ELEMENTS:
       case FAST_HOLEY_DOUBLE_ELEMENTS:
       case FAST_HOLEY_ELEMENTS:
       case FAST_HOLEY_SMI_ELEMENTS:
@@ -5212,8 +5218,14 @@ void LCodeGen::DoStoreKeyedExternal(LStoreKeyedExternal* instr) {
         break;
       case FLOAT32_ELEMENTS:
       case FLOAT64_ELEMENTS:
+      case INT32x4_ELEMENTS:
+      case FLOAT32x4_ELEMENTS:
+      case FLOAT64x2_ELEMENTS:
       case EXTERNAL_FLOAT32_ELEMENTS:
       case EXTERNAL_FLOAT64_ELEMENTS:
+      case EXTERNAL_INT32x4_ELEMENTS:
+      case EXTERNAL_FLOAT32x4_ELEMENTS:
+      case EXTERNAL_FLOAT64x2_ELEMENTS:
       case FAST_DOUBLE_ELEMENTS:
       case FAST_ELEMENTS:
       case FAST_SMI_ELEMENTS:
