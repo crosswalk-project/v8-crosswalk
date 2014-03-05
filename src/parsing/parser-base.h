@@ -2443,6 +2443,10 @@ ParserBase<Traits>::ParseLeftHandSideExpression(
         typename Traits::Type::ExpressionList args =
             ParseArguments(&spread_pos, classifier, CHECK_OK);
 
+        if (this->BuildSIMD128LoadStoreExpression(
+            &result, args, pos, factory()))
+          break;
+
         // Keep track of eval() calls since they disable all local variable
         // optimizations.
         // The calls that need special treatment are the
