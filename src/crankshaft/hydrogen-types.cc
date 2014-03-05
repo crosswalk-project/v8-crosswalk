@@ -7,6 +7,7 @@
 #include "src/field-type.h"
 #include "src/handles-inl.h"
 #include "src/ostreams.h"
+#include "src/property-details.h"
 
 namespace v8 {
 namespace internal {
@@ -43,6 +44,9 @@ HType HType::FromValue(Handle<Object> value) {
     double n = Handle<v8::internal::HeapNumber>::cast(value)->value();
     return IsSmiDouble(n) ? HType::Smi() : HType::HeapNumber();
   }
+  if (raw_value->IsFloat32x4()) return HType::Float32x4();
+  if (raw_value->IsBool32x4()) return HType::Bool32x4();
+  if (raw_value->IsInt32x4()) return HType::Int32x4();
   if (raw_value->IsString()) return HType::String();
   if (raw_value->IsBoolean()) return HType::Boolean();
   if (raw_value->IsUndefined(isolate)) return HType::Undefined();
@@ -56,6 +60,22 @@ HType HType::FromValue(Handle<Object> value) {
   return HType::HeapObject();
 }
 
+// static
+HType HType::FromRepresentation(Representation representation) {
+  HType result = HType::Tagged();
+  if (representation.IsSmi()) {
+    result = HType::Smi();
+  } else if (representation.IsDouble()) {
+    result = HType::HeapNumber();
+  } else if (representation.IsFloat32x4()) {
+    result = HType::Float32x4();
+  } else if (representation.IsBool32x4()) {
+    result = HType::Bool32x4();
+  } else if (representation.IsInt32x4()) {
+    result = HType::Int32x4();
+  }
+  return result;
+}
 
 std::ostream& operator<<(std::ostream& os, const HType& t) {
   // Note: The c1visualizer syntax for locals allows only a sequence of the

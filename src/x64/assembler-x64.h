@@ -249,6 +249,8 @@ DOUBLE_REGISTERS(DECLARE_REGISTER)
 #undef DECLARE_REGISTER
 const DoubleRegister no_double_reg = {DoubleRegister::kCode_no_reg};
 
+typedef DoubleRegister SIMD128Register;
+
 enum Condition {
   // any value < 0 is considered no_condition
   no_condition  = -1,
@@ -356,10 +358,10 @@ enum ScaleFactor {
   times_2 = 1,
   times_4 = 2,
   times_8 = 3,
+  maximal_scale_factor = times_8,
   times_int_size = times_4,
   times_pointer_size = (kPointerSize == 8) ? times_8 : times_4
 };
-
 
 class Operand BASE_EMBEDDED {
  public:
@@ -1041,10 +1043,10 @@ class Assembler : public AssemblerBase {
   // Use movaps when moving float values and movd for integer
   // values in xmm registers.
   void movss(XMMRegister dst, XMMRegister src);
-
   void movss(XMMRegister dst, const Operand& src);
   void movss(const Operand& dst, XMMRegister src);
   void shufps(XMMRegister dst, XMMRegister src, byte imm8);
+  void shufpd(XMMRegister dst, XMMRegister src, byte imm8);
 
   void cvttss2si(Register dst, const Operand& src);
   void cvttss2si(Register dst, XMMRegister src);
@@ -1066,6 +1068,15 @@ class Assembler : public AssemblerBase {
   void mulps(XMMRegister dst, const Operand& src);
   void divps(XMMRegister dst, XMMRegister src);
   void divps(XMMRegister dst, const Operand& src);
+
+  void addpd(XMMRegister dst, XMMRegister src);
+  void addpd(XMMRegister dst, const Operand& src);
+  void subpd(XMMRegister dst, XMMRegister src);
+  void subpd(XMMRegister dst, const Operand& src);
+  void mulpd(XMMRegister dst, XMMRegister src);
+  void mulpd(XMMRegister dst, const Operand& src);
+  void divpd(XMMRegister dst, XMMRegister src);
+  void divpd(XMMRegister dst, const Operand& src);
 
   void movmskps(Register dst, XMMRegister src);
 
@@ -1139,8 +1150,10 @@ class Assembler : public AssemblerBase {
   void minsd(XMMRegister dst, const Operand& src);
 
   void andpd(XMMRegister dst, XMMRegister src);
+  void andpd(XMMRegister dst, const Operand& src);
   void orpd(XMMRegister dst, XMMRegister src);
   void xorpd(XMMRegister dst, XMMRegister src);
+  void xorpd(XMMRegister dst, const Operand& src);
   void sqrtsd(XMMRegister dst, XMMRegister src);
   void sqrtsd(XMMRegister dst, const Operand& src);
 
@@ -1158,6 +1171,16 @@ class Assembler : public AssemblerBase {
   // SSE 4.1 instruction
   void insertps(XMMRegister dst, XMMRegister src, byte imm8);
   void extractps(Register dst, XMMRegister src, byte imm8);
+
+  void minpd(XMMRegister dst, XMMRegister src);
+  void minpd(XMMRegister dst, const Operand& src);
+  void maxpd(XMMRegister dst, XMMRegister src);
+  void maxpd(XMMRegister dst, const Operand& src);
+  void sqrtpd(XMMRegister dst, XMMRegister src);
+  void sqrtpd(XMMRegister dst, const Operand& src);
+  void punpackldq(XMMRegister dst, XMMRegister src);
+  void punpackldq(XMMRegister dst, const Operand& src);
+
   void pextrd(Register dst, XMMRegister src, int8_t imm8);
   void pinsrd(XMMRegister dst, Register src, int8_t imm8);
   void pinsrd(XMMRegister dst, const Operand& src, int8_t imm8);
@@ -1368,6 +1391,14 @@ class Assembler : public AssemblerBase {
   void vmovsd(const Operand& dst, XMMRegister src) {
     vsd(0x11, src, xmm0, dst);
   }
+
+  void pslld(XMMRegister dst, XMMRegister src);
+  void psrld(XMMRegister dst, XMMRegister src);
+  void psrad(XMMRegister reg, int8_t shift);
+  void psrad(XMMRegister dst, XMMRegister src);
+
+  void pcmpgtd(XMMRegister dst, XMMRegister src);
+  void pcmpltd(XMMRegister dst, XMMRegister src);
 
 #define AVX_SP_3(instr, opcode) \
   AVX_S_3(instr, opcode)        \
