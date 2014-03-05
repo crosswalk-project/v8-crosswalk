@@ -145,6 +145,7 @@ class Representation {
     if (IsHeapObject()) return other.IsNone();
     if (kind_ == kUInteger8 && other.kind_ == kInteger8) return false;
     if (kind_ == kUInteger16 && other.kind_ == kInteger16) return false;
+    if (IsSIMD128() && other.IsSIMD128()) return false;
     return kind_ > other.kind_;
   }
 
@@ -186,6 +187,7 @@ class Representation {
   bool IsDouble() const { return kind_ == kDouble; }
   bool IsFloat32x4() const { return kind_ == kFloat32x4; }
   bool IsInt32x4() const { return kind_ == kInt32x4; }
+  bool IsSIMD128() const { return IsFloat32x4() || IsInt32x4(); }
   bool IsHeapObject() const { return kind_ == kHeapObject; }
   bool IsExternal() const { return kind_ == kExternal; }
   bool IsSpecialization() const {

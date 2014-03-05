@@ -385,6 +385,11 @@ XMMRegister LCodeGen::ToDoubleRegister(int index) const {
 }
 
 
+XMMRegister LCodeGen::ToSIMD128Register(int index) const {
+  return XMMRegister::FromAllocationIndex(index);
+}
+
+
 Register LCodeGen::ToRegister(LOperand* op) const {
   ASSERT(op->IsRegister());
   return ToRegister(op->index());
@@ -394,6 +399,24 @@ Register LCodeGen::ToRegister(LOperand* op) const {
 XMMRegister LCodeGen::ToDoubleRegister(LOperand* op) const {
   ASSERT(op->IsDoubleRegister());
   return ToDoubleRegister(op->index());
+}
+
+
+XMMRegister LCodeGen::ToFloat32x4Register(LOperand* op) const {
+  ASSERT(op->IsFloat32x4Register());
+  return ToSIMD128Register(op->index());
+}
+
+
+XMMRegister LCodeGen::ToInt32x4Register(LOperand* op) const {
+  ASSERT(op->IsInt32x4Register());
+  return ToSIMD128Register(op->index());
+}
+
+
+XMMRegister LCodeGen::ToSIMD128Register(LOperand* op) const {
+  ASSERT(op->IsFloat32x4Register() || op->IsInt32x4Register());
+  return ToSIMD128Register(op->index());
 }
 
 
@@ -457,7 +480,8 @@ static int ArgumentsOffsetWithoutFrame(int index) {
 Operand LCodeGen::ToOperand(LOperand* op) const {
   // Does not handle registers. In X64 assembler, plain registers are not
   // representable as an Operand.
-  ASSERT(op->IsStackSlot() || op->IsDoubleStackSlot());
+  ASSERT(op->IsStackSlot() || op->IsDoubleStackSlot() ||
+         op->IsFloat32x4StackSlot() || op->IsInt32x4StackSlot());
   if (NeedsEagerFrame()) {
     return Operand(rbp, StackSlotOffset(op->index()));
   } else {
@@ -570,6 +594,12 @@ void LCodeGen::AddToTranslation(LEnvironment* environment,
     }
   } else if (op->IsDoubleStackSlot()) {
     translation->StoreDoubleStackSlot(op->index());
+  } else if (op->IsFloat32x4StackSlot()) {
+    translation->StoreSIMD128StackSlot(op->index(),
+                                       Translation::FLOAT32x4_STACK_SLOT);
+  } else if (op->IsInt32x4StackSlot()) {
+    translation->StoreSIMD128StackSlot(op->index(),
+                                       Translation::INT32x4_STACK_SLOT);
   } else if (op->IsArgument()) {
     ASSERT(is_tagged);
     int src_index = GetStackSlotCount() + op->index();
@@ -586,6 +616,12 @@ void LCodeGen::AddToTranslation(LEnvironment* environment,
   } else if (op->IsDoubleRegister()) {
     XMMRegister reg = ToDoubleRegister(op);
     translation->StoreDoubleRegister(reg);
+  } else if (op->IsFloat32x4Register()) {
+    XMMRegister reg = ToFloat32x4Register(op);
+    translation->StoreSIMD128Register(reg, Translation::FLOAT32x4_REGISTER);
+  } else if (op->IsInt32x4Register()) {
+    XMMRegister reg = ToInt32x4Register(op);
+    translation->StoreSIMD128Register(reg, Translation::INT32x4_REGISTER);
   } else if (op->IsConstantOperand()) {
     HConstant* constant = chunk()->LookupConstant(LConstantOperand::cast(op));
     int src_index = DefineDeoptimizationLiteral(constant->handle(isolate()));
@@ -2874,26 +2910,6 @@ void LCodeGen::DoAccessArgumentsAt(LAccessArgumentsAt* instr) {
 }
 
 
-void LCodeGen::DoDeferredSIMD128ToTagged(LInstruction* instr,
-                                         Runtime::FunctionId id) {
-  // TODO(3095996): Get rid of this. For now, we need to make the
-  // result register contain a valid pointer because it is already
-  // contained in the register pointer map.
-  Register reg = ToRegister(instr->result());
-  __ Move(reg, Smi::FromInt(0));
-
-  {
-    PushSafepointRegistersScope scope(this);
-    __ movp(rsi, Operand(rbp, StandardFrameConstants::kContextOffset));
-    __ CallRuntimeSaveDoubles(id);
-    RecordSafepointWithRegisters(
-        instr->pointer_map(), 0, Safepoint::kNoLazyDeopt);
-    __ movp(kScratchRegister, rax);
-  }
-  __ movp(reg, kScratchRegister);
-}
-
-
 void LCodeGen::HandleExternalArrayOpRequiresPreScale(
     LOperand* key,
     ElementsKind elements_kind) {
@@ -2902,62 +2918,6 @@ void LCodeGen::HandleExternalArrayOpRequiresPreScale(
         static_cast<int>(maximal_scale_factor);
     ASSERT(pre_shift_size > 0);
     __ shl(ToRegister(key), Immediate(pre_shift_size));
-  }
-}
-
-
-template<class T>
-void LCodeGen::DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr) {
-  class DeferredSIMD128ToTagged V8_FINAL : public LDeferredCode {
-   public:
-    DeferredSIMD128ToTagged(LCodeGen* codegen,
-                            LInstruction* instr,
-                            Runtime::FunctionId id)
-        : LDeferredCode(codegen), instr_(instr), id_(id) { }
-    virtual void Generate() V8_OVERRIDE {
-      codegen()->DoDeferredSIMD128ToTagged(instr_, id_);
-    }
-    virtual LInstruction* instr() V8_OVERRIDE { return instr_; }
-   private:
-    LInstruction* instr_;
-    Runtime::FunctionId id_;
-  };
-
-  // Pre scale key if necessary.
-  LOperand* key = instr->key();
-  ElementsKind elements_kind = instr->elements_kind();
-  if (!key->IsConstantOperand()) {
-    HandleExternalArrayOpRequiresPreScale(key, elements_kind);
-  }
-
-  // Allocate a SIMD128 object on the heap.
-  Register reg = ToRegister(instr->result());
-  Register tmp = ToRegister(instr->temp());
-  DeferredSIMD128ToTagged* deferred =
-      new(zone()) DeferredSIMD128ToTagged(this, instr,
-          static_cast<Runtime::FunctionId>(T::kRuntimeAllocatorId()));
-  if (FLAG_inline_new) {
-    __ AllocateSIMDHeapObject(T::kSize, reg, tmp, deferred->entry(),
-        static_cast<Heap::RootListIndex>(T::kMapRootIndex()));
-  } else {
-    __ jmp(deferred->entry());
-  }
-  __ bind(deferred->exit());
-
-  // Copy the SIMD128 value from the external array to the heap object.
-  STATIC_ASSERT(T::kValueSize % kPointerSize == 0);
-  int base_offset = instr->is_fixed_typed_array()
-      ? FixedTypedArrayBase::kDataOffset - kHeapObjectTag
-      : 0;
-  for (int offset = 0; offset < T::kValueSize; offset += kPointerSize) {
-    Operand operand(BuildFastArrayOperand(
-        instr->elements(),
-        key,
-        elements_kind,
-        base_offset + offset,
-        instr->additional_index()));
-    __ movp(tmp, operand);
-    __ movp(FieldOperand(reg, T::kValueOffset + offset), tmp);
   }
 }
 
@@ -2977,6 +2937,8 @@ void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
       // and the dehoisted address computation happens in 64 bits
       __ movsxlq(key_reg, key_reg);
     }
+
+    HandleExternalArrayOpRequiresPreScale(key, elements_kind);
   }
   int base_offset = instr->is_fixed_typed_array()
     ? FixedTypedArrayBase::kDataOffset - kHeapObjectTag
@@ -2996,10 +2958,8 @@ void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
   } else if (elements_kind == EXTERNAL_FLOAT64_ELEMENTS ||
              elements_kind == FLOAT64_ELEMENTS) {
     __ movsd(ToDoubleRegister(instr->result()), operand);
-  } else if (IsFloat32x4ElementsKind(elements_kind)) {
-    DoLoadKeyedSIMD128ExternalArray<Float32x4>(instr);
-  } else if (IsInt32x4ElementsKind(elements_kind)) {
-    DoLoadKeyedSIMD128ExternalArray<Int32x4>(instr);
+  } else if (IsSIMD128ElementsKind(elements_kind)) {
+    __ movups(ToSIMD128Register(instr->result()), operand);
   } else {
     Register result(ToRegister(instr->result()));
     switch (elements_kind) {
@@ -3171,6 +3131,7 @@ Operand LCodeGen::BuildFastArrayOperand(
     if (constant_value & 0xF0000000) {
       Abort(kArrayIndexConstantValueTooBig);
     }
+
     return Operand(elements_pointer_reg,
                    ((constant_value + additional_index) << shift_size)
                        + offset);
@@ -4142,42 +4103,6 @@ void LCodeGen::DoBoundsCheck(LBoundsCheck* instr) {
 }
 
 
-template<class T>
-void LCodeGen::DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr) {
-  ASSERT(instr->value()->IsRegister());
-  Register input_reg = ToRegister(instr->value());
-  Condition cc = masm()->CheckSmi(input_reg);
-  DeoptimizeIf(cc, instr->environment());
-  __ CompareRoot(FieldOperand(input_reg, HeapObject::kMapOffset),
-      static_cast<Heap::RootListIndex>(T::kMapRootIndex()));
-  DeoptimizeIf(not_equal, instr->environment());
-
-  // Pre scale key if necessary.
-  LOperand* key = instr->key();
-  ElementsKind elements_kind = instr->elements_kind();
-  if (!key->IsConstantOperand()) {
-    HandleExternalArrayOpRequiresPreScale(key, elements_kind);
-  }
-
-  // Copy the SIMD128 value from the heap object to the external array.
-  STATIC_ASSERT(T::kValueSize % kPointerSize == 0);
-  int base_offset = instr->is_fixed_typed_array()
-      ? FixedTypedArrayBase::kDataOffset - kHeapObjectTag
-      : 0;
-  for (int offset = 0; offset < T::kValueSize; offset += kPointerSize) {
-    Operand operand(BuildFastArrayOperand(
-          instr->elements(),
-          key,
-          elements_kind,
-          base_offset + offset,
-          instr->additional_index()));
-    __ movp(kScratchRegister,
-        FieldOperand(input_reg, T::kValueOffset + offset));
-    __ movp(operand, kScratchRegister);
-  }
-}
-
-
 void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
   ElementsKind elements_kind = instr->elements_kind();
   LOperand* key = instr->key();
@@ -4193,6 +4118,8 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
       // and the dehoisted address computation happens in 64 bits
       __ movsxlq(key_reg, key_reg);
     }
+
+    HandleExternalArrayOpRequiresPreScale(key, elements_kind);
   }
   int base_offset = instr->is_fixed_typed_array()
     ? FixedTypedArrayBase::kDataOffset - kHeapObjectTag
@@ -4212,10 +4139,8 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
   } else if (elements_kind == EXTERNAL_FLOAT64_ELEMENTS ||
              elements_kind == FLOAT64_ELEMENTS) {
     __ movsd(operand, ToDoubleRegister(instr->value()));
-  } else if (IsFloat32x4ElementsKind(elements_kind)) {
-    DoStoreKeyedSIMD128ExternalArray<Float32x4>(instr);
-  } else if (IsInt32x4ElementsKind(elements_kind)) {
-    DoStoreKeyedSIMD128ExternalArray<Int32x4>(instr);
+  } else if (IsSIMD128ElementsKind(elements_kind)) {
+    __ movups(operand, ToSIMD128Register(instr->value()));
   } else {
     Register value(ToRegister(instr->value()));
     switch (elements_kind) {
@@ -4749,6 +4674,71 @@ void LCodeGen::DoDeferredNumberTagD(LNumberTagD* instr) {
 }
 
 
+void LCodeGen::DoDeferredSIMD128ToTagged(LSIMD128ToTagged* instr,
+                                         Runtime::FunctionId id) {
+  // TODO(3095996): Get rid of this. For now, we need to make the
+  // result register contain a valid pointer because it is already
+  // contained in the register pointer map.
+  Register reg = ToRegister(instr->result());
+  __ Move(reg, Smi::FromInt(0));
+
+  {
+    PushSafepointRegistersScope scope(this);
+    __ movp(rsi, Operand(rbp, StandardFrameConstants::kContextOffset));
+    __ CallRuntimeSaveDoubles(id);
+    RecordSafepointWithRegisters(
+        instr->pointer_map(), 0, Safepoint::kNoLazyDeopt);
+    __ movp(kScratchRegister, rax);
+  }
+  __ movp(reg, kScratchRegister);
+}
+
+
+template<class T>
+void LCodeGen::HandleSIMD128ToTagged(LSIMD128ToTagged* instr) {
+  class DeferredSIMD128ToTagged V8_FINAL : public LDeferredCode {
+   public:
+    DeferredSIMD128ToTagged(LCodeGen* codegen,
+                            LSIMD128ToTagged* instr,
+                            Runtime::FunctionId id)
+        : LDeferredCode(codegen), instr_(instr), id_(id) { }
+    virtual void Generate() V8_OVERRIDE {
+      codegen()->DoDeferredSIMD128ToTagged(instr_, id_);
+    }
+    virtual LInstruction* instr() V8_OVERRIDE { return instr_; }
+   private:
+    LSIMD128ToTagged* instr_;
+    Runtime::FunctionId id_;
+  };
+
+  XMMRegister input_reg = ToSIMD128Register(instr->value());
+  Register reg = ToRegister(instr->result());
+  Register tmp = ToRegister(instr->temp());
+
+  DeferredSIMD128ToTagged* deferred =
+      new(zone()) DeferredSIMD128ToTagged(this, instr,
+          static_cast<Runtime::FunctionId>(T::kRuntimeAllocatorId()));
+  if (FLAG_inline_new) {
+    __ AllocateSIMDHeapObject(T::kSize, reg, tmp, deferred->entry(),
+        static_cast<Heap::RootListIndex>(T::kMapRootIndex()));
+  } else {
+    __ jmp(deferred->entry());
+  }
+  __ bind(deferred->exit());
+  __ movups(FieldOperand(reg, T::kValueOffset), input_reg);
+}
+
+
+void LCodeGen::DoSIMD128ToTagged(LSIMD128ToTagged* instr) {
+  if (instr->value()->IsFloat32x4Register()) {
+    HandleSIMD128ToTagged<Float32x4>(instr);
+  } else {
+    ASSERT(instr->value()->IsInt32x4Register());
+    HandleSIMD128ToTagged<Int32x4>(instr);
+  }
+}
+
+
 void LCodeGen::DoSmiTag(LSmiTag* instr) {
   ASSERT(instr->value()->Equals(instr->result()));
   Register input = ToRegister(instr->value());
@@ -4923,6 +4913,35 @@ void LCodeGen::DoNumberUntagD(LNumberUntagD* instr) {
                    instr->hydrogen()->deoptimize_on_minus_zero(),
                    instr->environment(),
                    mode);
+}
+
+
+template<class T>
+void LCodeGen::HandleTaggedToSIMD128(LTaggedToSIMD128* instr) {
+  LOperand* input = instr->value();
+  ASSERT(input->IsRegister());
+  LOperand* result = instr->result();
+  ASSERT(result->IsSIMD128Register());
+
+  Register input_reg = ToRegister(input);
+  XMMRegister result_reg = ToSIMD128Register(result);
+
+  Condition cc = masm()->CheckSmi(input_reg);
+  DeoptimizeIf(cc, instr->environment());
+  __ CompareRoot(FieldOperand(input_reg, HeapObject::kMapOffset),
+                 static_cast<Heap::RootListIndex>(T::kMapRootIndex()));
+  DeoptimizeIf(not_equal, instr->environment());
+  __ movups(result_reg, FieldOperand(input_reg, T::kValueOffset));
+}
+
+
+void LCodeGen::DoTaggedToSIMD128(LTaggedToSIMD128* instr) {
+  if (instr->representation().IsFloat32x4()) {
+    HandleTaggedToSIMD128<Float32x4>(instr);
+  } else {
+    ASSERT(instr->representation().IsInt32x4());
+    HandleTaggedToSIMD128<Int32x4>(instr);
+  }
 }
 
 

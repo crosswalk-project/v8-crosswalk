@@ -336,6 +336,8 @@ const char* HType::ToString() {
     case kTaggedNumber: return "number";
     case kSmi: return "smi";
     case kHeapNumber: return "heap-number";
+    case kFloat32x4: return "float32x4";
+    case kInt32x4: return "int32x4";
     case kString: return "string";
     case kBoolean: return "boolean";
     case kNonPrimitive: return "non-primitive";
@@ -353,6 +355,10 @@ HType HType::TypeFromValue(Handle<Object> value) {
     result = HType::Smi();
   } else if (value->IsHeapNumber()) {
     result = HType::HeapNumber();
+  } else if (value->IsFloat32x4()) {
+    result = HType::Float32x4();
+  } else if (value->IsInt32x4()) {
+    result = HType::Int32x4();
   } else if (value->IsString()) {
     result = HType::String();
   } else if (value->IsBoolean()) {
@@ -1213,7 +1219,22 @@ bool HTypeofIsAndBranch::KnownSuccessorBlock(HBasicBlock** block) {
       *block = SecondSuccessor();
     }
     return true;
+  } else if (value()->representation().IsFloat32x4()) {
+    if (compares_float32x4_type()) {
+      *block = FirstSuccessor();
+    } else {
+      *block = SecondSuccessor();
+    }
+    return true;
+  } else if (value()->representation().IsInt32x4()) {
+    if (compares_int32x4_type()) {
+      *block = FirstSuccessor();
+    } else {
+      *block = SecondSuccessor();
+    }
+    return true;
   }
+
   *block = NULL;
   return false;
 }
