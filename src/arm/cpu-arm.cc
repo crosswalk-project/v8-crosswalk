@@ -56,6 +56,12 @@ bool CPU::SupportsCrankshaft() {
 }
 
 
+bool CPU::SupportsSIMD128InCrankshaft() {
+  // Not Implemented.
+  return false;
+}
+
+
 void CPU::FlushICache(void* start, size_t size) {
   // Nothing to do flushing no instructions.
   if (size == 0) {

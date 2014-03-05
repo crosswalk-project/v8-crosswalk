@@ -220,6 +220,9 @@ struct XMMRegister : IntelDoubleRegister {
 };
 
 
+typedef XMMRegister SIMD128Register;
+
+
 #define xmm0 (static_cast<const XMMRegister&>(double_register_0))
 #define xmm1 (static_cast<const XMMRegister&>(double_register_1))
 #define xmm2 (static_cast<const XMMRegister&>(double_register_2))
@@ -410,6 +413,11 @@ class Operand BASE_EMBEDDED {
                    ScaleFactor scale,
                    int32_t disp,
                    RelocInfo::Mode rmode = RelocInfo::NONE32);
+
+  // Offset from existing memory operand.
+  // Offset is added to existing displacement as 32-bit signed values and
+  // this must not overflow.
+  Operand(const Operand& base, int32_t offset);
 
   static Operand StaticVariable(const ExternalReference& ext) {
     return Operand(reinterpret_cast<int32_t>(ext.address()),
@@ -1029,6 +1037,8 @@ class Assembler : public AssemblerBase {
 
   // SSE instructions
   void movaps(XMMRegister dst, XMMRegister src);
+  void movups(XMMRegister dst, const Operand& src);
+  void movups(const Operand& dst, XMMRegister src);
   void shufps(XMMRegister dst, XMMRegister src, byte imm8);
 
   void andps(XMMRegister dst, const Operand& src);

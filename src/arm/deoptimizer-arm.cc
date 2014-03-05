@@ -136,7 +136,7 @@ void Deoptimizer::SetPlatformCompiledStubRegisters(
 }
 
 
-void Deoptimizer::CopyDoubleRegisters(FrameDescription* output_frame) {
+void Deoptimizer::CopySIMD128Registers(FrameDescription* output_frame) {
   for (int i = 0; i < DwVfpRegister::kMaxNumRegisters; ++i) {
     double double_value = input_->GetDoubleRegister(i);
     output_frame->SetDoubleRegister(i, double_value);
@@ -233,7 +233,7 @@ void Deoptimizer::EntryGenerator::Generate() {
 
   // Copy VFP registers to
   // double_registers_[DoubleRegister::kMaxNumAllocatableRegisters]
-  int double_regs_offset = FrameDescription::double_registers_offset();
+  int double_regs_offset = FrameDescription::simd128_registers_offset();
   for (int i = 0; i < DwVfpRegister::kMaxNumAllocatableRegisters; ++i) {
     int dst_offset = i * kDoubleSize + double_regs_offset;
     int src_offset = i * kDoubleSize + kNumberOfRegisters * kPointerSize;
@@ -307,7 +307,7 @@ void Deoptimizer::EntryGenerator::Generate() {
   __ CheckFor32DRegs(ip);
 
   __ ldr(r1, MemOperand(r0, Deoptimizer::input_offset()));
-  int src_offset = FrameDescription::double_registers_offset();
+  int src_offset = FrameDescription::simd128_registers_offset();
   for (int i = 0; i < DwVfpRegister::kMaxNumRegisters; ++i) {
     if (i == kDoubleRegZero.code()) continue;
     if (i == kScratchDoubleReg.code()) continue;
@@ -376,6 +376,18 @@ void FrameDescription::SetCallerFp(unsigned offset, intptr_t value) {
 void FrameDescription::SetCallerConstantPool(unsigned offset, intptr_t value) {
   ASSERT(FLAG_enable_ool_constant_pool);
   SetFrameSlot(offset, value);
+}
+
+
+double FrameDescription::GetDoubleRegister(unsigned n) const {
+  ASSERT(n < 2 * ARRAY_SIZE(simd128_registers_));
+  return simd128_registers_[n / 2].d[n % 2];
+}
+
+
+void FrameDescription::SetDoubleRegister(unsigned n, double value) {
+  ASSERT(n < 2 * ARRAY_SIZE(simd128_registers_));
+  simd128_registers_[n / 2].d[n % 2] = value;
 }
 
 
