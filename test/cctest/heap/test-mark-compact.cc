@@ -105,6 +105,8 @@ HEAP_TEST(NoPromotion) {
 
     heap::SealCurrentObjects(heap);
 
+  heap->new_space()->Grow();
+
     int array_length =
         heap::FixedArrayLenFromSize(Page::kMaxRegularHeapObjectSize);
     Handle<FixedArray> array = isolate->factory()->NewFixedArray(array_length);
