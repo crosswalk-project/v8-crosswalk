@@ -249,6 +249,20 @@ struct FPRegister : public CPURegister {
   // End of V8 compatibility section -----------------------
 };
 
+struct SIMD128Register {
+  static const int kMaxNumRegisters = 0;
+
+  static int ToAllocationIndex(SIMD128Register reg) {
+    UNIMPLEMENTED();
+    return -1;
+  }
+
+  static const char* AllocationIndexToString(int index) {
+    UNIMPLEMENTED();
+    return NULL;
+  }
+};
+
 
 STATIC_ASSERT(sizeof(CPURegister) == sizeof(Register));
 STATIC_ASSERT(sizeof(CPURegister) == sizeof(FPRegister));
