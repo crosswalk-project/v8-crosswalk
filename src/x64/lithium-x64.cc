@@ -344,6 +344,19 @@ void LAccessArgumentsAt::PrintDataTo(StringStream* stream) {
 
 
 int LPlatformChunk::GetNextSpillIndex(RegisterKind kind) {
+  switch (kind) {
+    case GENERAL_REGISTERS: return spill_slot_count_++;
+    case DOUBLE_REGISTERS: return spill_slot_count_++;
+    case FLOAT32x4_REGISTERS:
+    case INT32x4_REGISTERS: {
+      spill_slot_count_++;
+      return spill_slot_count_++;
+    }
+    default:
+      UNREACHABLE();
+      return -1;
+  }
+
   return spill_slot_count_++;
 }
 
@@ -353,11 +366,14 @@ LOperand* LPlatformChunk::GetNextSpillSlot(RegisterKind kind) {
   // Alternatively, at some point, start using half-size
   // stack slots for int32 values.
   int index = GetNextSpillIndex(kind);
-  if (kind == DOUBLE_REGISTERS) {
-    return LDoubleStackSlot::Create(index, zone());
-  } else {
-    ASSERT(kind == GENERAL_REGISTERS);
-    return LStackSlot::Create(index, zone());
+  switch (kind) {
+    case GENERAL_REGISTERS: return LStackSlot::Create(index, zone());
+    case DOUBLE_REGISTERS: return LDoubleStackSlot::Create(index, zone());
+    case FLOAT32x4_REGISTERS: return LFloat32x4StackSlot::Create(index, zone());
+    case INT32x4_REGISTERS: return LInt32x4StackSlot::Create(index, zone());
+    default:
+      UNREACHABLE();
+      return NULL;
   }
 }
 
@@ -1704,6 +1720,10 @@ LInstruction* LChunkBuilder::DoChange(HChange* instr) {
       LOperand* value = UseRegister(instr->value());
       LNumberUntagD* res = new(zone()) LNumberUntagD(value);
       return AssignEnvironment(DefineAsRegister(res));
+    } else if (to.IsSIMD128()) {
+      LOperand* value = UseRegister(instr->value());
+      LTaggedToSIMD128* res = new(zone()) LTaggedToSIMD128(value, to);
+      return AssignEnvironment(DefineAsRegister(res));
     } else if (to.IsSmi()) {
       HValue* val = instr->value();
       LOperand* value = UseRegister(val);
@@ -1787,6 +1807,16 @@ LInstruction* LChunkBuilder::DoChange(HChange* instr) {
         return DefineAsRegister(new(zone()) LInteger32ToDouble(value));
       }
     }
+  } else if (from.IsSIMD128()) {
+    ASSERT(to.IsTagged());
+    info()->MarkAsDeferredCalling();
+    LOperand* value = UseRegister(instr->value());
+    LOperand* temp = TempRegister();
+
+    // Make sure that temp and result_temp are different registers.
+    LUnallocated* result_temp = TempRegister();
+    LSIMD128ToTagged* result = new(zone()) LSIMD128ToTagged(value, temp);
+    return AssignPointerMap(Define(result, result_temp));
   }
   UNREACHABLE();
   return NULL;
@@ -1978,25 +2008,21 @@ LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
       : UseRegisterOrConstantAtStart(instr->key());
   LLoadKeyed* result = NULL;
 
-  bool load_128bits_without_sse2 = IsSIMD128ElementsKind(elements_kind);
   if (!instr->is_typed_elements()) {
     LOperand* obj = UseRegisterAtStart(instr->elements());
-    result = new(zone()) LLoadKeyed(obj, key, NULL);
+    result = new(zone()) LLoadKeyed(obj, key);
   } else {
     ASSERT(
         (instr->representation().IsInteger32() &&
          !(IsDoubleOrFloatElementsKind(instr->elements_kind()))) ||
         (instr->representation().IsDouble() &&
          (IsDoubleOrFloatElementsKind(instr->elements_kind()))) ||
-        (instr->representation().IsTagged() &&
-         (IsSIMD128ElementsKind(instr->elements_kind()))));
+        (instr->representation().IsFloat32x4() &&
+         IsFloat32x4ElementsKind(instr->elements_kind())) ||
+        (instr->representation().IsInt32x4() &&
+         IsInt32x4ElementsKind(instr->elements_kind())));
     LOperand* backing_store = UseRegister(instr->elements());
-    result = new(zone()) LLoadKeyed(backing_store, key,
-        load_128bits_without_sse2 ? TempRegister() : NULL);
-    if (load_128bits_without_sse2) {
-      info()->MarkAsDeferredCalling();
-      AssignPointerMap(result);
-    }
+    result = new(zone()) LLoadKeyed(backing_store, key);
   }
 
   DefineAsRegister(result);
@@ -2057,8 +2083,10 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
        !IsDoubleOrFloatElementsKind(elements_kind)) ||
        (instr->value()->representation().IsDouble() &&
        IsDoubleOrFloatElementsKind(elements_kind)) ||
-       (instr->value()->representation().IsTagged() &&
-       IsSIMD128ElementsKind(elements_kind)));
+      (instr->value()->representation().IsFloat32x4() &&
+       IsFloat32x4ElementsKind(elements_kind)) ||
+      (instr->value()->representation().IsInt32x4() &&
+       IsInt32x4ElementsKind(elements_kind)));
   ASSERT((instr->is_fixed_typed_array() &&
           instr->elements()->representation().IsTagged()) ||
          (instr->is_external() &&
@@ -2074,9 +2102,7 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
       ? UseTempRegisterOrConstant(instr->key())
       : UseRegisterOrConstantAtStart(instr->key());
   LOperand* backing_store = UseRegister(instr->elements());
-  LStoreKeyed* result = new(zone()) LStoreKeyed(backing_store, key, val);
-  bool store_128bits_without_sse2 = IsSIMD128ElementsKind(elements_kind);
-  return store_128bits_without_sse2 ? AssignEnvironment(result) : result;
+  return new(zone()) LStoreKeyed(backing_store, key, val);
 }
 
 

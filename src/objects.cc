@@ -2350,6 +2350,8 @@ const char* Representation::Mnemonic() const {
     case kTagged: return "t";
     case kSmi: return "s";
     case kDouble: return "d";
+    case kFloat32x4: return "float32x4";
+    case kInt32x4: return "int32x44";
     case kInteger32: return "i";
     case kHeapObject: return "h";
     case kExternal: return "x";
@@ -11044,6 +11046,20 @@ void DeoptimizationInputData::DeoptimizationInputDataPrint(FILE* out) {
           break;
         }
 
+        case Translation::FLOAT32x4_REGISTER: {
+          int reg_code = iterator.Next();
+          PrintF(out, "{input=%s}",
+                 SIMD128Register::AllocationIndexToString(reg_code));
+          break;
+        }
+
+        case Translation::INT32x4_REGISTER: {
+          int reg_code = iterator.Next();
+          PrintF(out, "{input=%s}",
+                 SIMD128Register::AllocationIndexToString(reg_code));
+          break;
+        }
+
         case Translation::STACK_SLOT: {
           int input_slot_index = iterator.Next();
           PrintF(out, "{input=%d}", input_slot_index);
@@ -11063,6 +11079,18 @@ void DeoptimizationInputData::DeoptimizationInputDataPrint(FILE* out) {
         }
 
         case Translation::DOUBLE_STACK_SLOT: {
+          int input_slot_index = iterator.Next();
+          PrintF(out, "{input=%d}", input_slot_index);
+          break;
+        }
+
+        case Translation::FLOAT32x4_STACK_SLOT: {
+          int input_slot_index = iterator.Next();
+          PrintF(out, "{input=%d}", input_slot_index);
+          break;
+        }
+
+        case Translation::INT32x4_STACK_SLOT: {
           int input_slot_index = iterator.Next();
           PrintF(out, "{input=%d}", input_slot_index);
           break;

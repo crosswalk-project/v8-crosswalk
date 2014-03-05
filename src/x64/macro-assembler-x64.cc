@@ -898,10 +898,10 @@ void MacroAssembler::PushCallerSaved(SaveFPRegsMode fp_mode,
   }
   // R12 to r15 are callee save on all platforms.
   if (fp_mode == kSaveFPRegs) {
-    subq(rsp, Immediate(kDoubleSize * XMMRegister::kMaxNumRegisters));
+    subq(rsp, Immediate(kSIMD128Size * XMMRegister::kMaxNumRegisters));
     for (int i = 0; i < XMMRegister::kMaxNumRegisters; i++) {
       XMMRegister reg = XMMRegister::from_code(i);
-      movsd(Operand(rsp, i * kDoubleSize), reg);
+      movups(Operand(rsp, i * kSIMD128Size), reg);
     }
   }
 }
@@ -914,9 +914,9 @@ void MacroAssembler::PopCallerSaved(SaveFPRegsMode fp_mode,
   if (fp_mode == kSaveFPRegs) {
     for (int i = 0; i < XMMRegister::kMaxNumRegisters; i++) {
       XMMRegister reg = XMMRegister::from_code(i);
-      movsd(reg, Operand(rsp, i * kDoubleSize));
+      movups(reg, Operand(rsp, i * kSIMD128Size));
     }
-    addq(rsp, Immediate(kDoubleSize * XMMRegister::kMaxNumRegisters));
+    addq(rsp, Immediate(kSIMD128Size * XMMRegister::kMaxNumRegisters));
   }
   for (int i = kNumberOfSavedRegs - 1; i >= 0; i--) {
     Register reg = saved_regs[i];
@@ -3715,13 +3715,13 @@ void MacroAssembler::EnterExitFrameEpilogue(int arg_stack_space,
 #endif
   // Optionally save all XMM registers.
   if (save_doubles) {
-    int space = XMMRegister::kMaxNumAllocatableRegisters * kDoubleSize +
+    int space = XMMRegister::kMaxNumAllocatableRegisters * kSIMD128Size +
         arg_stack_space * kRegisterSize;
     subq(rsp, Immediate(space));
     int offset = -2 * kPointerSize;
     for (int i = 0; i < XMMRegister::NumAllocatableRegisters(); i++) {
       XMMRegister reg = XMMRegister::FromAllocationIndex(i);
-      movsd(Operand(rbp, offset - ((i + 1) * kDoubleSize)), reg);
+      movups(Operand(rbp, offset - ((i + 1) * kSIMD128Size)), reg);
     }
   } else if (arg_stack_space > 0) {
     subq(rsp, Immediate(arg_stack_space * kRegisterSize));
@@ -3765,7 +3765,7 @@ void MacroAssembler::LeaveExitFrame(bool save_doubles) {
     int offset = -2 * kPointerSize;
     for (int i = 0; i < XMMRegister::NumAllocatableRegisters(); i++) {
       XMMRegister reg = XMMRegister::FromAllocationIndex(i);
-      movsd(reg, Operand(rbp, offset - ((i + 1) * kDoubleSize)));
+      movups(reg, Operand(rbp, offset - ((i + 1) * kSIMD128Size)));
     }
   }
   // Get the return address from the stack and restore the frame pointer.
