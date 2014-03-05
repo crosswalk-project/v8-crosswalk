@@ -16,6 +16,7 @@ namespace internal {
 // Forward declarations.
 template <typename T> class Handle;
 class Object;
+class Representation;
 
 #define HTYPE_LIST(V)                               \
   V(Any, 0x0)             /* 0000 0000 0000 0000 */ \
@@ -27,13 +28,16 @@ class Object;
   V(HeapPrimitive, 0x25)  /* 0000 0000 0010 0101 */ \
   V(Null, 0x27)           /* 0000 0000 0010 0111 */ \
   V(HeapNumber, 0x2d)     /* 0000 0000 0010 1101 */ \
-  V(String, 0x65)         /* 0000 0000 0110 0101 */ \
-  V(Boolean, 0xa5)        /* 0000 0000 1010 0101 */ \
-  V(Undefined, 0x125)     /* 0000 0001 0010 0101 */ \
-  V(JSReceiver, 0x221)    /* 0000 0010 0010 0001 */ \
-  V(JSObject, 0x621)      /* 0000 0110 0010 0001 */ \
-  V(JSArray, 0xe21)       /* 0000 1110 0010 0001 */ \
-  V(None, 0xfff)          /* 0000 1111 1111 1111 */
+  V(Float32x4, 0x65)      /* 0000 0000 0110 0101 */ \
+  V(Bool32x4, 0xa5)       /* 0000 0000 1010 0101 */ \
+  V(Int32x4, 0x125)       /* 0000 0001 0010 0101 */ \
+  V(String, 0x225)        /* 0000 0010 0010 0101 */ \
+  V(Boolean, 0x425)       /* 0000 0100 0010 0101 */ \
+  V(Undefined, 0x825)     /* 0000 1000 0010 0101 */ \
+  V(JSReceiver, 0x1021)   /* 0001 0000 0010 0001 */ \
+  V(JSObject, 0x3021)     /* 0011 0000 0010 0001 */ \
+  V(JSArray, 0x7021)      /* 0111 0000 0010 0001 */ \
+  V(None, 0x7fff)         /* 0111 1111 1111 1111 */
 
 class HType final {
  public:
@@ -65,6 +69,7 @@ class HType final {
   template <class T>
   static HType FromType(typename T::TypeHandle type) WARN_UNUSED_RESULT;
   static HType FromValue(Handle<Object> value) WARN_UNUSED_RESULT;
+  static HType FromRepresentation(Representation representation);
 
   friend std::ostream& operator<<(std::ostream& os, const HType& t);
 
