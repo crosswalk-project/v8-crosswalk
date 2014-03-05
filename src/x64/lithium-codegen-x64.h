@@ -62,6 +62,10 @@ class LCodeGen: public LCodeGenBase {
   // Support for converting LOperands to assembler types.
   Register ToRegister(LOperand* op) const;
   XMMRegister ToDoubleRegister(LOperand* op) const;
+  XMMRegister ToFloat32x4Register(LOperand* op) const;
+  XMMRegister ToFloat64x2Register(LOperand* op) const;
+  XMMRegister ToInt32x4Register(LOperand* op) const;
+  XMMRegister ToSIMD128Register(LOperand* op) const;
   bool IsInteger32Constant(LConstantOperand* op) const;
   bool IsDehoistedKeyConstant(LConstantOperand* op) const;
   bool IsSmiConstant(LConstantOperand* op) const;
@@ -104,7 +108,13 @@ class LCodeGen: public LCodeGenBase {
   void DoDeferredLoadMutableDouble(LLoadFieldByIndex* instr,
                                    Register object,
                                    Register index);
-  void DoDeferredSIMD128ToTagged(LInstruction* instr, Runtime::FunctionId id);
+  void DoDeferredSIMD128ToTagged(LSIMD128ToTagged* instr,
+                                 Runtime::FunctionId id);
+
+  template<class T>
+  void HandleTaggedToSIMD128(LTaggedToSIMD128* instr);
+  template<class T>
+  void HandleSIMD128ToTagged(LSIMD128ToTagged* instr);
 
 // Parallel move support.
   void DoParallelMove(LParallelMove* move);
@@ -224,6 +234,7 @@ class LCodeGen: public LCodeGenBase {
 
   Register ToRegister(int index) const;
   XMMRegister ToDoubleRegister(int index) const;
+  XMMRegister ToSIMD128Register(int index) const;
   Operand BuildFastArrayOperand(
       LOperand* elements_pointer,
       LOperand* key,
@@ -299,15 +310,12 @@ class LCodeGen: public LCodeGenBase {
 
   void EnsureSpaceForLazyDeopt(int space_needed) override;
   void DoLoadKeyedExternalArray(LLoadKeyed* instr);
-  void HandleExternalArrayOpRequiresPreScale(LOperand* key,
+  bool HandleExternalArrayOpRequiresPreScale(LOperand* key,
+                                             Representation key_representation,
                                              ElementsKind elements_kind);
-  template<class T>
-  void DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr);
   void DoLoadKeyedFixedDoubleArray(LLoadKeyed* instr);
   void DoLoadKeyedFixedArray(LLoadKeyed* instr);
   void DoStoreKeyedExternalArray(LStoreKeyed* instr);
-  template<class T>
-  void DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr);
   void DoStoreKeyedFixedDoubleArray(LStoreKeyed* instr);
   void DoStoreKeyedFixedArray(LStoreKeyed* instr);
 

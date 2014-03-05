@@ -221,6 +221,7 @@ class Genesis BASE_EMBEDDED {
       Handle<Map>* external_map);
   bool InstallExperimentalNatives();
   void InstallBuiltinFunctionIds();
+  void InstallExperimentalSIMDBuiltinFunctionIds();
   void InstallJSFunctionResultCaches();
   void InitializeNormalizedMapCaches();
 
@@ -2416,6 +2417,7 @@ bool Genesis::InstallExperimentalNatives() {
       if (!CompileExperimentalBuiltin(isolate(), i)) return false;
       // Store the map for the float32x4, float64x2 and int32x4 function
       // prototype after the float32x4 and int32x4 function has been set up.
+      InstallExperimentalSIMDBuiltinFunctionIds();
       JSObject* float32x4_function_prototype = JSObject::cast(
           native_context()->float32x4_function()->instance_prototype());
       native_context()->set_float32x4_function_prototype_map(
@@ -2433,6 +2435,35 @@ bool Genesis::InstallExperimentalNatives() {
 
   InstallExperimentalNativeFunctions();
   return true;
+}
+
+
+static Handle<JSObject> ResolveBuiltinSIMDIdHolder(
+    Handle<Context> native_context,
+    const char* holder_expr) {
+  Isolate* isolate = native_context->GetIsolate();
+  Factory* factory = isolate->factory();
+  Handle<GlobalObject> global(native_context->global_object());
+  Handle<Object>  holder = global;
+  char* name = const_cast<char*>(holder_expr);
+  char* period_pos = strchr(name, '.');
+  while (period_pos != NULL) {
+    Vector<const char> property(name,
+                                static_cast<int>(period_pos - name));
+    Handle<String> property_string = factory->InternalizeUtf8String(property);
+    DCHECK(!property_string.is_null());
+    holder = Object::GetProperty(holder, property_string).ToHandleChecked();
+    if (strcmp(".prototype", period_pos) == 0) {
+      Handle<JSFunction> function = Handle<JSFunction>::cast(holder);
+      return Handle<JSObject>(JSObject::cast(function->prototype()));
+    } else {
+      name = period_pos + 1;
+      period_pos = strchr(name, '.');
+    }
+  }
+
+  return Handle<JSObject>::cast(Object::GetPropertyOrElement(
+      holder, factory->InternalizeUtf8String(name)).ToHandleChecked());
 }
 
 
@@ -2467,6 +2498,53 @@ void Genesis::InstallBuiltinFunctionIds() {
         ResolveBuiltinIdHolder(native_context(), builtin.holder_expr);
     InstallBuiltinFunctionId(holder, builtin.fun_name, builtin.id);
   }
+}
+
+
+void Genesis::InstallExperimentalSIMDBuiltinFunctionIds() {
+  HandleScope scope(isolate());
+#define INSTALL_BUILTIN_ID(holder_expr, fun_name, name)     \
+  {                                                         \
+    Handle<JSObject> holder = ResolveBuiltinSIMDIdHolder(   \
+        native_context(), #holder_expr);                    \
+    BuiltinFunctionId id = k##name;                         \
+    InstallBuiltinFunctionId(holder, #fun_name, id);        \
+  }
+  SIMD_ARRAY_OPERATIONS(INSTALL_BUILTIN_ID)
+  TYPED_ARRAYS_SIMD_LOAD_OPERATIONS(INSTALL_BUILTIN_ID)
+  TYPED_ARRAYS_SIMD_STORE_OPERATIONS(INSTALL_BUILTIN_ID)
+  SIMD_LOAD_OPERATIONS(INSTALL_BUILTIN_ID)
+  SIMD_STORE_OPERATIONS(INSTALL_BUILTIN_ID)
+#define INSTALL_SIMD_NULLARY_FUNCTION_ID(p1, p2, p3, p4)                       \
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_NULLARY_OPERATIONS(INSTALL_SIMD_NULLARY_FUNCTION_ID)
+#undef INSTALL_SIMD_NULLARY_FUNCTION_ID
+#define INSTALL_SIMD_UNARY_FUNCTION_ID(p1, p2, p3, p4, p5)                     \
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_UNARY_OPERATIONS(INSTALL_SIMD_UNARY_FUNCTION_ID)
+#undef INSTALL_SIMD_UNARY_FUNCTION_ID
+#define INSTALL_SIMD_BINARY_FUNCTION_ID(p1, p2, p3, p4, p5, p6)                \
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_BINARY_OPERATIONS(INSTALL_SIMD_BINARY_FUNCTION_ID)
+#undef INSTALL_SIMD_BINARY_FUNCTION_ID
+#define INSTALL_SIMD_TERNARY_FUNCTION_ID(p1, p2, p3, p4, p5, p6, p7)           \
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_TERNARY_OPERATIONS(INSTALL_SIMD_TERNARY_FUNCTION_ID)
+#undef INSTALL_SIMD_TERNARY_FUNCTION_ID
+#define INSTALL_SIMD_QUARTERNARY_FUNCTION_ID(p1, p2, p3, p4, p5, p6, p7, p8)   \
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_QUARTERNARY_OPERATIONS(INSTALL_SIMD_QUARTERNARY_FUNCTION_ID)
+#undef INSTALL_SIMD_QUARTERNARY_FUNCTION_ID
+#define INSTALL_SIMD_QUINARY_FUNCTION_ID(p1, p2, p3, p4, p5, p6, p7, p8, p9)   \
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_QUINARY_OPERATIONS(INSTALL_SIMD_QUINARY_FUNCTION_ID)
+#undef INSTALL_SIMD_QUINARY_FUNCTION_ID
+#define INSTALL_SIMD_SENARY_FUNCTION_ID(                                       \
+    p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)\
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_SENARY_OPERATIONS(INSTALL_SIMD_SENARY_FUNCTION_ID)
+#undef INSTALL_SIMD_SENARY_FUNCTION_ID
+#undef INSTALL_BUILTIN_ID
 }
 
 

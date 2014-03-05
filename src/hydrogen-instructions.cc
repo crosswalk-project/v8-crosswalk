@@ -841,6 +841,7 @@ bool HInstruction::CanDeoptimize() {
     case HValue::kTypeofIsAndBranch:
     case HValue::kUnknownOSRValue:
     case HValue::kUseConst:
+    case HValue::kNullarySIMDOperation:
       return false;
 
     case HValue::kStoreKeyed:
@@ -899,6 +900,12 @@ bool HInstruction::CanDeoptimize() {
     case HValue::kTypeof:
     case HValue::kUnaryMathOperation:
     case HValue::kWrapReceiver:
+    case HValue::kUnarySIMDOperation:
+    case HValue::kBinarySIMDOperation:
+    case HValue::kTernarySIMDOperation:
+    case HValue::kQuarternarySIMDOperation:
+    case HValue::kQuinarySIMDOperation:
+    case HValue::kSenarySIMDOperation:
       return true;
   }
   UNREACHABLE();
@@ -1346,7 +1353,23 @@ bool HTypeofIsAndBranch::KnownSuccessorBlock(HBasicBlock** block) {
         type_literal_.IsKnownGlobal(isolate()->heap()->number_string());
     *block = number_type ? FirstSuccessor() : SecondSuccessor();
     return true;
+  } else if (value()->representation().IsFloat32x4()) {
+    bool float32x4_type =
+        type_literal_.IsKnownGlobal(isolate()->heap()->float32x4_string());
+    *block = float32x4_type ? FirstSuccessor() : SecondSuccessor();
+    return true;
+  } else if (value()->representation().IsFloat64x2()) {
+    bool float64x2_type =
+        type_literal_.IsKnownGlobal(isolate()->heap()->float64x2_string());
+    *block = float64x2_type ? FirstSuccessor() : SecondSuccessor();
+    return true;
+  } else if (value()->representation().IsInt32x4()) {
+    bool int32x4_type =
+        type_literal_.IsKnownGlobal(isolate()->heap()->int32x4_string());
+    *block = int32x4_type ? FirstSuccessor() : SecondSuccessor();
+    return true;
   }
+
   *block = NULL;
   return false;
 }
@@ -2473,6 +2496,9 @@ std::ostream& HPhi::PrintTo(std::ostream& os) const {  // NOLINT
             << int32_non_phi_uses() + int32_indirect_uses() << "i_"
             << double_non_phi_uses() + double_indirect_uses() << "d_"
             << tagged_non_phi_uses() + tagged_indirect_uses() << "t"
+            << float32x4_non_phi_uses() + float32x4_indirect_uses() << "f32x4_"
+            << int32x4_non_phi_uses() + int32x4_indirect_uses() << "i32x4_"
+            << float64x2_non_phi_uses() + float64x2_indirect_uses() << "f64x2_"
             << TypeOf(this) << "]";
 }
 
@@ -2551,12 +2577,16 @@ void HPhi::InitRealUses(int phi_id) {
 
 void HPhi::AddNonPhiUsesFrom(HPhi* other) {
   if (FLAG_trace_representation) {
-    PrintF("adding to #%d Phi uses of #%d Phi: s%d i%d d%d t%d\n",
-           id(), other->id(),
-           other->non_phi_uses_[Representation::kSmi],
-           other->non_phi_uses_[Representation::kInteger32],
-           other->non_phi_uses_[Representation::kDouble],
-           other->non_phi_uses_[Representation::kTagged]);
+    PrintF(
+        "adding to #%d Phi uses of #%d Phi: s%d i%d d%d f32x4%d i32x4%d "
+        "f64x2%d t%d\n",
+        id(), other->id(), other->non_phi_uses_[Representation::kSmi],
+        other->non_phi_uses_[Representation::kInteger32],
+        other->non_phi_uses_[Representation::kDouble],
+        other->non_phi_uses_[Representation::kFloat32x4],
+        other->non_phi_uses_[Representation::kInt32x4],
+        other->non_phi_uses_[Representation::kFloat64x2],
+        other->non_phi_uses_[Representation::kTagged]);
   }
 
   for (int i = 0; i < Representation::kNumRepresentations; i++) {
@@ -4417,7 +4447,9 @@ void HPhi::InferRepresentation(HInferRepresentationPhase* h_infer) {
 
 Representation HPhi::RepresentationFromInputs() {
   bool has_type_feedback =
-      smi_non_phi_uses() + int32_non_phi_uses() + double_non_phi_uses() > 0;
+      smi_non_phi_uses() + int32_non_phi_uses() + double_non_phi_uses() +
+      float32x4_non_phi_uses() + float64x2_non_phi_uses() +
+      int32x4_non_phi_uses() > 0;
   Representation r = representation();
   for (int i = 0; i < OperandCount(); ++i) {
     // Ignore conservative Tagged assumption of parameters if we have
@@ -4719,5 +4751,198 @@ std::ostream& operator<<(std::ostream& os, const HObjectAccess& access) {
 
   return os << "@" << access.offset();
 }
+
+
+HInstruction* HNullarySIMDOperation::New(
+    Isolate* isolate, Zone* zone, HValue* context, BuiltinFunctionId op) {
+  return new(zone) HNullarySIMDOperation(context, op);
+}
+
+
+HInstruction* HUnarySIMDOperation::New(
+    Isolate* isolate, Zone* zone, HValue* context, HValue* value,
+    BuiltinFunctionId op, Representation to) {
+  return new(zone) HUnarySIMDOperation(context, value, op, to);
+}
+
+
+HInstruction* HBinarySIMDOperation::New(
+    Isolate* isolate, Zone* zone, HValue* context, HValue* left, HValue* right,
+    BuiltinFunctionId op) {
+  return new(zone) HBinarySIMDOperation(context, left, right, op);
+}
+
+
+HInstruction* HTernarySIMDOperation::New(
+    Isolate* isolate, Zone* zone, HValue* context, HValue* mask, HValue* left,
+    HValue* right, BuiltinFunctionId op) {
+  return new(zone) HTernarySIMDOperation(context, mask, left, right, op);
+}
+
+
+HInstruction* HQuarternarySIMDOperation::New(
+    Isolate* isolate, Zone* zone, HValue* context, HValue* x, HValue* y,
+    HValue* z, HValue* w, BuiltinFunctionId op) {
+  return new(zone) HQuarternarySIMDOperation(context, x, y, z, w, op);
+}
+
+
+HInstruction* HQuinarySIMDOperation::New(
+    Isolate* isolate, Zone* zone, HValue* context, HValue* a0, HValue* a1,
+    HValue* a2, HValue* a3, HValue * a4, BuiltinFunctionId op) {
+  return new(zone) HQuinarySIMDOperation(context, a0, a1, a2, a3, a4, op);
+}
+
+
+HInstruction* HSenarySIMDOperation::New(
+    Isolate* isolate, Zone* zone, HValue* context, HValue* a0, HValue* a1,
+    HValue* a2, HValue* a3, HValue* a4, HValue* a5, BuiltinFunctionId op) {
+  return new(zone) HSenarySIMDOperation(context, a0, a1, a2, a3, a4, a5, op);
+}
+
+
+const char* HNullarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_NULLARY_OPERATION_CASE_ITEM(module, function, name, p4)           \
+    case k##name:                                                              \
+      return #module "." #function;
+SIMD_NULLARY_OPERATIONS(SIMD_NULLARY_OPERATION_CASE_ITEM)
+#undef SIMD_NULLARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+std::ostream& HNullarySIMDOperation::PrintDataTo(std::ostream& os) const {
+  return os << OpName();
+}
+
+
+const char* HUnarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_UNARY_OPERATION_CASE_ITEM(module, function, name, p4, p5)         \
+    case k##name:                                                              \
+      return #module "." #function;
+SIMD_UNARY_OPERATIONS(SIMD_UNARY_OPERATION_CASE_ITEM)
+SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(SIMD_UNARY_OPERATION_CASE_ITEM)
+#undef SIMD_UNARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+std::ostream& HUnarySIMDOperation::PrintDataTo(std::ostream& os) const {
+  return os << OpName() << " " << NameOf(value());
+}
+
+
+const char* HBinarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_BINARY_OPERATION_CASE_ITEM(module, function, name, p4, p5, p6)    \
+    case k##name:                                                              \
+      return #module "." #function;
+SIMD_BINARY_OPERATIONS(SIMD_BINARY_OPERATION_CASE_ITEM)
+#undef SIMD_BINARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+std::ostream& HBinarySIMDOperation::PrintDataTo(std::ostream& os) const {
+  return os << OpName() << " " << NameOf(left()) << " "
+            << NameOf(right());
+}
+
+
+const char* HTernarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_TERNARY_OPERATION_CASE_ITEM(module, function, name, p4, p5, p6,   \
+                                         p7)                                   \
+    case k##name:                                                              \
+      return #module "." #function;
+SIMD_TERNARY_OPERATIONS(SIMD_TERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_TERNARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+std::ostream& HTernarySIMDOperation::PrintDataTo(std::ostream& os) const {
+  return os << OpName() << " " << NameOf(first()) << " "
+            << NameOf(second()) << " " << NameOf(third());
+}
+
+
+const char* HQuarternarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_QUARTERNARY_OPERATION_CASE_ITEM(module, function, name, p4, p5,   \
+                                             p6, p7, p8)                       \
+    case k##name:                                                              \
+      return #module "." #function;
+SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUARTERNARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+std::ostream& HQuarternarySIMDOperation::PrintDataTo(std::ostream& os) const {
+  return os << OpName() << " " << NameOf(x()) << " " << NameOf(y()) << " "
+            << NameOf(z()) << " " << NameOf(w());
+}
+
+
+const char* HQuinarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_QUINARY_OPERATION_CASE_ITEM(module, function, name, p4, p5,   \
+                                         p6, p7, p8, p9)                   \
+    case k##name:                                                          \
+      return #module "." #function;
+SIMD_QUINARY_OPERATIONS(SIMD_QUINARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUINARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+std::ostream& HQuinarySIMDOperation::PrintDataTo(std::ostream& os) const {
+  return os << OpName() << " " << NameOf(a0()) << " " << NameOf(a1()) << " "
+            << NameOf(a2()) << " " << NameOf(a3()) << " " << NameOf(a4());
+}
+
+
+const char* HSenarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_SENARY_OPERATION_CASE_ITEM(module, function, name, p4, p5,   \
+                                         p6, p7, p8, p9, p10)             \
+    case k##name:                                                         \
+      return #module "." #function;
+SIMD_SENARY_OPERATIONS(SIMD_SENARY_OPERATION_CASE_ITEM)
+#undef SIMD_SENARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+std::ostream& HSenarySIMDOperation::PrintDataTo(std::ostream& os) const {
+  return os << OpName() << " " << NameOf(a0()) << " " << NameOf(a1()) << " "
+            << NameOf(a2()) << " " << NameOf(a3()) << " " << NameOf(a4())
+            << " " << NameOf(a5());
+}
+
 
 } }  // namespace v8::internal
