@@ -206,6 +206,15 @@ LOperand* LiveRange::CreateAssignedOperand(Zone* zone) {
       case DOUBLE_REGISTERS:
         op = LDoubleRegister::Create(assigned_register(), zone);
         break;
+      case FLOAT32x4_REGISTERS:
+        op = LFloat32x4Register::Create(assigned_register(), zone);
+        break;
+      case BOOL32x4_REGISTERS:
+        op = LBool32x4Register::Create(assigned_register(), zone);
+        break;
+      case INT32x4_REGISTERS:
+        op = LInt32x4Register::Create(assigned_register(), zone);
+        break;
       default:
         UNREACHABLE();
     }
@@ -456,7 +465,7 @@ void LiveRange::ConvertOperands(Zone* zone) {
 
     if (use_pos->HasOperand()) {
       DCHECK(op->IsRegister() || op->IsDoubleRegister() ||
-             !use_pos->RequiresRegister());
+             op->IsSIMD128Register() || !use_pos->RequiresRegister());
       use_pos->operand()->ConvertTo(op->kind(), op->index());
     }
     use_pos = use_pos->next();
@@ -521,6 +530,7 @@ LAllocator::LAllocator(int num_values, HGraph* graph)
       active_live_ranges_(8, zone()),
       inactive_live_ranges_(8, zone()),
       reusable_slots_(8, zone()),
+      reusable_simd128_slots_(8, zone()),
       next_virtual_register_(num_values),
       first_artificial_register_(num_values),
       mode_(UNALLOCATED_REGISTERS),
@@ -838,6 +848,21 @@ void LAllocator::MeetConstraintsBetween(LInstruction* first,
         if (RequiredRegisterKind(input_copy->virtual_register()) ==
             DOUBLE_REGISTERS) {
           double_artificial_registers_.Add(
+              cur_input->virtual_register() - first_artificial_register_,
+              zone());
+        } else if (RequiredRegisterKind(input_copy->virtual_register()) ==
+            FLOAT32x4_REGISTERS) {
+          float32x4_artificial_registers_.Add(
+              cur_input->virtual_register() - first_artificial_register_,
+              zone());
+        } else if (RequiredRegisterKind(input_copy->virtual_register()) ==
+            BOOL32x4_REGISTERS) {
+          bool32x4_artificial_registers_.Add(
+              cur_input->virtual_register() - first_artificial_register_,
+              zone());
+        } else if (RequiredRegisterKind(input_copy->virtual_register()) ==
+            INT32x4_REGISTERS) {
+          int32x4_artificial_registers_.Add(
               cur_input->virtual_register() - first_artificial_register_,
               zone());
         }
@@ -1160,8 +1185,10 @@ void LAllocator::ResolveControlFlow(LiveRange* range,
         if (branch->HasPointerMap()) {
           if (HasTaggedValue(range->id())) {
             branch->pointer_map()->RecordPointer(cur_op, chunk()->zone());
-          } else if (!cur_op->IsDoubleStackSlot() &&
-                     !cur_op->IsDoubleRegister()) {
+          } else if (!cur_op->IsDoubleStackSlot()  &&
+                     !cur_op->IsDoubleRegister()   &&
+                     !cur_op->IsSIMD128StackSlot() &&
+                     !cur_op->IsSIMD128Register()) {
             branch->pointer_map()->RemovePointer(cur_op);
           }
         }
@@ -1492,6 +1519,9 @@ void LAllocator::AllocateRegisters() {
     if (live_ranges_[i] != NULL) {
       if (live_ranges_[i]->Kind() == mode_) {
         AddToUnhandledUnsorted(live_ranges_[i]);
+      } else if (mode_ == DOUBLE_REGISTERS &&
+                 IsSIMD128RegisterKind(live_ranges_[i]->Kind())) {
+        AddToUnhandledUnsorted(live_ranges_[i]);
       }
     }
   }
@@ -1499,6 +1529,7 @@ void LAllocator::AllocateRegisters() {
   DCHECK(UnhandledIsSorted());
 
   DCHECK(reusable_slots_.is_empty());
+  DCHECK(reusable_simd128_slots_.is_empty());
   DCHECK(active_live_ranges_.is_empty());
   DCHECK(inactive_live_ranges_.is_empty());
 
@@ -1590,6 +1621,7 @@ void LAllocator::AllocateRegisters() {
   }
 
   reusable_slots_.Rewind(0);
+  reusable_simd128_slots_.Rewind(0);
   active_live_ranges_.Rewind(0);
   inactive_live_ranges_.Rewind(0);
 }
@@ -1626,10 +1658,25 @@ RegisterKind LAllocator::RequiredRegisterKind(int virtual_register) const {
     HValue* value = graph_->LookupValue(virtual_register);
     if (value != NULL && value->representation().IsDouble()) {
       return DOUBLE_REGISTERS;
+    } else if (value != NULL && (value->representation().IsFloat32x4())) {
+      return FLOAT32x4_REGISTERS;
+    } else if (value != NULL && (value->representation().IsBool32x4())) {
+      return BOOL32x4_REGISTERS;
+    } else if (value != NULL && (value->representation().IsInt32x4())) {
+      return INT32x4_REGISTERS;
     }
   } else if (double_artificial_registers_.Contains(
       virtual_register - first_artificial_register_)) {
     return DOUBLE_REGISTERS;
+  } else if (float32x4_artificial_registers_.Contains(
+      virtual_register - first_artificial_register_)) {
+    return FLOAT32x4_REGISTERS;
+  } else if (bool32x4_artificial_registers_.Contains(
+      virtual_register - first_artificial_register_)) {
+    return BOOL32x4_REGISTERS;
+  } else if (int32x4_artificial_registers_.Contains(
+      virtual_register - first_artificial_register_)) {
+    return INT32x4_REGISTERS;
   }
 
   return GENERAL_REGISTERS;
@@ -1712,19 +1759,26 @@ void LAllocator::FreeSpillSlot(LiveRange* range) {
 
   int index = range->TopLevel()->GetSpillOperand()->index();
   if (index >= 0) {
-    reusable_slots_.Add(range, zone());
+    if (IsSIMD128RegisterKind(range->Kind())) {
+      reusable_simd128_slots_.Add(range, zone());
+    } else {
+      reusable_slots_.Add(range, zone());
+    }
   }
 }
 
 
 LOperand* LAllocator::TryReuseSpillSlot(LiveRange* range) {
-  if (reusable_slots_.is_empty()) return NULL;
-  if (reusable_slots_.first()->End().Value() >
+  ZoneList<LiveRange*>* reusable_slots = IsSIMD128RegisterKind(range->Kind())
+      ? &reusable_simd128_slots_
+      : &reusable_slots_;
+  if (reusable_slots->is_empty()) return NULL;
+  if (reusable_slots->first()->End().Value() >
       range->TopLevel()->Start().Value()) {
     return NULL;
   }
-  LOperand* result = reusable_slots_.first()->TopLevel()->GetSpillOperand();
-  reusable_slots_.Remove(0);
+  LOperand* result = reusable_slots->first()->TopLevel()->GetSpillOperand();
+  reusable_slots->Remove(0);
   return result;
 }
 
@@ -1787,7 +1841,8 @@ bool LAllocator::TryAllocateFreeReg(LiveRange* current) {
   }
 
   LOperand* hint = current->FirstHint();
-  if (hint != NULL && (hint->IsRegister() || hint->IsDoubleRegister())) {
+  if (hint != NULL && (hint->IsRegister() || hint->IsDoubleRegister() ||
+      hint->IsSIMD128Register())) {
     int register_index = hint->index();
     TraceAlloc(
         "Found reg hint %s (free until [%d) for live range %d (end %d[).\n",
@@ -2140,7 +2195,21 @@ void LAllocator::Spill(LiveRange* range) {
 
   if (!first->HasAllocatedSpillOperand()) {
     LOperand* op = TryReuseSpillSlot(range);
-    if (op == NULL) op = chunk_->GetNextSpillSlot(range->Kind());
+    if (op == NULL) {
+      op = chunk_->GetNextSpillSlot(range->Kind());
+    } else if (range->Kind() == FLOAT32x4_REGISTERS &&
+               op->kind() != LOperand::FLOAT32x4_STACK_SLOT) {
+      // Convert to Float32x4StackSlot.
+      op = LFloat32x4StackSlot::Create(op->index(), zone());
+    } else if (range->Kind() == BOOL32x4_REGISTERS &&
+               op->kind() != LOperand::BOOL32x4_STACK_SLOT) {
+      // Convert to Bool32x4StackSlot.
+      op = LBool32x4StackSlot::Create(op->index(), zone());
+    } else if (range->Kind() == INT32x4_REGISTERS &&
+               op->kind() != LOperand::INT32x4_STACK_SLOT) {
+      // Convert to Int32x4StackSlot.
+      op = LInt32x4StackSlot::Create(op->index(), zone());
+    }
     first->SetSpillOperand(op);
   }
   range->MakeSpilled(chunk()->zone());
