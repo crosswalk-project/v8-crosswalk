@@ -97,8 +97,9 @@ void Deoptimizer::FillInputFrame(Address tos, JavaScriptFrame* frame) {
   }
   input_->SetRegister(rsp.code(), reinterpret_cast<intptr_t>(frame->sp()));
   input_->SetRegister(rbp.code(), reinterpret_cast<intptr_t>(frame->fp()));
+  simd128_value_t zero = {{0.0, 0.0}};
   for (int i = 0; i < DoubleRegister::NumAllocatableRegisters(); i++) {
-    input_->SetDoubleRegister(i, 0.0);
+    input_->SetSIMD128Register(i, zero);
   }
 
   // Fill the frame content from the actual data on the frame.
@@ -119,9 +120,13 @@ void Deoptimizer::SetPlatformCompiledStubRegisters(
 
 
 void Deoptimizer::CopyDoubleRegisters(FrameDescription* output_frame) {
+}
+
+
+void Deoptimizer::CopySIMD128Registers(FrameDescription* output_frame) {
   for (int i = 0; i < XMMRegister::NumAllocatableRegisters(); ++i) {
-    double double_value = input_->GetDoubleRegister(i);
-    output_frame->SetDoubleRegister(i, double_value);
+    simd128_value_t xmm_value = input_->GetSIMD128Register(i);
+    output_frame->SetSIMD128Register(i, xmm_value);
   }
 }
 
@@ -140,14 +145,14 @@ void Deoptimizer::TableEntryGenerator::Generate() {
   // Save all general purpose registers before messing with them.
   const int kNumberOfRegisters = Register::kNumRegisters;
 
-  const int kDoubleRegsSize = kDoubleSize *
+  const int kXMMRegsSize = kSIMD128Size *
       XMMRegister::NumAllocatableRegisters();
-  __ subp(rsp, Immediate(kDoubleRegsSize));
+  __ subp(rsp, Immediate(kXMMRegsSize));
 
   for (int i = 0; i < XMMRegister::NumAllocatableRegisters(); ++i) {
     XMMRegister xmm_reg = XMMRegister::FromAllocationIndex(i);
-    int offset = i * kDoubleSize;
-    __ movsd(Operand(rsp, offset), xmm_reg);
+    int offset = i * kSIMD128Size;
+    __ movups(Operand(rsp, offset), xmm_reg);
   }
 
   // We push all registers onto the stack, even though we do not need
@@ -158,7 +163,7 @@ void Deoptimizer::TableEntryGenerator::Generate() {
   }
 
   const int kSavedRegistersAreaSize = kNumberOfRegisters * kRegisterSize +
-                                      kDoubleRegsSize;
+                                      kXMMRegsSize;
 
   __ Store(ExternalReference(Isolate::kCEntryFPAddress, isolate()), rbp);
 
@@ -210,11 +215,13 @@ void Deoptimizer::TableEntryGenerator::Generate() {
     __ PopQuad(Operand(rbx, offset));
   }
 
-  // Fill in the double input registers.
-  int double_regs_offset = FrameDescription::double_registers_offset();
+  // Fill in the xmm input registers.
+  STATIC_ASSERT(kSIMD128Size == 2 * kDoubleSize);
+  int xmm_regs_offset = FrameDescription::simd128_registers_offset();
   for (int i = 0; i < XMMRegister::NumAllocatableRegisters(); i++) {
-    int dst_offset = i * kDoubleSize + double_regs_offset;
+    int dst_offset = i * kSIMD128Size + xmm_regs_offset;
     __ popq(Operand(rbx, dst_offset));
+    __ popq(Operand(rbx, dst_offset + kDoubleSize));
   }
 
   // Remove the bailout id and return address from the stack.
@@ -278,8 +285,8 @@ void Deoptimizer::TableEntryGenerator::Generate() {
 
   for (int i = 0; i < XMMRegister::NumAllocatableRegisters(); ++i) {
     XMMRegister xmm_reg = XMMRegister::FromAllocationIndex(i);
-    int src_offset = i * kDoubleSize + double_regs_offset;
-    __ movsd(xmm_reg, Operand(rbx, src_offset));
+    int src_offset = i * kSIMD128Size + xmm_regs_offset;
+    __ movups(xmm_reg, Operand(rbx, src_offset));
   }
 
   // Push state, pc, and continuation from the last output frame.
@@ -348,6 +355,40 @@ void FrameDescription::SetCallerFp(unsigned offset, intptr_t value) {
 void FrameDescription::SetCallerConstantPool(unsigned offset, intptr_t value) {
   // No out-of-line constant pool support.
   UNREACHABLE();
+}
+
+
+double FrameDescription::GetDoubleRegister(unsigned n) const {
+  DCHECK(n < arraysize(simd128_registers_));
+  return simd128_registers_[n].d[0];
+}
+
+
+void FrameDescription::SetDoubleRegister(unsigned n, double value) {
+  DCHECK(n < arraysize(simd128_registers_));
+  simd128_registers_[n].d[0] = value;
+}
+
+
+simd128_value_t FrameDescription::GetSIMD128Register(unsigned n) const {
+  DCHECK(n < arraysize(simd128_registers_));
+  return simd128_registers_[n];
+}
+
+
+void FrameDescription::SetSIMD128Register(unsigned n, simd128_value_t value) {
+  DCHECK(n < arraysize(simd128_registers_));
+  simd128_registers_[n] = value;
+}
+
+
+int FrameDescription::double_registers_offset() {
+  return OFFSET_OF(FrameDescription, simd128_registers_);
+}
+
+
+int FrameDescription::simd128_registers_offset() {
+  return OFFSET_OF(FrameDescription, simd128_registers_);
 }
 
 
