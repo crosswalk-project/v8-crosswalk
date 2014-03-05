@@ -275,6 +275,34 @@ struct QwNeonRegister {
     return r;
   }
 
+  static int ToAllocationIndex(QwNeonRegister reg) {
+    DCHECK(reg.code() < kMaxNumRegisters);
+    return reg.code();
+  }
+
+  static const char* AllocationIndexToString(int index) {
+    DCHECK(index >= 0 && index < kMaxNumRegisters);
+    const char* const names[] = {
+      "q0",
+      "q1",
+      "q2",
+      "q3",
+      "q4",
+      "q5",
+      "q6",
+      "q7",
+      "q8",
+      "q9",
+      "q10",
+      "q11",
+      "q12",
+      "q13",
+      "q14",
+      "q15",
+    };
+    return names[index];
+  }
+
   bool is_valid() const {
     return (0 <= reg_code) && (reg_code < kMaxNumRegisters);
   }
@@ -295,6 +323,7 @@ struct QwNeonRegister {
 
 
 typedef QwNeonRegister QuadRegister;
+typedef QwNeonRegister SIMD128Register;
 
 typedef QwNeonRegister Simd128Register;
 

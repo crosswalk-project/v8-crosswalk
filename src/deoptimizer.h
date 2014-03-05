@@ -18,6 +18,11 @@ class DeoptimizedFrameInfo;
 class TranslatedState;
 class RegisterValues;
 
+static inline simd128_value_t read_simd128_value(Address p, int slot_offset) {
+  Address address = p + slot_offset;
+  return *reinterpret_cast<simd128_value_t*>(address);
+}
+
 class TranslatedValue {
  public:
   // Allocation-less getter of the value.
@@ -40,6 +45,9 @@ class TranslatedValue {
     kUInt32,
     kBoolBit,
     kDouble,
+    kFloat32x4,
+    kInt32x4,
+    kBool32x4,
     kCapturedObject,    // Object captured by the escape analysis.
                         // The number of nested objects can be obtained
                         // with the DeferredObjectLength() method
@@ -65,6 +73,12 @@ class TranslatedValue {
   static TranslatedValue NewInt32(TranslatedState* container, int32_t value);
   static TranslatedValue NewUInt32(TranslatedState* container, uint32_t value);
   static TranslatedValue NewBool(TranslatedState* container, uint32_t value);
+  static TranslatedValue NewFloat32x4(TranslatedState* container,
+                                      float32x4_value_t value);
+  static TranslatedValue NewInt32x4(TranslatedState* container,
+                                    int32x4_value_t value);
+  static TranslatedValue NewBool32x4(TranslatedState* container,
+                                     bool32x4_value_t value);
   static TranslatedValue NewTagged(TranslatedState* container, Object* literal);
   static TranslatedValue NewInvalid(TranslatedState* container);
 
@@ -95,6 +109,12 @@ class TranslatedValue {
     int32_t int32_value_;
     // kind is kDouble
     double double_value_;
+    // Kind is kFloat32x4
+    float32x4_value_t float32x4_value_;
+    // Kind is kBool32x4
+    bool32x4_value_t bool32x4_value_;
+    // Kind is kInt32x4
+    int32x4_value_t int32x4_value_;
     // kind is kDuplicatedObject or kArgumentsObject or kCapturedObject.
     MaterializedObjectInfo materialization_info_;
   };
@@ -104,6 +124,9 @@ class TranslatedValue {
   int32_t int32_value() const;
   uint32_t uint32_value() const;
   double double_value() const;
+  float32x4_value_t float32x4_value() const;
+  int32x4_value_t int32x4_value() const;
+  bool32x4_value_t bool32x4_value() const;
   int object_length() const;
   int object_index() const;
 };
@@ -361,6 +384,7 @@ class OptimizedFunctionVisitor BASE_EMBEDDED {
     "non-strict elements in KeyedLoadGenericStub")                             \
   V(kNotADateObject, "not a date object")                                      \
   V(kNotAHeapNumber, "not a heap number")                                      \
+  V(kNotASIMD128, "not a simd128 value")                                       \
   V(kNotAHeapNumberUndefinedBoolean, "not a heap number/undefined/true/false") \
   V(kNotAHeapNumberUndefined, "not a heap number/undefined")                   \
   V(kNotAJavaScriptObject, "not a JavaScript object")                          \
@@ -673,6 +697,10 @@ class Deoptimizer : public Malloced {
   // from the input frame's double registers.
   void CopyDoubleRegisters(FrameDescription* output_frame);
 
+  // Fill the given output frame's simd128 registers with the original values
+  // from the input frame's simd128 registers.
+  void CopySIMD128Registers(FrameDescription* output_frame);
+
   Isolate* isolate_;
   JSFunction* function_;
   Code* compiled_code_;
@@ -738,23 +766,23 @@ class RegisterValues {
     return registers_[n];
   }
 
-  double GetDoubleRegister(unsigned n) const {
-    DCHECK(n < arraysize(double_registers_));
-    return double_registers_[n];
-  }
+  double GetDoubleRegister(unsigned n) const;
+  simd128_value_t GetSIMD128Register(unsigned n) const;
 
   void SetRegister(unsigned n, intptr_t value) {
     DCHECK(n < arraysize(registers_));
     registers_[n] = value;
   }
 
-  void SetDoubleRegister(unsigned n, double value) {
-    DCHECK(n < arraysize(double_registers_));
-    double_registers_[n] = value;
-  }
+  void SetDoubleRegister(unsigned n, double value);
+
+  void SetSIMD128Register(unsigned n, simd128_value_t value);
 
   intptr_t registers_[Register::kNumRegisters];
   double double_registers_[DoubleRegister::kMaxNumRegisters];
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64 || V8_TARGET_ARCH_ARM
+  simd128_value_t simd128_registers_[SIMD128Register::kMaxNumRegisters];
+#endif
 };
 
 
@@ -813,12 +841,20 @@ class FrameDescription {
     return register_values_.GetDoubleRegister(n);
   }
 
+  simd128_value_t GetSIMD128Register(unsigned n) const {
+    return register_values_.GetSIMD128Register(n);
+  }
+
   void SetRegister(unsigned n, intptr_t value) {
     register_values_.SetRegister(n, value);
   }
 
   void SetDoubleRegister(unsigned n, double value) {
     register_values_.SetDoubleRegister(n, value);
+  }
+
+  void SetSIMD128Register(unsigned n, simd128_value_t value) {
+    register_values_.SetSIMD128Register(n, value);
   }
 
   intptr_t GetTop() const { return top_; }
@@ -853,9 +889,9 @@ class FrameDescription {
     return OFFSET_OF(FrameDescription, register_values_.registers_);
   }
 
-  static int double_registers_offset() {
-    return OFFSET_OF(FrameDescription, register_values_.double_registers_);
-  }
+  static int double_registers_offset();
+
+  static int simd128_registers_offset();
 
   static int frame_size_offset() {
     return offsetof(FrameDescription, frame_size_);
@@ -978,11 +1014,17 @@ class TranslationIterator BASE_EMBEDDED {
   V(UINT32_REGISTER)               \
   V(BOOL_REGISTER)                 \
   V(DOUBLE_REGISTER)               \
+  V(FLOAT32x4_REGISTER)            \
+  V(BOOL32x4_REGISTER)             \
+  V(INT32x4_REGISTER)              \
   V(STACK_SLOT)                    \
   V(INT32_STACK_SLOT)              \
   V(UINT32_STACK_SLOT)             \
   V(BOOL_STACK_SLOT)               \
   V(DOUBLE_STACK_SLOT)             \
+  V(FLOAT32x4_STACK_SLOT)          \
+  V(BOOL32x4_STACK_SLOT)           \
+  V(INT32x4_STACK_SLOT)            \
   V(LITERAL)
 
 class Translation BASE_EMBEDDED {
@@ -1024,11 +1066,13 @@ class Translation BASE_EMBEDDED {
   void StoreUint32Register(Register reg);
   void StoreBoolRegister(Register reg);
   void StoreDoubleRegister(DoubleRegister reg);
+  void StoreSIMD128Register(SIMD128Register reg, Opcode opcode);
   void StoreStackSlot(int index);
   void StoreInt32StackSlot(int index);
   void StoreUint32StackSlot(int index);
   void StoreBoolStackSlot(int index);
   void StoreDoubleStackSlot(int index);
+  void StoreSIMD128StackSlot(int index, Opcode opcode);
   void StoreLiteral(int literal_id);
   void StoreArgumentsObject(bool args_known, int args_index, int args_length);
   void StoreJSFrameFunction();
