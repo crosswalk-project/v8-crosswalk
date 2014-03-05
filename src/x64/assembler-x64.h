@@ -287,6 +287,7 @@ const XMMRegister xmm15 = { 15 };
 
 
 typedef XMMRegister DoubleRegister;
+typedef XMMRegister SIMD128Register;
 
 
 enum Condition {
@@ -1058,9 +1059,12 @@ class Assembler : public AssemblerBase {
   void ucomiss(XMMRegister dst, XMMRegister src);
   void ucomiss(XMMRegister dst, const Operand& src);
   void movaps(XMMRegister dst, XMMRegister src);
+  void movups(XMMRegister dst, const Operand& src);
+  void movups(const Operand& dst, XMMRegister src);
   void movss(XMMRegister dst, const Operand& src);
   void movss(const Operand& dst, XMMRegister src);
   void shufps(XMMRegister dst, XMMRegister src, byte imm8);
+  void shufpd(XMMRegister dst, XMMRegister src, byte imm8);
 
   void cvttss2si(Register dst, const Operand& src);
   void cvttss2si(Register dst, XMMRegister src);
@@ -1081,6 +1085,15 @@ class Assembler : public AssemblerBase {
   void mulps(XMMRegister dst, const Operand& src);
   void divps(XMMRegister dst, XMMRegister src);
   void divps(XMMRegister dst, const Operand& src);
+
+  void addpd(XMMRegister dst, XMMRegister src);
+  void addpd(XMMRegister dst, const Operand& src);
+  void subpd(XMMRegister dst, XMMRegister src);
+  void subpd(XMMRegister dst, const Operand& src);
+  void mulpd(XMMRegister dst, XMMRegister src);
+  void mulpd(XMMRegister dst, const Operand& src);
+  void divpd(XMMRegister dst, XMMRegister src);
+  void divpd(XMMRegister dst, const Operand& src);
 
   void movmskps(Register dst, XMMRegister src);
 
@@ -1148,8 +1161,10 @@ class Assembler : public AssemblerBase {
   void minsd(XMMRegister dst, const Operand& src);
 
   void andpd(XMMRegister dst, XMMRegister src);
+  void andpd(XMMRegister dst, const Operand& src);
   void orpd(XMMRegister dst, XMMRegister src);
   void xorpd(XMMRegister dst, XMMRegister src);
+  void xorpd(XMMRegister dst, const Operand& src);
   void sqrtsd(XMMRegister dst, XMMRegister src);
   void sqrtsd(XMMRegister dst, const Operand& src);
 
@@ -1165,6 +1180,40 @@ class Assembler : public AssemblerBase {
 
   // SSE 4.1 instruction
   void extractps(Register dst, XMMRegister src, byte imm8);
+  void insertps(XMMRegister dst, XMMRegister src, byte imm8);
+
+  void minps(XMMRegister dst, XMMRegister src);
+  void minps(XMMRegister dst, const Operand& src);
+  void maxps(XMMRegister dst, XMMRegister src);
+  void maxps(XMMRegister dst, const Operand& src);
+  void minpd(XMMRegister dst, XMMRegister src);
+  void minpd(XMMRegister dst, const Operand& src);
+  void maxpd(XMMRegister dst, XMMRegister src);
+  void maxpd(XMMRegister dst, const Operand& src);
+  void rcpps(XMMRegister dst, XMMRegister src);
+  void rcpps(XMMRegister dst, const Operand& src);
+  void rsqrtps(XMMRegister dst, XMMRegister src);
+  void rsqrtps(XMMRegister dst, const Operand& src);
+  void sqrtps(XMMRegister dst, XMMRegister src);
+  void sqrtps(XMMRegister dst, const Operand& src);
+  void sqrtpd(XMMRegister dst, XMMRegister src);
+  void sqrtpd(XMMRegister dst, const Operand& src);
+  void paddd(XMMRegister dst, XMMRegister src);
+  void paddd(XMMRegister dst, const Operand& src);
+  void psubd(XMMRegister dst, XMMRegister src);
+  void psubd(XMMRegister dst, const Operand& src);
+  void pmulld(XMMRegister dst, XMMRegister src);
+  void pmulld(XMMRegister dst, const Operand& src);
+  void pmuludq(XMMRegister dst, XMMRegister src);
+  void pmuludq(XMMRegister dst, const Operand& src);
+  void punpackldq(XMMRegister dst, XMMRegister src);
+  void punpackldq(XMMRegister dst, const Operand& src);
+  void psrldq(XMMRegister dst, uint8_t shift);
+  void pshufd(XMMRegister dst, XMMRegister src, uint8_t shuffle);
+  void cvtps2dq(XMMRegister dst, XMMRegister src);
+  void cvtps2dq(XMMRegister dst, const Operand& src);
+  void cvtdq2ps(XMMRegister dst, XMMRegister src);
+  void cvtdq2ps(XMMRegister dst, const Operand& src);
 
   void pextrd(Register dst, XMMRegister src, int8_t imm8);
 
@@ -1364,6 +1413,21 @@ class Assembler : public AssemblerBase {
   void vucomisd(XMMRegister dst, const Operand& src);
   void vsd(byte op, XMMRegister dst, XMMRegister src1, XMMRegister src2);
   void vsd(byte op, XMMRegister dst, XMMRegister src1, const Operand& src2);
+  void cmpps(XMMRegister dst, XMMRegister src, int8_t cmp);
+  void cmpeqps(XMMRegister dst, XMMRegister src);
+  void cmpltps(XMMRegister dst, XMMRegister src);
+  void cmpleps(XMMRegister dst, XMMRegister src);
+  void cmpneqps(XMMRegister dst, XMMRegister src);
+  void cmpnltps(XMMRegister dst, XMMRegister src);
+  void cmpnleps(XMMRegister dst, XMMRegister src);
+
+  void pslld(XMMRegister dst, XMMRegister src);
+  void psrld(XMMRegister dst, XMMRegister src);
+  void psrad(XMMRegister reg, int8_t shift);
+  void psrad(XMMRegister dst, XMMRegister src);
+
+  void pcmpgtd(XMMRegister dst, XMMRegister src);
+  void pcmpltd(XMMRegister dst, XMMRegister src);
 
   void vaddss(XMMRegister dst, XMMRegister src1, XMMRegister src2) {
     vss(0x58, dst, src1, src2);
@@ -1864,6 +1928,7 @@ class Assembler : public AssemblerBase {
   void emit_sse_operand(Register reg, const Operand& adr);
   void emit_sse_operand(XMMRegister dst, Register src);
   void emit_sse_operand(Register dst, XMMRegister src);
+  void emit_sse_operand(XMMRegister dst);
 
   // Emit machine code for one of the operations ADD, ADC, SUB, SBC,
   // AND, OR, XOR, or CMP.  The encodings of these operations are all

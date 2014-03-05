@@ -929,13 +929,13 @@ void MacroAssembler::EnterExitFramePrologue() {
 void MacroAssembler::EnterExitFrameEpilogue(int argc, bool save_doubles) {
   // Optionally save all XMM registers.
   if (save_doubles) {
-    int space = XMMRegister::kMaxNumRegisters * kDoubleSize +
+    int space = XMMRegister::kMaxNumRegisters * kSIMD128Size +
                 argc * kPointerSize;
     sub(esp, Immediate(space));
     const int offset = -2 * kPointerSize;
     for (int i = 0; i < XMMRegister::kMaxNumRegisters; i++) {
       XMMRegister reg = XMMRegister::from_code(i);
-      movsd(Operand(ebp, offset - ((i + 1) * kDoubleSize)), reg);
+      movups(Operand(ebp, offset - ((i + 1) * kSIMD128Size)), reg);
     }
   } else {
     sub(esp, Immediate(argc * kPointerSize));
@@ -978,7 +978,7 @@ void MacroAssembler::LeaveExitFrame(bool save_doubles) {
     const int offset = -2 * kPointerSize;
     for (int i = 0; i < XMMRegister::kMaxNumRegisters; i++) {
       XMMRegister reg = XMMRegister::from_code(i);
-      movsd(reg, Operand(ebp, offset - ((i + 1) * kDoubleSize)));
+      movups(reg, Operand(ebp, offset - ((i + 1) * kSIMD128Size)));
     }
   }
 
@@ -1525,13 +1525,50 @@ void MacroAssembler::AllocateHeapNumber(Register result,
 }
 
 
-void MacroAssembler::AllocateSIMDHeapObject(int size,
-                                            Register result,
-                                            Register scratch,
-                                            Label* gc_required,
-                                            Heap::RootListIndex map_index) {
-  UNREACHABLE();  // NOTIMPLEMENTED
+#define SIMD128_HEAP_ALLOCATE_FUNCTIONS(V) \
+  V(Float32x4, float32x4, FLOAT32x4)       \
+  V(Float64x2, float64x2, FLOAT64x2)       \
+  V(Int32x4, int32x4, INT32x4)
+
+#define DECLARE_SIMD_HEAP_ALLOCATE_FUNCTION(Type, type, TYPE)              \
+void MacroAssembler::Allocate##Type(Register result,                       \
+                                    Register scratch1,                     \
+                                    Register scratch2,                     \
+                                    Label* gc_required) {                  \
+  /* Allocate SIMD128 object */                                            \
+  Allocate(Type::kSize, result, scratch1, no_reg, gc_required, TAG_OBJECT);\
+  /* Load the initial map and assign to new allocated object. */           \
+  mov(scratch1, Operand(ebp, StandardFrameConstants::kContextOffset));     \
+  mov(scratch1,                                                            \
+      Operand(scratch1,                                                    \
+              Context::SlotOffset(Context::GLOBAL_OBJECT_INDEX)));         \
+  mov(scratch1,                                                            \
+      FieldOperand(scratch1, GlobalObject::kNativeContextOffset));         \
+  mov(scratch1,                                                            \
+      Operand(scratch1,                                                    \
+              Context::SlotOffset(Context::TYPE##_FUNCTION_INDEX)));       \
+  LoadGlobalFunctionInitialMap(scratch1, scratch1);                        \
+  mov(FieldOperand(result, JSObject::kMapOffset), scratch1);               \
+  /* Initialize properties and elements. */                                \
+  mov(FieldOperand(result, JSObject::kPropertiesOffset),                   \
+      Immediate(isolate()->factory()->empty_fixed_array()));               \
+  mov(FieldOperand(result, JSObject::kElementsOffset),                     \
+      Immediate(isolate()->factory()->empty_fixed_array()));               \
+  /* Allocate FixedTypedArray object */                                    \
+  Allocate(FixedTypedArrayBase::kDataOffset + k##Type##Size,               \
+           scratch1, scratch2, no_reg, gc_required, TAG_OBJECT);           \
+                                                                           \
+  mov(FieldOperand(scratch1, FixedTypedArrayBase::kMapOffset),             \
+      Immediate(isolate()->factory()->fixed_##type##_array_map()));        \
+  mov(scratch2, Immediate(1));                                             \
+  SmiTag(scratch2);                                                        \
+  mov(FieldOperand(scratch1, FixedTypedArrayBase::kLengthOffset),          \
+      scratch2);                                                           \
+  /* Assign TifxedTypedArray object to SIMD128 object */                   \
+  mov(FieldOperand(result, Type::kValueOffset), scratch1);                 \
 }
+
+SIMD128_HEAP_ALLOCATE_FUNCTIONS(DECLARE_SIMD_HEAP_ALLOCATE_FUNCTION)
 
 
 void MacroAssembler::AllocateTwoByteString(Register result,
@@ -3232,6 +3269,90 @@ void MacroAssembler::TruncatingDiv(Register dividend, int32_t divisor) {
   mov(eax, dividend);
   shr(eax, 31);
   add(edx, eax);
+}
+
+
+void MacroAssembler::absps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_absolute_constant =
+      { 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF };
+  andps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_absolute_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::abspd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } double_absolute_constant =
+      { 0xFFFFFFFF, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFF };
+  andps(dst,
+        Operand(reinterpret_cast<int32_t>(&double_absolute_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::notps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_not_constant =
+      { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+  xorps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_not_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::negateps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_negate_constant =
+      { 0x80000000, 0x80000000, 0x80000000, 0x80000000 };
+  xorps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_negate_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::negatepd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } double_negate_constant =
+      { 0x00000000, 0x80000000, 0x00000000, 0x80000000 };
+  xorpd(dst,
+        Operand(reinterpret_cast<int32_t>(&double_negate_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::pnegd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } int32_one_constant = { 0x1, 0x1, 0x1, 0x1 };
+  notps(dst);
+  paddd(dst,
+        Operand(reinterpret_cast<int32_t>(&int32_one_constant),
+                RelocInfo::NONE32));
 }
 
 

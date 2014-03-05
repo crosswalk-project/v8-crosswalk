@@ -112,6 +112,9 @@ void Deoptimizer::CopyDoubleRegisters(FrameDescription* output_frame) {
 }
 
 
+void Deoptimizer::CopySIMD128Registers(FrameDescription* output_frame) {
+}
+
 
 #define __ masm()->
 
@@ -356,6 +359,41 @@ void FrameDescription::SetCallerFp(unsigned offset, intptr_t value) {
 void FrameDescription::SetCallerConstantPool(unsigned offset, intptr_t value) {
   // No out-of-line constant pool support.
   UNREACHABLE();
+}
+
+
+double FrameDescription::GetDoubleRegister(unsigned n) const {
+  DCHECK(n < arraysize(double_registers_));
+  return double_registers_[n];
+}
+
+
+void FrameDescription::SetDoubleRegister(unsigned n, double value) {
+  DCHECK(n < arraysize(double_registers_));
+  double_registers_[n] = value;
+}
+
+
+simd128_value_t FrameDescription::GetSIMD128Register(unsigned n) const {
+  UNREACHABLE();
+  simd128_value_t value;
+  return value;
+}
+
+
+void FrameDescription::SetSIMD128Register(unsigned n, simd128_value_t value) {
+  UNREACHABLE();
+}
+
+
+int FrameDescription::double_registers_offset() {
+  return OFFSET_OF(FrameDescription, double_registers_);
+}
+
+
+int FrameDescription::simd128_registers_offset() {
+  UNREACHABLE();
+  return -1;
 }
 
 
