@@ -114,6 +114,15 @@ void LOperand::PrintTo(StringStream* stream) {
       }
       break;
     }
+    case FLOAT32x4_STACK_SLOT:
+      stream->Add("[float32x4_stack:%d]", index());
+      break;
+    case BOOL32x4_STACK_SLOT:
+      stream->Add("[bool32x4_stack:%d]", index());
+      break;
+    case INT32x4_STACK_SLOT:
+      stream->Add("[int32x4_stack:%d]", index());
+      break;
     case DOUBLE_REGISTER: {
       int reg_index = index();
       if (reg_index < 0 || reg_index >= DoubleRegister::kMaxNumRegisters) {
@@ -123,6 +132,29 @@ void LOperand::PrintTo(StringStream* stream) {
       }
       break;
     }
+    case FLOAT32x4_REGISTER:
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+      stream->Add("[%s|R]", SIMD128Register::from_code(index()).ToString());
+#else
+      stream->Add("[%s|R]", "Target hasn't no method toString()");
+#endif
+      break;
+    case BOOL32x4_REGISTER:
+
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+      stream->Add("[%s|R]", "QwNeonRegister hasn't no toString");
+      stream->Add("[%s|R]", SIMD128Register::from_code(index()).ToString());
+#else
+      stream->Add("[%s|R]", "Target hasn't no method toString()");
+#endif
+      break;
+    case INT32x4_REGISTER:
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+      stream->Add("[%s|R]", SIMD128Register::from_code(index()).ToString());
+#else
+      stream->Add("[%s|R]", "Target hasn't no method toString()");
+#endif
+      break;
   }
 }
 
@@ -214,7 +246,10 @@ void LEnvironment::PrintTo(StringStream* stream) {
 void LPointerMap::RecordPointer(LOperand* op, Zone* zone) {
   // Do not record arguments as pointers.
   if (op->IsStackSlot() && op->index() < 0) return;
-  DCHECK(!op->IsDoubleRegister() && !op->IsDoubleStackSlot());
+  DCHECK(!op->IsDoubleRegister() && !op->IsDoubleStackSlot() &&
+         !op->IsFloat32x4Register() && !op->IsFloat32x4StackSlot() &&
+         !op->IsBool32x4Register() && !op->IsBool32x4StackSlot() &&
+         !op->IsInt32x4Register() && !op->IsInt32x4StackSlot());
   pointer_operands_.Add(op, zone);
 }
 
@@ -222,7 +257,10 @@ void LPointerMap::RecordPointer(LOperand* op, Zone* zone) {
 void LPointerMap::RemovePointer(LOperand* op) {
   // Do not record arguments as pointers.
   if (op->IsStackSlot() && op->index() < 0) return;
-  DCHECK(!op->IsDoubleRegister() && !op->IsDoubleStackSlot());
+  DCHECK(!op->IsDoubleRegister() && !op->IsDoubleStackSlot() &&
+         !op->IsFloat32x4Register() && !op->IsFloat32x4StackSlot() &&
+         !op->IsBool32x4Register() && !op->IsBool32x4StackSlot() &&
+         !op->IsInt32x4Register() && !op->IsInt32x4StackSlot());
   for (int i = 0; i < pointer_operands_.length(); ++i) {
     if (pointer_operands_[i]->Equals(op)) {
       pointer_operands_.Remove(i);
@@ -235,7 +273,10 @@ void LPointerMap::RemovePointer(LOperand* op) {
 void LPointerMap::RecordUntagged(LOperand* op, Zone* zone) {
   // Do not record arguments as pointers.
   if (op->IsStackSlot() && op->index() < 0) return;
-  DCHECK(!op->IsDoubleRegister() && !op->IsDoubleStackSlot());
+  DCHECK(!op->IsDoubleRegister() && !op->IsDoubleStackSlot() &&
+         !op->IsFloat32x4Register() && !op->IsFloat32x4StackSlot() &&
+         !op->IsBool32x4Register() && !op->IsBool32x4StackSlot() &&
+         !op->IsInt32x4Register() && !op->IsInt32x4StackSlot());
   untagged_operands_.Add(op, zone);
 }
 

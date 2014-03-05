@@ -45,6 +45,11 @@ MachineType reptyp(Representation representation) {
     case Representation::kNone:
     case Representation::kNumRepresentations:
       break;
+    case Representation::kFloat32x4:
+    case Representation::kInt32x4:
+    case Representation::kBool32x4:
+      // TODO(nhu): fix this in TF implementation.
+      break;
   }
   UNREACHABLE();
   return MachineType::None();
