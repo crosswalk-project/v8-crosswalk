@@ -95,6 +95,16 @@ typedef byte* Address;
 // -----------------------------------------------------------------------------
 // Constants
 
+struct float32x4_value_t { float storage[4]; };
+struct int32x4_value_t { int32_t storage[4]; };
+struct bool32x4_value_t {int32_t storage[4]; };
+union simd128_value_t {
+  double d[2];
+  float32x4_value_t f4;
+  int32x4_value_t i4;
+  bool32x4_value_t b4;
+};
+
 const int KB = 1024;
 const int MB = KB * KB;
 const int GB = KB * KB * KB;
@@ -111,15 +121,19 @@ const int kMinUInt16 = 0;
 
 const uint32_t kMaxUInt32 = 0xFFFFFFFFu;
 
-const int kCharSize      = sizeof(char);      // NOLINT
-const int kShortSize     = sizeof(short);     // NOLINT
-const int kIntSize       = sizeof(int);       // NOLINT
-const int kInt32Size     = sizeof(int32_t);   // NOLINT
-const int kInt64Size     = sizeof(int64_t);   // NOLINT
-const int kFloatSize     = sizeof(float);     // NOLINT
-const int kDoubleSize    = sizeof(double);    // NOLINT
-const int kIntptrSize    = sizeof(intptr_t);  // NOLINT
-const int kPointerSize   = sizeof(void*);     // NOLINT
+const int kCharSize      = sizeof(char);                 // NOLINT
+const int kShortSize     = sizeof(short);                // NOLINT
+const int kIntSize       = sizeof(int);                  // NOLINT
+const int kInt32Size     = sizeof(int32_t);              // NOLINT
+const int kInt64Size     = sizeof(int64_t);              // NOLINT
+const int kDoubleSize    = sizeof(double);               // NOLINT
+const int kFloatSize     = sizeof(float);                // NOLINT
+const int kFloat32x4Size = sizeof(float32x4_value_t);    // NOLINT
+const int kBool32x4Size   = sizeof(int32x4_value_t);      // NOLINT
+const int kInt32x4Size   = sizeof(int32x4_value_t);      // NOLINT
+const int kSIMD128Size   = sizeof(simd128_value_t);      // NOLINT
+const int kIntptrSize    = sizeof(intptr_t);             // NOLINT
+const int kPointerSize   = sizeof(void*);                // NOLINT
 #if V8_TARGET_ARCH_X64 && V8_TARGET_ARCH_32_BIT
 const int kRegisterSize  = kPointerSize + kPointerSize;
 #else

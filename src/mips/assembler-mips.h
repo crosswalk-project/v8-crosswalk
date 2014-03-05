@@ -304,6 +304,19 @@ struct FPUControlRegister {
 const FPUControlRegister no_fpucreg = { kInvalidFPUControlRegister };
 const FPUControlRegister FCSR = { kFCSRRegister };
 
+struct SIMD128Register {
+  static const int kMaxNumRegisters = 0;
+
+  static int ToAllocationIndex(SIMD128Register reg) {
+    UNIMPLEMENTED();
+    return -1;
+  }
+
+  static const char* AllocationIndexToString(int index) {
+    UNIMPLEMENTED();
+    return NULL;
+  }
+};
 
 // -----------------------------------------------------------------------------
 // Machine instruction Operands.

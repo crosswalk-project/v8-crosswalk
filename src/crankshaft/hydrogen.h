@@ -1400,7 +1400,8 @@ class HGraphBuilder {
       ElementsKind elements_kind,
       PropertyAccessType access_type,
       LoadKeyedHoleMode load_mode,
-      KeyedAccessStoreMode store_mode);
+      KeyedAccessStoreMode store_mode,
+      BuiltinFunctionId id = kNumberOfBuiltinFunction);
 
   HInstruction* AddElementAccess(
       HValue* elements,
@@ -1409,7 +1410,8 @@ class HGraphBuilder {
       HValue* dependency,
       ElementsKind elements_kind,
       PropertyAccessType access_type,
-      LoadKeyedHoleMode load_mode = NEVER_RETURN_HOLE);
+      LoadKeyedHoleMode load_mode = NEVER_RETURN_HOLE,
+      BuiltinFunctionId id = kNumberOfBuiltinFunction);
 
   HInstruction* AddLoadStringInstanceType(HValue* string);
   HInstruction* AddLoadStringLength(HValue* string);
@@ -2630,6 +2632,23 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
     }
     bool IsConfigurable() const { return details_.IsConfigurable(); }
     bool IsReadOnly() const { return details_.IsReadOnly(); }
+    bool IsSIMD128PropertyCallback() {
+/*
+      return (((instance_type_ == Float32x4::kInstanceType ||
+                instance_type_ == Int32x4::kInstanceType) &&
+               (name_->Equals(isolate()->heap()->signMask()) ||
+                name_->Equals(isolate()->heap()->x()) ||
+                name_->Equals(isolate()->heap()->y()) ||
+                name_->Equals(isolate()->heap()->z()) ||
+                name_->Equals(isolate()->heap()->w()))) ||
+              (instance_type_ == Int32x4::kInstanceType &&
+               (name_->Equals(isolate()->heap()->flagX()) ||
+                name_->Equals(isolate()->heap()->flagY()) ||
+                name_->Equals(isolate()->heap()->flagZ()) ||
+                name_->Equals(isolate()->heap()->flagW()))));
+*/
+      return false;
+    }
 
     bool IsStringType() { return map_->instance_type() < FIRST_NONSTRING_TYPE; }
     bool IsNumberType() { return map_->instance_type() == HEAP_NUMBER_TYPE; }
@@ -2870,6 +2889,10 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
                                           int argument_count);
 
   bool CanBeFunctionApplyArguments(Call* expr);
+
+  bool TryInlineSIMDBuiltinCall(Call* expr,
+                                BuiltinFunctionId id,
+                                int argument_count);
 
   // The translation state of the currently-being-translated function.
   FunctionState* function_state_;
