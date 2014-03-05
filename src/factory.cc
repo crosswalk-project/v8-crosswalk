@@ -1078,43 +1078,25 @@ Handle<HeapNumber> Factory::NewHeapNumber(double value,
 
 Handle<Float32x4> Factory::NewFloat32x4(float32x4_value_t value,
                                         PretenureFlag pretenure) {
-  Handle<JSFunction> constructor(
-      isolate()->native_context()->float32x4_function());
-  Handle<JSObject> jsobject = NewJSObject(constructor);
-  Handle<Float32x4> float32x4(Float32x4::cast(*jsobject));
-  Handle<FixedTypedArrayBase> storage =
-      this->NewFixedTypedArray(static_cast<int>(1), kExternalFloat32x4Array);
-  FixedFloat32x4Array::cast(*storage)->set(0, value);
-  float32x4->set_value(*storage);
-  return float32x4;
+  CALL_HEAP_FUNCTION(
+      isolate(),
+      isolate()->heap()->AllocateFloat32x4(value, pretenure), Float32x4);
 }
 
 
 Handle<Float64x2> Factory::NewFloat64x2(float64x2_value_t value,
                                         PretenureFlag pretenure) {
-  Handle<JSFunction> constructor(
-      isolate()->native_context()->float64x2_function());
-  Handle<JSObject> jsobject = NewJSObject(constructor);
-  Handle<Float64x2> float64x2(Float64x2::cast(*jsobject));
-  Handle<FixedTypedArrayBase> storage =
-      this->NewFixedTypedArray(static_cast<int>(1), kExternalFloat64x2Array);
-  FixedFloat64x2Array::cast(*storage)->set(0, value);
-  float64x2->set_value(*storage);
-  return float64x2;
+  CALL_HEAP_FUNCTION(
+      isolate(),
+      isolate()->heap()->AllocateFloat64x2(value, pretenure), Float64x2);
 }
 
 
 Handle<Int32x4> Factory::NewInt32x4(int32x4_value_t value,
                                     PretenureFlag pretenure) {
-  Handle<JSFunction> constructor(
-      isolate()->native_context()->int32x4_function());
-  Handle<JSObject> jsobject = NewJSObject(constructor);
-  Handle<Int32x4> int32x4(Int32x4::cast(*jsobject));
-  Handle<FixedTypedArrayBase> storage =
-      this->NewFixedTypedArray(static_cast<int>(1), kExternalInt32x4Array);
-  FixedInt32x4Array::cast(*storage)->set(0, value);
-  int32x4->set_value(*storage);
-  return int32x4;
+  CALL_HEAP_FUNCTION(
+      isolate(),
+      isolate()->heap()->AllocateInt32x4(value, pretenure), Int32x4);
 }
 
 
