@@ -222,11 +222,19 @@ function NAMEGreaterThanOrEqualJS(a, b) {
 }
 
 function NAMELoadJS(tarray, index) {
-  return %NAMELoad(tarray, index);
+  if (NAME == "Float32x4" || NAME == "Int32x4") {
+    return tarray._getTYPEXYZW(index);
+  } else {
+    return %NAMELoad(tarray, index);
+  }
 }
 
 function NAMEStoreJS(tarray, index, a) {
-  return %NAMEStore(tarray, index, a);
+  if (NAME == "Float32x4" || NAME == "Int32x4") {
+    return tarray._setTYPEXYZW(index, a);
+  } else {
+    return %NAMEStore(tarray, index, a);
+  }
 }
 endmacro
 
@@ -334,24 +342,32 @@ SIMD_FROM_BITS_TYPES(DECLARE_FROM_BITS_FUNCTIONS)
 
 
 macro SIMD_LOADN_STOREN_TYPES(FUNCTION)
-FUNCTION(Float32x4, 1)
-FUNCTION(Float32x4, 2)
-FUNCTION(Float32x4, 3)
-FUNCTION(Int32x4, 1)
-FUNCTION(Int32x4, 2)
-FUNCTION(Int32x4, 3)
-FUNCTION(Uint32x4, 1)
-FUNCTION(Uint32x4, 2)
-FUNCTION(Uint32x4, 3)
+FUNCTION(Float32x4, 1, X)
+FUNCTION(Float32x4, 2, XY)
+FUNCTION(Float32x4, 3, XYZ)
+FUNCTION(Int32x4, 1, X)
+FUNCTION(Int32x4, 2, XY)
+FUNCTION(Int32x4, 3, XYZ)
+FUNCTION(Uint32x4, 1, X)
+FUNCTION(Uint32x4, 2, XY)
+FUNCTION(Uint32x4, 3, XYZ)
 endmacro
 
-macro DECLARE_LOADN_STOREN_FUNCTIONS(NAME, COUNT)
+macro DECLARE_LOADN_STOREN_FUNCTIONS(NAME, COUNT, LANES)
 function NAMELoadCOUNTJS(tarray, index) {
-  return %NAMELoadCOUNT(tarray, index);
+  if (NAME == "Float32x4" || NAME == "Int32x4") {
+    return tarray._getTYPELANES(index);
+  } else {
+    return %NAMELoadCOUNT(tarray, index);
+  }
 }
 
 function NAMEStoreCOUNTJS(tarray, index, a) {
-  return %NAMEStoreCOUNT(tarray, index, a);
+  if (NAME == "Float32x4" || NAME == "Int32x4") {
+    return tarray._setTYPELANES(index, a);
+  } else {
+    return %NAMEStoreCOUNT(tarray, index, a);
+  }
 }
 endmacro
 
@@ -937,5 +953,112 @@ utils.Export(function(to) {
   to.Uint8x16ToString = Uint8x16ToString;
   to.Bool8x16ToString = Bool8x16ToString;
 });
+// --------------------SIMD128 Access in Typed Array -----------------
+var $Uint8Array = global.Uint8Array;
+var $Int8Array = global.Int8Array;
+var $Uint16Array = global.Uint16Array;
+var $Int16Array = global.Int16Array;
+var $Uint32Array = global.Uint32Array;
+var $Int32Array = global.Int32Array;
+var $Float32Array = global.Float32Array;
+var $Float64Array = global.Float64Array;
+
+macro DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, TYPE, TYPENAME, LANES, NBYTES)
+function VIEWGetTYPELANESJS(index) {
+  if (!(%_ClassOf(this) === 'VIEW')) {
+    throw MakeTypeError('incompatible_method_receiver',
+                        ["VIEW._getTYPELANES", this]);
+  }
+  var tarray = this;
+  if (%_ArgumentsLength() < 1) {
+    throw MakeTypeError('invalid_argument');
+  }
+  if (!IS_NUMBER(index)) {
+    throw MakeTypeError('The 2nd argument must be a Number.');
+  }
+  var offset = TO_INTEGER(index) * tarray.BYTES_PER_ELEMENT + tarray.byteOffset;
+  if (offset < tarray.byteOffset || (offset + NBYTES) > (tarray.byteLength + tarray.byteOffset))
+    throw MakeRangeError('The value of index is invalid.');
+  var arraybuffer = tarray.buffer;
+  return %TYPELoadLANES(arraybuffer, offset);
+}
+
+function VIEWSetTYPELANESJS(index, value) {
+  if (!(%_ClassOf(this) === 'VIEW')) {
+    throw MakeTypeError('incompatible_method_receiver',
+                        ["VIEW._setTYPELANES", this]);
+  }
+  var tarray = this;
+  if (%_ArgumentsLength() < 2) {
+    throw MakeTypeError('invalid_argument');
+  }
+  if (!IS_NUMBER(index)) {
+    throw MakeTypeError('The 2nd argument must be a Number.');
+  }
+
+  if (typeof(value) !== 'TYPENAME') {
+     throw MakeTypeError(kInvalidArgument);
+  }
+  var offset = TO_INTEGER(index) * tarray.BYTES_PER_ELEMENT + tarray.byteOffset;
+  if (offset < tarray.byteOffset || (offset + NBYTES) > (tarray.byteLength + tarray.byteOffset))
+    throw MakeRangeError('The value of index is invalid.');
+  var arraybuffer = tarray.buffer;
+  %TYPEStoreLANES(arraybuffer, offset, value);
+}
+endmacro
+
+macro DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(VIEW)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Float32x4, float32x4, XYZW, 16)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Float32x4, float32x4, XYZ, 12)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Float32x4, float32x4, XY, 8)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Float32x4, float32x4, X, 4)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Int32x4, int32x4, XYZW, 16)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Int32x4, int32x4, XYZ, 12)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Int32x4, int32x4, XY, 8)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Int32x4, int32x4, X, 4)
+endmacro
+
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Uint8Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Int8Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Uint16Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Int16Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Uint32Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Int32Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Float32Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Float64Array)
+
+function SetupTypedArraysSimdLoadStore() {
+macro DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(VIEW)
+  utils.InstallFunctions($VIEW.prototype, DONT_ENUM, [
+      "_getFloat32x4X", VIEWGetFloat32x4XJS,
+      "_setFloat32x4X", VIEWSetFloat32x4XJS,
+      "_getFloat32x4XY", VIEWGetFloat32x4XYJS,
+      "_setFloat32x4XY", VIEWSetFloat32x4XYJS,
+      "_getFloat32x4XYZ", VIEWGetFloat32x4XYZJS,
+      "_setFloat32x4XYZ", VIEWSetFloat32x4XYZJS,
+      "_getFloat32x4XYZW", VIEWGetFloat32x4XYZWJS,
+      "_setFloat32x4XYZW", VIEWSetFloat32x4XYZWJS,
+      "_getInt32x4X", VIEWGetInt32x4XJS,
+      "_setInt32x4X", VIEWSetInt32x4XJS,
+      "_getInt32x4XY", VIEWGetInt32x4XYJS,
+      "_setInt32x4XY", VIEWSetInt32x4XYJS,
+      "_getInt32x4XYZ", VIEWGetInt32x4XYZJS,
+      "_setInt32x4XYZ", VIEWSetInt32x4XYZJS,
+      "_getInt32x4XYZW", VIEWGetInt32x4XYZWJS,
+      "_setInt32x4XYZW", VIEWSetInt32x4XYZWJS
+  ]);
+endmacro
+
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Uint8Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Int8Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Uint16Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Int16Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Uint32Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Int32Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Float32Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Float64Array)
+}
+
+SetupTypedArraysSimdLoadStore();
 
 })

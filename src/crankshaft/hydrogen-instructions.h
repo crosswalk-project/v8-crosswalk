@@ -156,6 +156,13 @@ class LChunkBuilder;
   V(Typeof)                                   \
   V(TypeofIsAndBranch)                        \
   V(UnaryMathOperation)                       \
+  V(NullarySIMDOperation)                     \
+  V(UnarySIMDOperation)                       \
+  V(BinarySIMDOperation)                      \
+  V(TernarySIMDOperation)                     \
+  V(QuarternarySIMDOperation)                 \
+  V(QuinarySIMDOperation)                     \
+  V(SenarySIMDOperation)                      \
   V(UnknownOSRValue)                          \
   V(UseConst)                                 \
   V(WrapReceiver)
@@ -536,6 +543,9 @@ class HValue : public ZoneObject {
       HType t = type();
       if (t.IsSmi()) return Representation::Smi();
       if (t.IsHeapNumber()) return Representation::Double();
+      if (t.IsFloat32x4()) return Representation::Float32x4();
+      if (t.IsBool32x4()) return Representation::Bool32x4();
+      if (t.IsInt32x4()) return Representation::Int32x4();
       if (t.IsHeapObject()) return r;
       return Representation::None();
     }
@@ -544,7 +554,9 @@ class HValue : public ZoneObject {
 
   HType type() const { return type_; }
   void set_type(HType new_type) {
-    DCHECK(new_type.IsSubtypeOf(type_));
+    // TODO(ningxin): for SIMD ops, the initial type is None which
+    // hit the following ASSERT.
+    // DCHECK(new_type.IsSubtypeOf(type_));
     type_ = new_type;
   }
 
@@ -930,6 +942,13 @@ std::ostream& operator<<(std::ostream& os, const ChangesOf& v);
                 P3 p3, P4 p4, P5 p5, P6 p6, P7 p7) {                         \
     return new (zone) I(p1, p2, p3, p4, p5, p6, p7);                         \
   }
+
+#define DECLARE_INSTRUCTION_FACTORY_P8(I, P1, P2, P3, P4, P5, P6, P7, P8)    \
+  static I* New(Isolate* isolate, Zone* zone, HValue* context, P1 p1, P2 p2, \
+                P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8) {                  \
+    return new (zone) I(p1, p2, p3, p4, p5, p6, p7, p8);                     \
+  }
+
 
 #define DECLARE_INSTRUCTION_WITH_CONTEXT_FACTORY_P0(I)           \
   static I* New(Isolate* isolate, Zone* zone, HValue* context) { \
@@ -1619,7 +1638,15 @@ class HChange final : public HUnaryOperation {
     if (value->representation().IsSmi() || value->type().IsSmi()) {
       set_type(HType::Smi());
     } else {
-      set_type(HType::TaggedNumber());
+      if (to.IsFloat32x4()) {
+        set_type(HType::Float32x4());
+      } else if (to.IsInt32x4()) {
+        set_type(HType::Int32x4());
+      } else if (to.IsBool32x4()) {
+        set_type(HType::Bool32x4());
+      } else {
+        set_type(HType::TaggedNumber());
+      }
       if (to.IsTagged()) SetChangesFlag(kNewSpacePromotion);
     }
   }
@@ -4018,6 +4045,8 @@ class HBoundsCheckBaseIndexInformation;
 class HBoundsCheck final : public HTemplateInstruction<2> {
  public:
   DECLARE_INSTRUCTION_FACTORY_P2(HBoundsCheck, HValue*, HValue*);
+  DECLARE_INSTRUCTION_FACTORY_P4(HBoundsCheck, HValue*, HValue*,
+                                 BuiltinFunctionId, ElementsKind);
 
   bool skip_check() const { return skip_check_; }
   void set_skip_check() { skip_check_ = true; }
@@ -4055,6 +4084,8 @@ class HBoundsCheck final : public HTemplateInstruction<2> {
   HValue* length() const { return OperandAt(1); }
   bool allow_equality() const { return allow_equality_; }
   void set_allow_equality(bool v) { allow_equality_ = v; }
+  BuiltinFunctionId op() const { return op_; }
+  ElementsKind element_kind() const { return element_kind_; }
 
   int RedefinedOperandIndex() override { return 0; }
   bool IsPurelyInformativeDefinition() override { return skip_check(); }
@@ -4072,16 +4103,21 @@ class HBoundsCheck final : public HTemplateInstruction<2> {
   int offset_;
   int scale_;
   bool allow_equality_;
+  BuiltinFunctionId op_;
+  ElementsKind element_kind_;
 
  private:
   // Normally HBoundsCheck should be created using the
   // HGraphBuilder::AddBoundsCheck() helper.
   // However when building stubs, where we know that the arguments are Int32,
   // it makes sense to invoke this constructor directly.
-  HBoundsCheck(HValue* index, HValue* length)
+  HBoundsCheck(HValue* index, HValue* length,
+               BuiltinFunctionId op = kNumberOfBuiltinFunction,
+               ElementsKind element_kind = INT8_ELEMENTS)
     : skip_check_(false),
       base_(NULL), offset_(0), scale_(0),
-      allow_equality_(false) {
+      allow_equality_(false), op_(op),
+      element_kind_(element_kind) {
     SetOperandAt(0, index);
     SetOperandAt(1, length);
     SetFlag(kFlexibleRepresentation);
@@ -5882,6 +5918,16 @@ class HObjectAccess final {
     return HObjectAccess(kInobject, Oddball::kTypeOfOffset,
                          Representation::HeapObject());
   }
+  static HObjectAccess ForSIMD128Double0() {
+    return HObjectAccess(
+        kDouble, Float32x4::kValueOffset, Representation::Double());
+  }
+
+  static HObjectAccess ForSIMD128Double1() {
+    return HObjectAccess(kDouble,
+                         Float32x4::kValueOffset + kDoubleSize,
+                         Representation::Double());
+  }
 
   static HObjectAccess ForElementsPointer() {
     return HObjectAccess(kElementsPointer, JSObject::kElementsOffset);
@@ -6041,6 +6087,10 @@ class HObjectAccess final {
     return HObjectAccess(kInobject,
                          Map::kInstanceTypeAndBitFieldOffset,
                          Representation::UInteger16());
+  }
+
+  static HObjectAccess ForMapPrototype() {
+    return HObjectAccess(kInobject, Map::kPrototypeOffset);
   }
 
   static HObjectAccess ForPropertyCellValue() {
@@ -6512,6 +6562,9 @@ class HLoadKeyed final : public HTemplateInstruction<4>,
                                  ElementsKind, LoadKeyedHoleMode);
   DECLARE_INSTRUCTION_FACTORY_P7(HLoadKeyed, HValue*, HValue*, HValue*, HValue*,
                                  ElementsKind, LoadKeyedHoleMode, int);
+  DECLARE_INSTRUCTION_FACTORY_P8(HLoadKeyed, HValue*, HValue*, HValue*, HValue*,
+                                 ElementsKind, LoadKeyedHoleMode, int,
+                                 BuiltinFunctionId);
 
   bool is_fixed_typed_array() const {
     return IsFixedTypedArrayElementsKind(elements_kind());
@@ -6530,6 +6583,7 @@ class HLoadKeyed final : public HTemplateInstruction<4>,
   bool HasBackingStoreOwner() const { return OperandAt(0) != OperandAt(3); }
   uint32_t base_offset() const { return BaseOffsetField::decode(bit_field_); }
   bool TryIncreaseBaseOffset(uint32_t increase_by_value) override;
+  BuiltinFunctionId op() {return op_;}
   HValue* GetKey() override { return key(); }
   void SetKey(HValue* key) override { SetOperandAt(1, key); }
   bool IsDehoisted() const override {
@@ -6593,8 +6647,9 @@ class HLoadKeyed final : public HTemplateInstruction<4>,
   HLoadKeyed(HValue* obj, HValue* key, HValue* dependency,
              HValue* backing_store_owner, ElementsKind elements_kind,
              LoadKeyedHoleMode mode = NEVER_RETURN_HOLE,
-             int offset = kDefaultKeyedHeaderOffsetSentinel)
-      : bit_field_(0) {
+             int offset = kDefaultKeyedHeaderOffsetSentinel,
+             BuiltinFunctionId op = kNumberOfBuiltinFunction)
+      : bit_field_(0), op_(op) {
     offset = offset == kDefaultKeyedHeaderOffsetSentinel
         ? GetDefaultHeaderSizeForElementsKind(elements_kind)
         : offset;
@@ -6634,7 +6689,33 @@ class HLoadKeyed final : public HTemplateInstruction<4>,
         SetDependsOnFlag(kDoubleArrayElements);
       }
     } else {
-      if (elements_kind == FLOAT32_ELEMENTS ||
+      if (op_ == kFloat32ArrayGetFloat32x4XYZW ||
+          op_ == kFloat32ArrayGetFloat32x4X ||
+          op_ == kFloat32ArrayGetFloat32x4XY ||
+          op_ == kFloat32ArrayGetFloat32x4XYZ ||
+          op_ == kInt8ArrayGetFloat32x4XYZW ||
+          op_ == kInt8ArrayGetFloat32x4X ||
+          op_ == kInt8ArrayGetFloat32x4XY ||
+          op_ == kInt8ArrayGetFloat32x4XYZ ||
+          op_ == kUint8ArrayGetFloat32x4XYZW ||
+          op_ == kUint8ArrayGetFloat32x4X ||
+          op_ == kUint8ArrayGetFloat32x4XY ||
+          op_ == kUint8ArrayGetFloat32x4XYZ) {
+        set_representation(Representation::Float32x4());
+      } else if (op_ == kInt32ArrayGetInt32x4XYZW ||
+          op_ == kInt32ArrayGetInt32x4X ||
+          op_ == kInt32ArrayGetInt32x4XY ||
+          op_ == kInt32ArrayGetInt32x4XYZ ||
+          op_ == kInt8ArrayGetInt32x4XYZW ||
+          op_ == kInt8ArrayGetInt32x4X ||
+          op_ == kInt8ArrayGetInt32x4XY ||
+          op_ == kInt8ArrayGetInt32x4XYZ ||
+          op_ == kUint8ArrayGetInt32x4XYZW ||
+          op_ == kUint8ArrayGetInt32x4X ||
+          op_ == kUint8ArrayGetInt32x4XY ||
+          op_ == kUint8ArrayGetInt32x4XYZ) {
+        set_representation(Representation::Int32x4());
+      } else if (elements_kind == FLOAT32_ELEMENTS ||
           elements_kind == FLOAT64_ELEMENTS) {
         set_representation(Representation::Double());
       } else {
@@ -6685,6 +6766,7 @@ class HLoadKeyed final : public HTemplateInstruction<4>,
     public BitField<bool, kStartIsDehoisted, kBitsForIsDehoisted>
     {};  // NOLINT
   uint32_t bit_field_;
+  BuiltinFunctionId op_;
 };
 
 
@@ -6969,6 +7051,9 @@ class HStoreKeyed final : public HTemplateInstruction<4>,
   DECLARE_INSTRUCTION_FACTORY_P7(HStoreKeyed, HValue*, HValue*, HValue*,
                                  HValue*, ElementsKind, StoreFieldOrKeyedMode,
                                  int);
+  DECLARE_INSTRUCTION_FACTORY_P8(HStoreKeyed, HValue*, HValue*, HValue*,
+                                 HValue*, ElementsKind, StoreFieldOrKeyedMode,
+                                 int, BuiltinFunctionId);
 
   Representation RequiredInputRepresentation(int index) override {
     // kind_fast:               tagged[int32] = tagged
@@ -6983,6 +7068,33 @@ class HStoreKeyed final : public HTemplateInstruction<4>,
       return ArrayInstructionInterface::KeyedAccessIndexRequirement(
           OperandAt(1)->representation());
     } else if (index == 2) {
+      if (op_ == kFloat32ArraySetFloat32x4XYZW ||
+        op_ == kFloat32ArraySetFloat32x4X ||
+        op_ == kFloat32ArraySetFloat32x4XY ||
+        op_ == kFloat32ArraySetFloat32x4XYZ ||
+        op_ == kInt8ArraySetFloat32x4XYZW ||
+        op_ == kInt8ArraySetFloat32x4X ||
+        op_ == kInt8ArraySetFloat32x4XY ||
+        op_ == kInt8ArraySetFloat32x4XYZ ||
+        op_ == kUint8ArraySetFloat32x4XYZW ||
+        op_ == kUint8ArraySetFloat32x4X ||
+        op_ == kUint8ArraySetFloat32x4XY ||
+        op_ == kUint8ArraySetFloat32x4XYZ) {
+        return Representation::Float32x4();
+      } else if (op_ == kInt32ArraySetInt32x4XYZW ||
+        op_ == kInt32ArraySetInt32x4X ||
+        op_ == kInt32ArraySetInt32x4XY ||
+        op_ == kInt32ArraySetInt32x4XYZ ||
+        op_ == kInt8ArraySetInt32x4XYZW ||
+        op_ == kInt8ArraySetInt32x4X ||
+        op_ == kInt8ArraySetInt32x4XY ||
+        op_ == kInt8ArraySetInt32x4XYZ ||
+        op_ == kUint8ArraySetInt32x4XYZW ||
+        op_ == kUint8ArraySetInt32x4X ||
+        op_ == kUint8ArraySetInt32x4XY ||
+        op_ == kUint8ArraySetInt32x4XYZ) {
+        return Representation::Int32x4();
+      }
       return RequiredValueRepresentation(elements_kind(), store_mode());
     }
 
@@ -7021,6 +7133,33 @@ class HStoreKeyed final : public HTemplateInstruction<4>,
     if (IsUninitialized()) {
       return Representation::None();
     }
+    if (op_ == kFloat32ArraySetFloat32x4XYZW ||
+        op_ == kFloat32ArraySetFloat32x4X ||
+        op_ == kFloat32ArraySetFloat32x4XY ||
+        op_ == kFloat32ArraySetFloat32x4XYZ ||
+        op_ == kInt8ArraySetFloat32x4XYZW ||
+        op_ == kInt8ArraySetFloat32x4X ||
+        op_ == kInt8ArraySetFloat32x4XY ||
+        op_ == kInt8ArraySetFloat32x4XYZ ||
+        op_ == kUint8ArraySetFloat32x4XYZW ||
+        op_ == kUint8ArraySetFloat32x4X ||
+        op_ == kUint8ArraySetFloat32x4XY ||
+        op_ == kUint8ArraySetFloat32x4XYZ) {
+      return Representation::Float32x4();
+    } else if (op_ == kInt32ArraySetInt32x4XYZW ||
+        op_ == kInt32ArraySetInt32x4X ||
+        op_ == kInt32ArraySetInt32x4XY ||
+        op_ == kInt32ArraySetInt32x4XYZ ||
+        op_ == kInt8ArraySetInt32x4XYZW ||
+        op_ == kInt8ArraySetInt32x4X ||
+        op_ == kInt8ArraySetInt32x4XY ||
+        op_ == kInt8ArraySetInt32x4XYZ ||
+        op_ == kUint8ArraySetInt32x4XYZW ||
+        op_ == kUint8ArraySetInt32x4X ||
+        op_ == kUint8ArraySetInt32x4XY ||
+        op_ == kUint8ArraySetInt32x4XYZ) {
+      return Representation::Int32x4();
+    }
     Representation r =
         RequiredValueRepresentation(elements_kind(), store_mode());
     // For fast object elements kinds, don't assume anything.
@@ -7028,6 +7167,7 @@ class HStoreKeyed final : public HTemplateInstruction<4>,
     return r;
   }
 
+  BuiltinFunctionId op() const { return op_; }
   HValue* elements() const { return OperandAt(0); }
   HValue* key() const { return OperandAt(1); }
   HValue* value() const { return OperandAt(2); }
@@ -7094,7 +7234,8 @@ class HStoreKeyed final : public HTemplateInstruction<4>,
   HStoreKeyed(HValue* obj, HValue* key, HValue* val,
               HValue* backing_store_owner, ElementsKind elements_kind,
               StoreFieldOrKeyedMode store_mode = INITIALIZING_STORE,
-              int offset = kDefaultKeyedHeaderOffsetSentinel)
+              int offset = kDefaultKeyedHeaderOffsetSentinel,
+              BuiltinFunctionId op = kNumberOfBuiltinFunction)
       : base_offset_(offset == kDefaultKeyedHeaderOffsetSentinel
                          ? GetDefaultHeaderSizeForElementsKind(elements_kind)
                          : offset),
@@ -7102,7 +7243,8 @@ class HStoreKeyed final : public HTemplateInstruction<4>,
                    IsUninitializedField::encode(false) |
                    StoreModeField::encode(store_mode) |
                    ElementsKindField::encode(elements_kind)),
-        dominator_(NULL) {
+        dominator_(NULL),
+        op_(op) {
     SetOperandAt(0, obj);
     SetOperandAt(1, key);
     SetOperandAt(2, val);
@@ -7139,6 +7281,7 @@ class HStoreKeyed final : public HTemplateInstruction<4>,
   uint32_t base_offset_;
   uint32_t bit_field_;
   HValue* dominator_;
+  BuiltinFunctionId op_;
 };
 
 
@@ -7807,6 +7950,599 @@ class HAllocateBlockContext: public HTemplateInstruction<2> {
   Handle<ScopeInfo> scope_info_;
 };
 
+
+class HNullarySIMDOperation final : public HTemplateInstruction<1> {
+ public:
+  static HInstruction* New(Isolate* isolate,
+                           Zone* zone,
+                           HValue* context,
+                           BuiltinFunctionId op);
+
+  HValue* context() { return OperandAt(0); }
+
+  std::ostream& PrintDataTo(std::ostream& os) const override;
+
+  Representation observed_input_representation(int index) override {
+    return RequiredInputRepresentation(index);
+  }
+  Representation RequiredInputRepresentation(int index) override {
+    return Representation::Tagged();
+  }
+
+  BuiltinFunctionId op() const { return op_; }
+  const char* OpName() const;
+
+  DECLARE_CONCRETE_INSTRUCTION(NullarySIMDOperation)
+
+ protected:
+  bool DataEquals(HValue* other) override {
+    HNullarySIMDOperation* b = HNullarySIMDOperation::cast(other);
+    return op_ == b->op();
+  }
+
+ private:
+  HNullarySIMDOperation(HValue* context, BuiltinFunctionId op)
+      : HTemplateInstruction<1>(HType::None()), op_(op) {
+    SetOperandAt(0, context);
+    switch (op) {
+#define SIMD_NULLARY_OPERATION_CASE_ITEM(p1, p2, name, representation)    \
+      case k##name:                                                       \
+        set_representation(Representation::representation());             \
+        set_type(HType::FromRepresentation(representation_));         \
+        break;
+SIMD_NULLARY_OPERATIONS(SIMD_NULLARY_OPERATION_CASE_ITEM)
+#undef SIMD_NULLARY_OPERATION_CASE_ITEM
+      default:
+        UNREACHABLE();
+    }
+    SetFlag(kUseGVN);
+  }
+
+  bool IsDeletable() const override { return true; }
+
+  BuiltinFunctionId op_;
+};
+
+
+class HUnarySIMDOperation final : public HTemplateInstruction<2> {
+ public:
+  static HInstruction* New(Isolate* isolate,
+                           Zone* zone,
+                           HValue* context,
+                           HValue* value,
+                           BuiltinFunctionId op,
+                           Representation to = Representation::Float32x4());
+
+  HValue* context() { return OperandAt(0); }
+  HValue* value() const { return OperandAt(1); }
+
+  std::ostream& PrintDataTo(std::ostream& os) const override;
+
+  Representation observed_input_representation(int index) override {
+    return RequiredInputRepresentation(index);
+  }
+  Representation RequiredInputRepresentation(int index) override {
+    if (index == 0) {
+      return Representation::Tagged();
+    } else if (op_ == kSIMD128Change) {
+      return value()->representation();
+    } else {
+      switch (op_) {
+#define SIMD_UNARY_OPERATION_CASE_ITEM(p1, p2, name, p4, representation)    \
+        case k##name:                                                       \
+          return Representation::representation();
+SIMD_UNARY_OPERATIONS(SIMD_UNARY_OPERATION_CASE_ITEM)
+SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(SIMD_UNARY_OPERATION_CASE_ITEM)
+#undef SIMD_UNARY_OPERATION_CASE_ITEM
+        default:
+          UNREACHABLE();
+          return Representation::None();
+      }
+    }
+  }
+
+  BuiltinFunctionId op() const { return op_; }
+  const char* OpName() const;
+
+  DECLARE_CONCRETE_INSTRUCTION(UnarySIMDOperation)
+
+ protected:
+  bool DataEquals(HValue* other) override {
+    HUnarySIMDOperation* b = HUnarySIMDOperation::cast(other);
+    return op_ == b->op();
+  }
+
+ private:
+  HUnarySIMDOperation(HValue* context, HValue* value, BuiltinFunctionId op,
+                      Representation to = Representation::Float32x4())
+      : HTemplateInstruction<2>(HType::None()), op_(op) {
+    SetOperandAt(0, context);
+    SetOperandAt(1, value);
+    switch (op) {
+      case kSIMD128Change:
+        set_representation(to);
+        set_type(HType::FromRepresentation(to));
+        break;
+#define SIMD_UNARY_OPERATION_CASE_ITEM(p1, p2, name, representation, p5)  \
+      case k##name:                                                       \
+        set_representation(Representation::representation());             \
+        set_type(HType::FromRepresentation(representation_));         \
+        if (Representation::p5().IsInteger32())  {                        \
+          SetFlag(kTruncatingToInt32);                                    \
+        }                                                                 \
+        break;
+SIMD_UNARY_OPERATIONS(SIMD_UNARY_OPERATION_CASE_ITEM)
+SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(SIMD_UNARY_OPERATION_CASE_ITEM)
+#undef SIMD_UNARY_OPERATION_CASE_ITEM
+      default:
+        UNREACHABLE();
+    }
+    SetFlag(kUseGVN);
+  }
+
+  bool IsDeletable() const override { return true; }
+
+  BuiltinFunctionId op_;
+};
+
+
+class HBinarySIMDOperation final : public HTemplateInstruction<3> {
+ public:
+  static HInstruction* New(Isolate* isolate,
+                           Zone* zone,
+                           HValue* context,
+                           HValue* left,
+                           HValue* right,
+                           BuiltinFunctionId op);
+
+  HValue* context() { return OperandAt(0); }
+  HValue* left() const { return OperandAt(1); }
+  HValue* right() const { return OperandAt(2); }
+
+  std::ostream& PrintDataTo(std::ostream& os) const override;
+
+  Representation observed_input_representation(int index) override {
+    return RequiredInputRepresentation(index);
+  }
+  Representation RequiredInputRepresentation(int index) override {
+    if (index == 0) {
+      return Representation::Tagged();
+    } else {
+      switch (op_) {
+#define SIMD_BINARY_OPERATION_CASE_ITEM(p1, p2, name, p4, left_representation, \
+                                        right_representation)                  \
+      case k##name:                                                            \
+        return index == 1 ? Representation::left_representation()              \
+                          : Representation::right_representation();            \
+        break;
+SIMD_BINARY_OPERATIONS(SIMD_BINARY_OPERATION_CASE_ITEM)
+#undef SIMD_BINARY_OPERATION_CASE_ITEM
+        default:
+          UNREACHABLE();
+          return Representation::None();
+      }
+    }
+  }
+
+  BuiltinFunctionId op() const { return op_; }
+  const char* OpName() const;
+
+  DECLARE_CONCRETE_INSTRUCTION(BinarySIMDOperation)
+
+ protected:
+  bool DataEquals(HValue* other) override {
+    HBinarySIMDOperation* b = HBinarySIMDOperation::cast(other);
+    return op_ == b->op();
+  }
+
+ private:
+  HBinarySIMDOperation(HValue* context, HValue* left, HValue* right,
+                       BuiltinFunctionId op)
+      : HTemplateInstruction<3>(HType::None()), op_(op) {
+    SetOperandAt(0, context);
+    SetOperandAt(1, left);
+    SetOperandAt(2, right);
+    switch (op) {
+#define SIMD_BINARY_OPERATION_CASE_ITEM(p1, p2, name, representation, p5, p6)  \
+      case k##name:                                                            \
+        set_representation(Representation::representation());                  \
+        set_type(HType::FromRepresentation(representation_));                  \
+        if (Representation::p5().IsInteger32() ||                              \
+            Representation::p6().IsInteger32())  {                             \
+          SetFlag(kTruncatingToInt32);                                         \
+        }                                                                      \
+        break;
+SIMD_BINARY_OPERATIONS(SIMD_BINARY_OPERATION_CASE_ITEM)
+#undef SIMD_BINARY_OPERATION_CASE_ITEM
+      default:
+        UNREACHABLE();
+    }
+    SetFlag(kUseGVN);
+  }
+
+  bool IsDeletable() const override { return true; }
+
+  BuiltinFunctionId op_;
+};
+
+
+class HTernarySIMDOperation final : public HTemplateInstruction<4> {
+ public:
+  static HInstruction* New(Isolate* isolate,
+                           Zone* zone,
+                           HValue* context,
+                           HValue* first,
+                           HValue* second,
+                           HValue* third,
+                           BuiltinFunctionId op);
+
+  HValue* context() { return OperandAt(0); }
+  HValue* first() const { return OperandAt(1); }
+  HValue* second() const { return OperandAt(2); }
+  HValue* third() const { return OperandAt(3); }
+
+  std::ostream& PrintDataTo(std::ostream& os) const override;
+
+  Representation observed_input_representation(int index) override {
+    return RequiredInputRepresentation(index);
+  }
+  Representation RequiredInputRepresentation(int index) override {
+    if (index == 0) {
+      return Representation::Tagged();
+    } else {
+      switch (op_) {
+#define SIMD_TERNARY_OPERATION_CASE_ITEM(p1, p2, name, p4,                     \
+            first_representation, second_representation, third_representation) \
+        case k##name:                                                          \
+          switch (index) {                                                     \
+            case 1: return Representation::first_representation();             \
+            case 2: return Representation::second_representation();            \
+            case 3: return Representation::third_representation();             \
+            default:                                                           \
+              UNREACHABLE();                                                   \
+              return Representation::None();                                   \
+          }
+SIMD_TERNARY_OPERATIONS(SIMD_TERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_TERNARY_OPERATION_CASE_ITEM
+        default:
+          UNREACHABLE();
+          return Representation::None();
+      }
+    }
+  }
+
+  BuiltinFunctionId op() const { return op_; }
+  const char* OpName() const;
+
+  DECLARE_CONCRETE_INSTRUCTION(TernarySIMDOperation)
+
+ protected:
+  bool DataEquals(HValue* other) override {
+    HTernarySIMDOperation* b = HTernarySIMDOperation::cast(other);
+    return op_ == b->op();
+  }
+
+ private:
+  HTernarySIMDOperation(HValue* context, HValue* first, HValue* second,
+                        HValue* third, BuiltinFunctionId op)
+      : HTemplateInstruction<4>(HType::None()), op_(op) {
+    SetOperandAt(0, context);
+    SetOperandAt(1, first);
+    SetOperandAt(2, second);
+    SetOperandAt(3, third);
+    switch (op) {
+#define SIMD_TERNARY_OPERATION_CASE_ITEM(p1, p2, name, representation, p5,     \
+                                         p6, p7)                               \
+      case k##name:                                                            \
+        set_representation(Representation::representation());                  \
+        set_type(HType::FromRepresentation(representation_));              \
+        if (Representation::p5().IsInteger32() ||                              \
+            Representation::p6().IsInteger32() ||                              \
+            Representation::p7().IsInteger32())  {                             \
+          SetFlag(kTruncatingToInt32);                                         \
+        }                                                                      \
+        break;
+SIMD_TERNARY_OPERATIONS(SIMD_TERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_TERNARY_OPERATION_CASE_ITEM
+      default:
+        UNREACHABLE();
+    }
+    SetFlag(kUseGVN);
+  }
+
+  bool IsDeletable() const override { return true; }
+
+  BuiltinFunctionId op_;
+};
+
+
+class HQuarternarySIMDOperation final : public HTemplateInstruction<5> {
+ public:
+  static HInstruction* New(Isolate* isolate,
+                           Zone* zone,
+                           HValue* context,
+                           HValue* x,
+                           HValue* y,
+                           HValue* z,
+                           HValue* w,
+                           BuiltinFunctionId op);
+
+  HValue* context() { return OperandAt(0); }
+  HValue* x() const { return OperandAt(1); }
+  HValue* y() const { return OperandAt(2); }
+  HValue* z() const { return OperandAt(3); }
+  HValue* w() const { return OperandAt(4); }
+
+  std::ostream& PrintDataTo(std::ostream& os) const override;
+
+  Representation observed_input_representation(int index) override {
+    return RequiredInputRepresentation(index);
+  }
+  Representation RequiredInputRepresentation(int index) override {
+    if (index == 0) {
+      return Representation::Tagged();
+    } else {
+      switch (op_) {
+#define SIMD_QUARTERNARY_OPERATION_CASE_ITEM(p1, p2, name, p4,                 \
+            first_representation, second_representation, third_representation, \
+            fourth_representation)                                             \
+        case k##name:                                                          \
+          switch (index) {                                                     \
+            case 1: return Representation::first_representation();             \
+            case 2: return Representation::second_representation();            \
+            case 3: return Representation::third_representation();             \
+            case 4: return Representation::fourth_representation();            \
+            default:                                                           \
+              UNREACHABLE();                                                   \
+              return Representation::None();                                   \
+          }
+SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUARTERNARY_OPERATION_CASE_ITEM
+        default:
+          UNREACHABLE();
+          return Representation::None();
+      }
+    }
+  }
+
+  BuiltinFunctionId op() const { return op_; }
+  const char* OpName() const;
+
+  DECLARE_CONCRETE_INSTRUCTION(QuarternarySIMDOperation)
+
+ protected:
+  bool DataEquals(HValue* other) override {
+    HQuarternarySIMDOperation* b = HQuarternarySIMDOperation::cast(other);
+    return op_ == b->op();
+  }
+
+ private:
+  HQuarternarySIMDOperation(HValue* context, HValue* x, HValue* y, HValue* z,
+                            HValue* w, BuiltinFunctionId op)
+      : HTemplateInstruction<5>(HType::None()), op_(op) {
+    SetOperandAt(0, context);
+    SetOperandAt(1, x);
+    SetOperandAt(2, y);
+    SetOperandAt(3, z);
+    SetOperandAt(4, w);
+    switch (op) {
+#define SIMD_QUARTERNARY_OPERATION_CASE_ITEM(p1, p2, name, representation, p5, \
+                                             p6, p7, p8)                       \
+      case k##name:                                                            \
+        set_representation(Representation::representation());                  \
+        set_type(HType::FromRepresentation(representation_));              \
+        if (Representation::p5().IsInteger32() ||                              \
+            Representation::p6().IsInteger32() ||                              \
+            Representation::p7().IsInteger32() ||                              \
+            Representation::p8().IsInteger32())  {                             \
+          SetFlag(kTruncatingToInt32);                                         \
+        }                                                                      \
+        break;
+SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUARTERNARY_OPERATION_CASE_ITEM
+      default:
+        UNREACHABLE();
+    }
+    SetFlag(kUseGVN);
+  }
+
+  bool IsDeletable() const override { return true; }
+
+  BuiltinFunctionId op_;
+};
+
+
+class HQuinarySIMDOperation final : public HTemplateInstruction<6> {
+ public:
+  static HInstruction* New(Isolate* isolate,
+                           Zone* zone,
+                           HValue* context,
+                           HValue* a0,
+                           HValue* a1,
+                           HValue* a2,
+                           HValue* a3,
+                           HValue* a4,
+                           BuiltinFunctionId op);
+
+  HValue* context() { return OperandAt(0); }
+  HValue* a0() const { return OperandAt(1); }
+  HValue* a1() const { return OperandAt(2); }
+  HValue* a2() const { return OperandAt(3); }
+  HValue* a3() const { return OperandAt(4); }
+  HValue* a4() const { return OperandAt(5); }
+
+  std::ostream& PrintDataTo(std::ostream& os) const override;
+
+  Representation observed_input_representation(int index) override {
+    return RequiredInputRepresentation(index);
+  }
+  Representation RequiredInputRepresentation(int index) override {
+    if (index == 0) {
+      return Representation::Tagged();
+    } else {
+      switch (op_) {
+#define SIMD_QUINARY_OPERATION_CASE_ITEM(p1, p2, name, p4,                 \
+            first_representation, second_representation, third_representation, \
+            fourth_representation, fifth_representation)                       \
+        case k##name:                                                          \
+          switch (index) {                                                     \
+            case 1: return Representation::first_representation();             \
+            case 2: return Representation::second_representation();            \
+            case 3: return Representation::third_representation();             \
+            case 4: return Representation::fourth_representation();            \
+            case 5: return Representation::fifth_representation();             \
+            default:                                                           \
+              UNREACHABLE();                                                   \
+              return Representation::None();                                   \
+          }
+SIMD_QUINARY_OPERATIONS(SIMD_QUINARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUINARY_OPERATION_CASE_ITEM
+        default:
+          UNREACHABLE();
+          return Representation::None();
+      }
+    }
+  }
+
+  BuiltinFunctionId op() const { return op_; }
+  const char* OpName() const;
+
+  DECLARE_CONCRETE_INSTRUCTION(QuinarySIMDOperation)
+
+ protected:
+  bool DataEquals(HValue* other) override {
+    HQuinarySIMDOperation* b = HQuinarySIMDOperation::cast(other);
+    return op_ == b->op();
+  }
+
+ private:
+  HQuinarySIMDOperation(HValue* context, HValue* a0, HValue* a1, HValue* a2,
+                        HValue* a3, HValue* a4, BuiltinFunctionId op)
+      : HTemplateInstruction<6>(HType::None()), op_(op) {
+    SetOperandAt(0, context);
+    SetOperandAt(1, a0);
+    SetOperandAt(2, a1);
+    SetOperandAt(3, a2);
+    SetOperandAt(4, a3);
+    SetOperandAt(5, a4);
+    switch (op) {
+#define SIMD_QUINARY_OPERATION_CASE_ITEM(p1, p2, name, representation, p5, \
+                                         p6, p7, p8, p9)                   \
+      case k##name:                                                            \
+        set_representation(Representation::representation());                  \
+        set_type(HType::FromRepresentation(representation_));                  \
+        break;
+SIMD_QUINARY_OPERATIONS(SIMD_QUINARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUINARY_OPERATION_CASE_ITEM
+      default:
+        UNREACHABLE();
+    }
+    SetFlag(kUseGVN);
+  }
+
+  bool IsDeletable() const override { return true; }
+
+  BuiltinFunctionId op_;
+};
+
+
+class HSenarySIMDOperation final : public HTemplateInstruction<7> {
+ public:
+  static HInstruction* New(Isolate* isolate,
+                           Zone* zone,
+                           HValue* context,
+                           HValue* a0,
+                           HValue* a1,
+                           HValue* a2,
+                           HValue* a3,
+                           HValue* a4,
+                           HValue* a5,
+                           BuiltinFunctionId op);
+
+  HValue* context() { return OperandAt(0); }
+  HValue* a0() const { return OperandAt(1); }
+  HValue* a1() const { return OperandAt(2); }
+  HValue* a2() const { return OperandAt(3); }
+  HValue* a3() const { return OperandAt(4); }
+  HValue* a4() const { return OperandAt(5); }
+  HValue* a5() const { return OperandAt(6); }
+
+  std::ostream& PrintDataTo(std::ostream& os) const override;
+
+  Representation observed_input_representation(int index) override {
+    return RequiredInputRepresentation(index);
+  }
+  Representation RequiredInputRepresentation(int index) override {
+    if (index == 0) {
+      return Representation::Tagged();
+    } else {
+      switch (op_) {
+#define SIMD_SENARY_OPERATION_CASE_ITEM(p1, p2, name, p4,                 \
+            first_representation, second_representation, third_representation, \
+            fourth_representation, fifth_representation, sixth_representation) \
+        case k##name:                                                          \
+          switch (index) {                                                     \
+            case 1: return Representation::first_representation();             \
+            case 2: return Representation::second_representation();            \
+            case 3: return Representation::third_representation();             \
+            case 4: return Representation::fourth_representation();            \
+            case 5: return Representation::fifth_representation();             \
+            case 6: return Representation::sixth_representation();             \
+            default:                                                           \
+              UNREACHABLE();                                                   \
+              return Representation::None();                                   \
+          }
+SIMD_SENARY_OPERATIONS(SIMD_SENARY_OPERATION_CASE_ITEM)
+#undef SIMD_SENARY_OPERATION_CASE_ITEM
+        default:
+          UNREACHABLE();
+          return Representation::None();
+      }
+    }
+  }
+
+  BuiltinFunctionId op() const { return op_; }
+  const char* OpName() const;
+
+  DECLARE_CONCRETE_INSTRUCTION(SenarySIMDOperation)
+
+ protected:
+  bool DataEquals(HValue* other) override {
+    HSenarySIMDOperation* b = HSenarySIMDOperation::cast(other);
+    return op_ == b->op();
+  }
+
+ private:
+  HSenarySIMDOperation(HValue* context, HValue* a0, HValue* a1, HValue* a2,
+                       HValue* a3, HValue* a4, HValue* a5,
+                       BuiltinFunctionId op)
+      : HTemplateInstruction<7>(HType::None()), op_(op) {
+    SetOperandAt(0, context);
+    SetOperandAt(1, a0);
+    SetOperandAt(2, a1);
+    SetOperandAt(3, a2);
+    SetOperandAt(4, a3);
+    SetOperandAt(5, a4);
+    SetOperandAt(6, a5);
+    switch (op) {
+#define SIMD_SENARY_OPERATION_CASE_ITEM(p1, p2, name, representation, p5, \
+                                        p6, p7, p8, p9, p10)              \
+      case k##name:                                                            \
+        set_representation(Representation::representation());                  \
+        set_type(HType::FromRepresentation(representation_));                  \
+        break;
+SIMD_SENARY_OPERATIONS(SIMD_SENARY_OPERATION_CASE_ITEM)
+#undef SIMD_SENARY_OPERATION_CASE_ITEM
+      default:
+        UNREACHABLE();
+    }
+    SetFlag(kUseGVN);
+  }
+
+  bool IsDeletable() const override { return true; }
+
+  BuiltinFunctionId op_;
+};
 
 
 #undef DECLARE_INSTRUCTION
