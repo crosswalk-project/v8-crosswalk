@@ -16,6 +16,7 @@ namespace internal {
 template <typename T> class Handle;
 class Object;
 class OStream;
+class Representation;
 
 #define HTYPE_LIST(V)                                 \
   V(Any, 0x0)              /* 0000 0000 0000 0000 */  \
@@ -27,12 +28,15 @@ class OStream;
   V(HeapPrimitive, 0x25)   /* 0000 0000 0010 0101 */  \
   V(Null, 0x27)            /* 0000 0000 0010 0111 */  \
   V(HeapNumber, 0x2d)      /* 0000 0000 0010 1101 */  \
-  V(String, 0x65)          /* 0000 0000 0110 0101 */  \
-  V(Boolean, 0xa5)         /* 0000 0000 1010 0101 */  \
-  V(Undefined, 0x125)      /* 0000 0001 0010 0101 */  \
-  V(JSObject, 0x221)       /* 0000 0010 0010 0001 */  \
-  V(JSArray, 0x621)        /* 0000 0110 0010 0001 */  \
-  V(None, 0x7ff)           /* 0000 0111 1111 1111 */
+  V(Float32x4, 0x65)       /* 0000 0000 0110 0101 */  \
+  V(Float64x2, 0xa5)       /* 0000 0000 1010 0101 */  \
+  V(Int32x4, 0x125)        /* 0000 0001 0010 0101 */  \
+  V(String, 0x225)         /* 0000 0010 0010 0101 */  \
+  V(Boolean, 0x425)        /* 0000 0100 0010 0101 */  \
+  V(Undefined, 0x825)      /* 0000 1000 0010 0101 */  \
+  V(JSObject, 0x1021)      /* 0001 0000 0010 0001 */  \
+  V(JSArray, 0x3021)       /* 0011 0000 0010 0001 */  \
+  V(None, 0x3fff)          /* 0011 1111 1111 1111 */
 
 class HType V8_FINAL {
  public:
@@ -63,7 +67,8 @@ class HType V8_FINAL {
 
   template <class T>
   static HType FromType(typename T::TypeHandle type) V8_WARN_UNUSED_RESULT;
-  static HType FromValue(Handle<Object> value) V8_WARN_UNUSED_RESULT;
+  static HType FromValue(Handle<Object> value) ;
+  static HType FromRepresentation(Representation representation);
 
   friend OStream& operator<<(OStream& os, const HType& t);
 
