@@ -7155,18 +7155,175 @@ class Script: public Struct {
   V(Math, min, MathMin)                               \
   V(Math, imul, MathImul)
 
+#define SIMD_NULLARY_OPERATIONS(V)                                             \
+  V(SIMD.float32x4, zero, Float32x4Zero, Float32x4)                            \
+  V(SIMD.float64x2, zero, Float64x2Zero, Float64x2)                            \
+  V(SIMD.int32x4, zero, Int32x4Zero, Int32x4)
+
+#define SIMD_UNARY_OPERATIONS(V)                                               \
+  V(SIMD.float32x4, abs, Float32x4Abs, Float32x4, Float32x4)                   \
+  V(SIMD.float32x4, bitsToInt32x4, Float32x4BitsToInt32x4, Int32x4, Float32x4) \
+  V(SIMD.float32x4, neg, Float32x4Neg, Float32x4, Float32x4)                   \
+  V(SIMD.float32x4, reciprocal, Float32x4Reciprocal, Float32x4, Float32x4)     \
+  V(SIMD.float32x4, reciprocalSqrt, Float32x4ReciprocalSqrt,                   \
+    Float32x4, Float32x4)                                                      \
+  V(SIMD.float32x4, splat, Float32x4Splat, Float32x4, Double)                  \
+  V(SIMD.float32x4, sqrt, Float32x4Sqrt, Float32x4, Float32x4)                 \
+  V(SIMD.float32x4, toInt32x4, Float32x4ToInt32x4, Int32x4, Float32x4)         \
+  V(SIMD.float64x2, abs, Float64x2Abs, Float64x2, Float64x2)                   \
+  V(SIMD.float64x2, neg, Float64x2Neg, Float64x2, Float64x2)                   \
+  V(SIMD.float64x2, sqrt, Float64x2Sqrt, Float64x2, Float64x2)                 \
+  V(SIMD.int32x4, bitsToFloat32x4, Int32x4BitsToFloat32x4, Float32x4, Int32x4) \
+  V(SIMD.int32x4, neg, Int32x4Neg, Int32x4, Int32x4)                           \
+  V(SIMD.int32x4, not, Int32x4Not, Int32x4, Int32x4)                           \
+  V(SIMD.int32x4, splat, Int32x4Splat, Int32x4, Integer32)                     \
+  V(SIMD.int32x4, toFloat32x4, Int32x4ToFloat32x4, Float32x4, Int32x4)
+
+// Do not need to install them in InstallExperimentalSIMDBuiltinFunctionIds.
+#define SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(V)                           \
+  V(SIMD.float32x4.prototype, signMask, Float32x4GetSignMask, Integer32,       \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4.prototype, x, Float32x4GetX, Double, Float32x4)             \
+  V(SIMD.float32x4.prototype, y, Float32x4GetY, Double, Float32x4)             \
+  V(SIMD.float32x4.prototype, z, Float32x4GetZ, Double, Float32x4)             \
+  V(SIMD.float32x4.prototype, w, Float32x4GetW, Double, Float32x4)             \
+  V(SIMD.float64x2.prototype, signMask, Float64x2GetSignMask, Integer32,       \
+    Float64x2)                                                                 \
+  V(SIMD.float64x2.prototype, x, Float64x2GetX, Double, Float64x2)             \
+  V(SIMD.float64x2.prototype, y, Float64x2GetY, Double, Float64x2)             \
+  V(SIMD.int32x4.prototype, signMask, Int32x4GetSignMask, Integer32, Int32x4)  \
+  V(SIMD.int32x4.prototype, x, Int32x4GetX, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, y, Int32x4GetY, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, z, Int32x4GetZ, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, w, Int32x4GetW, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, flagX, Int32x4GetFlagX, Tagged, Int32x4)           \
+  V(SIMD.int32x4.prototype, flagY, Int32x4GetFlagY, Tagged, Int32x4)           \
+  V(SIMD.int32x4.prototype, flagZ, Int32x4GetFlagZ, Tagged, Int32x4)           \
+  V(SIMD.int32x4.prototype, flagW, Int32x4GetFlagW, Tagged, Int32x4)
+
+#define SIMD_BINARY_OPERATIONS(V)                                              \
+  V(SIMD.float32x4, add, Float32x4Add, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, div, Float32x4Div, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, max, Float32x4Max, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, min, Float32x4Min, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, mul, Float32x4Mul, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, sub, Float32x4Sub, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, equal, Float32x4Equal, Int32x4, Float32x4, Float32x4)      \
+  V(SIMD.float32x4, notEqual, Float32x4NotEqual, Int32x4, Float32x4,           \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, greaterThan, Float32x4GreaterThan, Int32x4, Float32x4,     \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, greaterThanOrEqual, Float32x4GreaterThanOrEqual, Int32x4,  \
+    Float32x4, Float32x4)                                                      \
+  V(SIMD.float32x4, lessThan, Float32x4LessThan, Int32x4, Float32x4,           \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, lessThanOrEqual, Float32x4LessThanOrEqual, Int32x4,        \
+    Float32x4, Float32x4)                                                      \
+  V(SIMD.float32x4, shuffle, Float32x4Shuffle, Float32x4, Float32x4,           \
+    Integer32)                                                                 \
+  V(SIMD.float32x4, scale, Float32x4Scale, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withX, Float32x4WithX, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withY, Float32x4WithY, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withZ, Float32x4WithZ, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withW, Float32x4WithW, Float32x4, Float32x4, Double)       \
+  V(SIMD.float64x2, add, Float64x2Add, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, div, Float64x2Div, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, max, Float64x2Max, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, min, Float64x2Min, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, mul, Float64x2Mul, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, sub, Float64x2Sub, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, scale, Float64x2Scale, Float64x2, Float64x2, Double)       \
+  V(SIMD.float64x2, withX, Float64x2WithX, Float64x2, Float64x2, Double)       \
+  V(SIMD.float64x2, withY, Float64x2WithY, Float64x2, Float64x2, Double)       \
+  V(SIMD, float64x2, Float64x2Constructor, Float64x2, Double, Double)          \
+  V(SIMD.int32x4, add, Int32x4Add, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, and, Int32x4And, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, mul, Int32x4Mul, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, or, Int32x4Or, Int32x4, Int32x4, Int32x4)                    \
+  V(SIMD.int32x4, sub, Int32x4Sub, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, xor, Int32x4Xor, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, shuffle, Int32x4Shuffle, Int32x4, Int32x4, Integer32)        \
+  V(SIMD.int32x4, withX, Int32x4WithX, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withY, Int32x4WithY, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withZ, Int32x4WithZ, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withW, Int32x4WithW, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withFlagX, Int32x4WithFlagX, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, withFlagY, Int32x4WithFlagY, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, withFlagZ, Int32x4WithFlagZ, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, withFlagW, Int32x4WithFlagW, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, greaterThan, Int32x4GreaterThan, Int32x4, Int32x4, Int32x4)  \
+  V(SIMD.int32x4, equal, Int32x4Equal, Int32x4, Int32x4, Int32x4)              \
+  V(SIMD.int32x4, lessThan, Int32x4LessThan, Int32x4, Int32x4, Int32x4)        \
+  V(SIMD.int32x4, shiftLeft, Int32x4ShiftLeft, Int32x4, Int32x4, Integer32)    \
+  V(SIMD.int32x4, shiftRight, Int32x4ShiftRight, Int32x4, Int32x4, Integer32)  \
+  V(SIMD.int32x4, shiftRightArithmetic, Int32x4ShiftRightArithmetic, Int32x4,  \
+    Int32x4, Integer32)
+
+#define SIMD_TERNARY_OPERATIONS(V)                                             \
+  V(SIMD.float32x4, clamp, Float32x4Clamp, Float32x4, Float32x4, Float32x4,    \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, shuffleMix, Float32x4ShuffleMix, Float32x4, Float32x4,     \
+    Float32x4, Integer32)                                                      \
+  V(SIMD.float64x2, clamp, Float64x2Clamp, Float64x2, Float64x2, Float64x2,    \
+    Float64x2)                                                                 \
+  V(SIMD.int32x4, select, Int32x4Select, Float32x4, Int32x4, Float32x4,        \
+    Float32x4)
+
+#define SIMD_QUARTERNARY_OPERATIONS(V)                                         \
+  V(SIMD, float32x4, Float32x4Constructor, Float32x4, Double, Double, Double,  \
+    Double)                                                                    \
+  V(SIMD, int32x4, Int32x4Constructor, Int32x4, Integer32, Integer32,          \
+    Integer32, Integer32)                                                      \
+  V(SIMD.int32x4, bool, Int32x4Bool, Int32x4, Tagged, Tagged, Tagged, Tagged)
+
+#define SIMD_ARRAY_OPERATIONS(V)                                               \
+  V(Float32x4Array.prototype, getAt, Float32x4ArrayGetAt)                      \
+  V(Float32x4Array.prototype, setAt, Float32x4ArraySetAt)                      \
+  V(Float64x2Array.prototype, getAt, Float64x2ArrayGetAt)                      \
+  V(Float64x2Array.prototype, setAt, Float64x2ArraySetAt)                      \
+  V(Int32x4Array.prototype, getAt, Int32x4ArrayGetAt)                          \
+  V(Int32x4Array.prototype, setAt, Int32x4ArraySetAt)
+
+// Do not need to install them in InstallExperimentalSIMDBuiltinFunctionIds.
+#define SIMD_FAKE_ID_LISTS(V)                                                  \
+  V(SIMD, unreachable, SIMD128Unreachable)                                     \
+  V(SIMD, change, SIMD128Change)
 
 enum BuiltinFunctionId {
   kArrayCode,
 #define DECLARE_FUNCTION_ID(ignored1, ignore2, name)    \
   k##name,
   FUNCTIONS_WITH_ID_LIST(DECLARE_FUNCTION_ID)
-#undef DECLARE_FUNCTION_ID
   // Fake id for a special case of Math.pow. Note, it continues the
   // list of math functions.
   kMathPowHalf,
   // Installed only on --harmony-maths.
-  kMathClz32
+  kMathClz32,
+  SIMD_FAKE_ID_LISTS(DECLARE_FUNCTION_ID)
+  SIMD_ARRAY_OPERATIONS(DECLARE_FUNCTION_ID)
+#undef DECLARE_FUNCTION_ID
+#define DECLARE_SIMD_NULLARY_FUNCTION_ID(i1, i2, name, i3)                     \
+  k##name,
+  SIMD_NULLARY_OPERATIONS(DECLARE_SIMD_NULLARY_FUNCTION_ID)
+#undef DECLARE_SIMD_NULLARY_FUNCTION_ID
+#define DECLARE_SIMD_UNARY_FUNCTION_ID(i1, i2, name, i3, i4)                   \
+  k##name,
+  SIMD_UNARY_OPERATIONS(DECLARE_SIMD_UNARY_FUNCTION_ID)
+  SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(DECLARE_SIMD_UNARY_FUNCTION_ID)
+#undef DECLARE_SIMD_UNARY_FUNCTION_ID
+#define DECLARE_SIMD_BINARY_FUNCTION_ID(i1, i2, name, i3, i4, i5)              \
+  k##name,
+  SIMD_BINARY_OPERATIONS(DECLARE_SIMD_BINARY_FUNCTION_ID)
+#undef DECLARE_SIMD_BINARY_FUNCTION_ID
+#define DECLARE_SIMD_TERNARY_FUNCTION_ID(i1, i2, name, i3, i4, i5, i6)         \
+  k##name,
+  SIMD_TERNARY_OPERATIONS(DECLARE_SIMD_TERNARY_FUNCTION_ID)
+#undef DECLARE_SIMD_TERNARY_FUNCTION_ID
+#define DECLARE_SIMD_QUARTERNARY_FUNCTION_ID(i1, i2, name, i3, i4, i5, i6, i7) \
+  k##name,
+  SIMD_QUARTERNARY_OPERATIONS(DECLARE_SIMD_QUARTERNARY_FUNCTION_ID)
+#undef DECLARE_SIMD_QUARTERNARY_FUNCTION_ID
+  kNumberOfBuiltinFunction
 };
 
 

@@ -20,7 +20,7 @@ class FuzzNativesTestSuite(testsuite.TestSuite):
       shell += ".exe"
     output = commands.Execute(
         context.command_prefix +
-        [shell, "--allow-natives-syntax", "-e",
+        [shell, "--allow-natives-syntax", "--simd-object", "-e",
          "try { var natives = %ListNatives();"
          "  for (var n in natives) { print(natives[n]); }"
          "} catch(e) {}"] +
@@ -32,7 +32,7 @@ class FuzzNativesTestSuite(testsuite.TestSuite):
     tests = []
     for line in output.stdout.strip().split():
       (name, argc) = line.split(",")
-      flags = ["--allow-natives-syntax",
+      flags = ["--allow-natives-syntax", "--simd-object",
                "-e", "var NAME = '%s', ARGC = %s;" % (name, argc)]
       test = testcase.TestCase(self, name, flags)
       tests.append(test)

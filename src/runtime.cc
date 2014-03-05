@@ -15360,7 +15360,7 @@ RUNTIME_FUNCTION(Runtime_Float64x2GetSignMask) {
   float64_uint64 y(self->y());
   uint64_t mx = x.u >> 63;
   uint64_t my = y.u >> 63;
-  uint32_t value = uint32_t (mx | (my << 1));
+  uint32_t value = static_cast<uint32_t>(mx | (my << 1));
   return *isolate->factory()->NewNumberFromUint(value);
 }
 
