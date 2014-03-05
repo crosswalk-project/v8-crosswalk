@@ -1427,6 +1427,11 @@ int HeapNumber::get_sign() {
 }
 
 
+const char* Float32x4::Name() {
+  return "float32x4";
+}
+
+
 int Float32x4::kRuntimeAllocatorId() {
   return Runtime::kAllocateFloat32x4;
 }
@@ -1450,6 +1455,11 @@ void Float32x4::set_value(float32x4_value_t value) {
 float Float32x4::getAt(int index) {
   ASSERT(index >= 0 && index < kLanes);
   return READ_FLOAT_FIELD(this, kValueOffset + index * kFloatSize);
+}
+
+
+const char* Int32x4::Name() {
+  return "int32x4";
 }
 
 
