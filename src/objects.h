@@ -1972,6 +1972,7 @@ class Float32x4: public HeapObject {
   static const int kLanes = 4;
   static const int kValueSize = kFloat32x4Size;
   static const InstanceType kInstanceType = FLOAT32x4_TYPE;
+  static inline const char* Name();
   static inline int kRuntimeAllocatorId();
   static inline int kMapRootIndex();
 
@@ -2009,6 +2010,7 @@ class Int32x4: public HeapObject {
   typedef int32x4_value_t value_t;
   static const int kValueSize = kInt32x4Size;
   static const InstanceType kInstanceType = INT32x4_TYPE;
+  static inline const char* Name();
   static inline int kRuntimeAllocatorId();
   static inline int kMapRootIndex();
 

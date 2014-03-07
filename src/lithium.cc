@@ -102,11 +102,25 @@ void LOperand::PrintTo(StringStream* stream) {
     case DOUBLE_STACK_SLOT:
       stream->Add("[double_stack:%d]", index());
       break;
+    case FLOAT32x4_STACK_SLOT:
+      stream->Add("[float32x4_stack:%d]", index());
+      break;
+    case INT32x4_STACK_SLOT:
+      stream->Add("[int32x4_stack:%d]", index());
+      break;
     case REGISTER:
       stream->Add("[%s|R]", Register::AllocationIndexToString(index()));
       break;
     case DOUBLE_REGISTER:
       stream->Add("[%s|R]", DoubleRegister::AllocationIndexToString(index()));
+      break;
+    case FLOAT32x4_REGISTER:
+      stream->Add("[%s|R]",
+                  SIMD128Register::AllocationIndexToString(index()));
+      break;
+    case INT32x4_REGISTER:
+      stream->Add("[%s|R]",
+                  SIMD128Register::AllocationIndexToString(index()));
       break;
     case ARGUMENT:
       stream->Add("[arg:%d]", index());
@@ -114,33 +128,37 @@ void LOperand::PrintTo(StringStream* stream) {
   }
 }
 
-#define DEFINE_OPERAND_CACHE(name, type)                      \
-  L##name* L##name::cache = NULL;                             \
-                                                              \
-  void L##name::SetUpCache() {                                \
-    if (cache) return;                                        \
-    cache = new L##name[kNumCachedOperands];                  \
-    for (int i = 0; i < kNumCachedOperands; i++) {            \
-      cache[i].ConvertTo(type, i);                            \
-    }                                                         \
-  }                                                           \
-                                                              \
-  void L##name::TearDownCache() {                             \
-    delete[] cache;                                           \
-  }
 
-LITHIUM_OPERAND_LIST(DEFINE_OPERAND_CACHE)
-#undef DEFINE_OPERAND_CACHE
+template<LOperand::Kind kOperandKind, int kNumCachedOperands>
+LSubKindOperand<kOperandKind, kNumCachedOperands>*
+LSubKindOperand<kOperandKind, kNumCachedOperands>::cache = NULL;
+
+
+template<LOperand::Kind kOperandKind, int kNumCachedOperands>
+void LSubKindOperand<kOperandKind, kNumCachedOperands>::SetUpCache() {
+  if (cache) return;
+  cache = new LSubKindOperand[kNumCachedOperands];
+  for (int i = 0; i < kNumCachedOperands; i++) {
+    cache[i].ConvertTo(kOperandKind, i);
+  }
+}
+
+
+template<LOperand::Kind kOperandKind, int kNumCachedOperands>
+void LSubKindOperand<kOperandKind, kNumCachedOperands>::TearDownCache() {
+  delete[] cache;
+}
+
 
 void LOperand::SetUpCaches() {
-#define LITHIUM_OPERAND_SETUP(name, type) L##name::SetUpCache();
+#define LITHIUM_OPERAND_SETUP(name, type, number) L##name::SetUpCache();
   LITHIUM_OPERAND_LIST(LITHIUM_OPERAND_SETUP)
 #undef LITHIUM_OPERAND_SETUP
 }
 
 
 void LOperand::TearDownCaches() {
-#define LITHIUM_OPERAND_TEARDOWN(name, type) L##name::TearDownCache();
+#define LITHIUM_OPERAND_TEARDOWN(name, type, number) L##name::TearDownCache();
   LITHIUM_OPERAND_LIST(LITHIUM_OPERAND_TEARDOWN)
 #undef LITHIUM_OPERAND_TEARDOWN
 }
@@ -197,7 +215,9 @@ void LEnvironment::PrintTo(StringStream* stream) {
 void LPointerMap::RecordPointer(LOperand* op, Zone* zone) {
   // Do not record arguments as pointers.
   if (op->IsStackSlot() && op->index() < 0) return;
-  ASSERT(!op->IsDoubleRegister() && !op->IsDoubleStackSlot());
+  ASSERT(!op->IsDoubleRegister() && !op->IsDoubleStackSlot() &&
+         !op->IsFloat32x4Register() && !op->IsFloat32x4StackSlot() &&
+         !op->IsInt32x4Register() && !op->IsInt32x4StackSlot());
   pointer_operands_.Add(op, zone);
 }
 
@@ -205,7 +225,9 @@ void LPointerMap::RecordPointer(LOperand* op, Zone* zone) {
 void LPointerMap::RemovePointer(LOperand* op) {
   // Do not record arguments as pointers.
   if (op->IsStackSlot() && op->index() < 0) return;
-  ASSERT(!op->IsDoubleRegister() && !op->IsDoubleStackSlot());
+  ASSERT(!op->IsDoubleRegister() && !op->IsDoubleStackSlot() &&
+         !op->IsFloat32x4Register() && !op->IsFloat32x4StackSlot() &&
+         !op->IsInt32x4Register() && !op->IsInt32x4StackSlot());
   for (int i = 0; i < pointer_operands_.length(); ++i) {
     if (pointer_operands_[i]->Equals(op)) {
       pointer_operands_.Remove(i);
@@ -218,7 +240,9 @@ void LPointerMap::RemovePointer(LOperand* op) {
 void LPointerMap::RecordUntagged(LOperand* op, Zone* zone) {
   // Do not record arguments as pointers.
   if (op->IsStackSlot() && op->index() < 0) return;
-  ASSERT(!op->IsDoubleRegister() && !op->IsDoubleStackSlot());
+  ASSERT(!op->IsDoubleRegister() && !op->IsDoubleStackSlot() &&
+         !op->IsFloat32x4Register() && !op->IsFloat32x4StackSlot() &&
+         !op->IsInt32x4Register() && !op->IsInt32x4StackSlot());
   untagged_operands_.Add(op, zone);
 }
 
