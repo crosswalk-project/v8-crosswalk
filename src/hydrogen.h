@@ -2297,6 +2297,7 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
 
     LookupResult* lookup() { return &lookup_; }
     Handle<Map> map() { return map_; }
+    Handle<String> name() { return name_; }
     Handle<JSObject> holder() { return holder_; }
     Handle<JSFunction> accessor() { return accessor_; }
     Handle<Object> constant() { return constant_; }
@@ -2308,6 +2309,21 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
     bool IsStringLength() {
       return map_->instance_type() < FIRST_NONSTRING_TYPE &&
           name_->Equals(isolate()->heap()->length_string());
+    }
+
+    bool IsSIMD128PropertyCallback() {
+      return (((map_->instance_type() == FLOAT32x4_TYPE ||
+                map_->instance_type() == INT32x4_TYPE) &&
+               (name_->Equals(isolate()->heap()->signMask()) ||
+                name_->Equals(isolate()->heap()->x()) ||
+                name_->Equals(isolate()->heap()->y()) ||
+                name_->Equals(isolate()->heap()->z()) ||
+                name_->Equals(isolate()->heap()->w()))) ||
+              (map_->instance_type() == INT32x4_TYPE &&
+               (name_->Equals(isolate()->heap()->flagX()) ||
+                name_->Equals(isolate()->heap()->flagY()) ||
+                name_->Equals(isolate()->heap()->flagZ()) ||
+                name_->Equals(isolate()->heap()->flagW()))));
     }
 
     bool IsArrayLength() {
