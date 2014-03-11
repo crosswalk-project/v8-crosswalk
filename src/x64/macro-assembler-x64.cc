@@ -2468,6 +2468,81 @@ void MacroAssembler::LookupNumberStringCache(Register object,
 }
 
 
+void MacroAssembler::absps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_absolute_constant =
+      { 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF };
+  Set(kScratchRegister, reinterpret_cast<intptr_t>(&float_absolute_constant));
+  andps(dst, Operand(kScratchRegister, 0));
+}
+
+
+void MacroAssembler::abspd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint64_t a;
+    uint64_t b;
+  } double_absolute_constant =
+      { V8_UINT64_C(0x7FFFFFFFFFFFFFFF), V8_UINT64_C(0x7FFFFFFFFFFFFFFF) };
+  Set(kScratchRegister, reinterpret_cast<intptr_t>(&double_absolute_constant));
+  andpd(dst, Operand(kScratchRegister, 0));
+}
+
+
+void MacroAssembler::negateps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_negate_constant =
+      { 0x80000000, 0x80000000, 0x80000000, 0x80000000 };
+  Set(kScratchRegister, reinterpret_cast<intptr_t>(&float_negate_constant));
+  xorps(dst, Operand(kScratchRegister, 0));
+}
+
+
+void MacroAssembler::negatepd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint64_t a;
+    uint64_t b;
+  } double_absolute_constant =
+      { V8_UINT64_C(0x8000000000000000), V8_UINT64_C(0x8000000000000000) };
+  Set(kScratchRegister, reinterpret_cast<intptr_t>(&double_absolute_constant));
+  xorpd(dst, Operand(kScratchRegister, 0));
+}
+
+
+void MacroAssembler::notps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_not_constant =
+      { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+  Set(kScratchRegister, reinterpret_cast<intptr_t>(&float_not_constant));
+  xorps(dst, Operand(kScratchRegister, 0));
+}
+
+
+void MacroAssembler::pnegd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } int32_one_constant = { 0x1, 0x1, 0x1, 0x1 };
+  notps(dst);
+  Set(kScratchRegister, reinterpret_cast<intptr_t>(&int32_one_constant));
+  paddd(dst, Operand(kScratchRegister, 0));
+}
+
+
+
 void MacroAssembler::JumpIfNotString(Register object,
                                      Register object_map,
                                      Label* not_string,

@@ -3655,6 +3655,90 @@ void MacroAssembler::TruncatingDiv(Register dividend, int32_t divisor) {
 }
 
 
+void MacroAssembler::absps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_absolute_constant =
+      { 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF };
+  andps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_absolute_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::abspd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } double_absolute_constant =
+      { 0xFFFFFFFF, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFF };
+  andps(dst,
+        Operand(reinterpret_cast<int32_t>(&double_absolute_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::notps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_not_constant =
+      { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+  xorps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_not_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::negateps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_negate_constant =
+      { 0x80000000, 0x80000000, 0x80000000, 0x80000000 };
+  xorps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_negate_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::negatepd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } double_negate_constant =
+      { 0x00000000, 0x80000000, 0x00000000, 0x80000000 };
+  xorpd(dst,
+        Operand(reinterpret_cast<int32_t>(&double_negate_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::pnegd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } int32_one_constant = { 0x1, 0x1, 0x1, 0x1 };
+  notps(dst);
+  paddd(dst,
+        Operand(reinterpret_cast<int32_t>(&int32_one_constant),
+                RelocInfo::NONE32));
+}
+
+
 } }  // namespace v8::internal
 
 #endif  // V8_TARGET_ARCH_IA32

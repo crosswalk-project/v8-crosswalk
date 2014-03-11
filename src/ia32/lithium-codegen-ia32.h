@@ -136,6 +136,8 @@ class LCodeGen: public LCodeGenBase {
                              IntegerSignedness signedness);
 
   void DoDeferredTaggedToI(LTaggedToI* instr, Label* done);
+  void DoDeferredFloat32x4ToTagged(LInstruction* instr);
+  void DoDeferredInt32x4ToTagged(LInstruction* instr);
   void DoDeferredMathAbsTaggedHeapNumber(LMathAbs* instr);
   void DoDeferredStackCheck(LStackCheck* instr);
   void DoDeferredStringCharCodeAt(LStringCharCodeAt* instr);
