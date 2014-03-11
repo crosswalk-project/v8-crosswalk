@@ -139,6 +139,11 @@ class LCodeGen;
   V(MathSqrt)                                   \
   V(ModByConstI)                                \
   V(ModByPowerOf2I)                             \
+  V(NullarySIMDOperation)                       \
+  V(UnarySIMDOperation)                         \
+  V(BinarySIMDOperation)                        \
+  V(TernarySIMDOperation)                       \
+  V(QuarternarySIMDOperation)                   \
   V(ModI)                                       \
   V(MulI)                                       \
   V(NumberTagD)                                 \
@@ -939,6 +944,154 @@ class LMathPowHalf V8_FINAL : public LTemplateInstruction<1, 1, 0> {
   LOperand* value() { return inputs_[0]; }
 
   DECLARE_CONCRETE_INSTRUCTION(MathPowHalf, "math-pow-half")
+};
+
+
+class LNullarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 0, 0> {
+ public:
+  explicit LNullarySIMDOperation(BuiltinFunctionId op)
+    : op_(op) {
+  }
+
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const V8_OVERRIDE {
+    return LInstruction::kNullarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
+  virtual const char* Mnemonic() const V8_OVERRIDE;
+  static LNullarySIMDOperation* cast(LInstruction* instr) {
+    ASSERT(instr->IsNullarySIMDOperation());
+    return reinterpret_cast<LNullarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(NullarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
+};
+
+
+class LUnarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 1, 0> {
+ public:
+  LUnarySIMDOperation(LOperand* value, BuiltinFunctionId op)
+    : op_(op) {
+    inputs_[0] = value;
+  }
+
+  LOperand* value() { return inputs_[0]; }
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const V8_OVERRIDE {
+    return LInstruction::kUnarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
+  virtual const char* Mnemonic() const V8_OVERRIDE;
+  static LUnarySIMDOperation* cast(LInstruction* instr) {
+    ASSERT(instr->IsUnarySIMDOperation());
+    return reinterpret_cast<LUnarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(UnarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
+};
+
+
+class LBinarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 2, 0> {
+ public:
+  LBinarySIMDOperation(LOperand* left, LOperand* right, BuiltinFunctionId op)
+    : op_(op) {
+    inputs_[0] = left;
+    inputs_[1] = right;
+  }
+
+  LOperand* left() { return inputs_[0]; }
+  LOperand* right() { return inputs_[1]; }
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const V8_OVERRIDE {
+    return LInstruction::kBinarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
+  virtual const char* Mnemonic() const V8_OVERRIDE;
+  static LBinarySIMDOperation* cast(LInstruction* instr) {
+    ASSERT(instr->IsBinarySIMDOperation());
+    return reinterpret_cast<LBinarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(BinarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
+};
+
+
+class LTernarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 3, 0> {
+ public:
+  LTernarySIMDOperation(LOperand* first, LOperand* second, LOperand* third,
+                        BuiltinFunctionId op)
+    : op_(op) {
+    inputs_[0] = first;
+    inputs_[1] = second;
+    inputs_[2] = third;
+  }
+
+  LOperand* first() { return inputs_[0]; }
+  LOperand* second() { return inputs_[1]; }
+  LOperand* third() { return inputs_[2]; }
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const V8_OVERRIDE {
+    return LInstruction::kTernarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
+  virtual const char* Mnemonic() const V8_OVERRIDE;
+  static LTernarySIMDOperation* cast(LInstruction* instr) {
+    ASSERT(instr->IsTernarySIMDOperation());
+    return reinterpret_cast<LTernarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(TernarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
+};
+
+
+class LQuarternarySIMDOperation V8_FINAL
+  : public LTemplateInstruction<1, 4, 0> {
+ public:
+  LQuarternarySIMDOperation(LOperand* x, LOperand* y, LOperand* z,
+                            LOperand* w, BuiltinFunctionId op)
+    : op_(op) {
+    inputs_[0] = x;
+    inputs_[1] = y;
+    inputs_[2] = z;
+    inputs_[3] = w;
+  }
+
+  LOperand* x() { return inputs_[0]; }
+  LOperand* y() { return inputs_[1]; }
+  LOperand* z() { return inputs_[2]; }
+  LOperand* w() { return inputs_[3]; }
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const V8_OVERRIDE {
+    return LInstruction::kQuarternarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
+  virtual const char* Mnemonic() const V8_OVERRIDE;
+  static LQuarternarySIMDOperation* cast(LInstruction* instr) {
+    ASSERT(instr->IsQuarternarySIMDOperation());
+    return reinterpret_cast<LQuarternarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(QuarternarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
 };
 
 
