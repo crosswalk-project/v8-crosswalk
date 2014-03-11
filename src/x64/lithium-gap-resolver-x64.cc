@@ -366,7 +366,6 @@ void LGapResolver::EmitSwap(int index) {
     __ movups(xmm0, other_operand);
     __ movups(other_operand, reg);
     __ movaps(reg, xmm0);
-
   } else {
     // No other combinations are possible.
     UNREACHABLE();

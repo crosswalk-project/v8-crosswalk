@@ -2369,6 +2369,14 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
         Context* context = current_info()->closure()->context();
         context = context->native_context();
         return handle(context->number_function()->initial_map());
+      } else if (type_->Is(Type::Float32x4())) {
+        Context* context = current_info()->closure()->context();
+        context = context->native_context();
+        return handle(context->float32x4_function()->initial_map());
+      } else if (type_->Is(Type::Int32x4())) {
+        Context* context = current_info()->closure()->context();
+        context = context->native_context();
+        return handle(context->int32x4_function()->initial_map());
       } else if (type_->Is(Type::Boolean())) {
         Context* context = current_info()->closure()->context();
         context = context->native_context();
@@ -2410,6 +2418,7 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
     bool IsLoad() const { return access_type_ == LOAD; }
 
     LookupResult* lookup() { return &lookup_; }
+    Handle<String> name() { return name_; }
     Handle<JSObject> holder() { return holder_; }
     Handle<JSFunction> accessor() { return accessor_; }
     Handle<Object> constant() { return constant_; }
@@ -2420,6 +2429,20 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
     Type* ToType(Handle<Map> map) { return builder_->ToType(map); }
     Isolate* isolate() { return lookup_.isolate(); }
     CompilationInfo* current_info() { return builder_->current_info(); }
+
+    bool IsSIMD128PropertyCallback() {
+      return (((type_->Is(Type::Float32x4()) || type_->Is(Type::Int32x4())) &&
+               (name_->Equals(isolate()->heap()->signMask()) ||
+                name_->Equals(isolate()->heap()->x()) ||
+                name_->Equals(isolate()->heap()->y()) ||
+                name_->Equals(isolate()->heap()->z()) ||
+                name_->Equals(isolate()->heap()->w()))) ||
+              (type_->Is(Type::Int32x4()) &&
+               (name_->Equals(isolate()->heap()->flagX()) ||
+                name_->Equals(isolate()->heap()->flagY()) ||
+                name_->Equals(isolate()->heap()->flagZ()) ||
+                name_->Equals(isolate()->heap()->flagW()))));
+    }
 
     bool LoadResult(Handle<Map> map);
     bool LookupDescriptor();

@@ -417,6 +417,58 @@ TEST(DisasmIa320) {
       __ psrlq(xmm0, 17);
       __ psrlq(xmm0, xmm1);
       __ por(xmm0, xmm1);
+
+     // new instruction introduced by SIMD
+      __ cvtdq2ps(xmm1, Operand(ebx, ecx, times_4, 10000));
+      __ cvtdq2ps(xmm1, xmm0);
+      __ cvtps2dq(xmm1, Operand(ebx, ecx, times_4, 10000));
+      __ cvtps2dq(xmm1, xmm0);
+      __ paddd(xmm1, Operand(ebx, ecx, times_4, 10000));
+      __ paddd(xmm1, xmm0);
+      __ psubd(xmm1, Operand(ebx, ecx, times_4, 10000));
+      __ psubd(xmm1, xmm0);
+      __ pmuludq(xmm1, Operand(ebx, ecx, times_4, 10000));
+      __ pmuludq(xmm1, xmm0);
+      __ punpackldq(xmm1, Operand(ebx, ecx, times_4, 10000));
+      __ punpackldq(xmm1, xmm0);
+      {
+         __ shufps(xmm1, xmm1, 0x0);
+         __ movups(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ movups(Operand(ebx, ecx, times_4, 10000), xmm1);
+
+         __ andps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ andps(xmm1, xmm0);
+         __ xorps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ xorps(xmm1, xmm0);
+         __ orps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ orps(xmm1, xmm0);
+
+         __ addps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ addps(xmm1, xmm0);
+         __ subps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ subps(xmm1, xmm0);
+         __ mulps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ mulps(xmm1, xmm0);
+         __ divps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ divps(xmm1, xmm0);
+         __ minps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ minps(xmm1, xmm0);
+         __ maxps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ maxps(xmm1, xmm0);
+         __ rcpps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ rcpps(xmm1, xmm0);
+         __ rsqrtps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ rsqrtps(xmm1, xmm0);
+         __ sqrtps(xmm1, Operand(ebx, ecx, times_4, 10000));
+         __ sqrtps(xmm1, xmm0);
+
+         __ cmpeqps(xmm1, xmm0);
+         __ cmpltps(xmm1, xmm0);
+         __ cmpleps(xmm1, xmm0);
+         __ cmpneqps(xmm1, xmm0);
+         __ cmpnltps(xmm1, xmm0);
+         __ cmpnleps(xmm1, xmm0);
+      }
     }
   }
 
@@ -450,6 +502,9 @@ TEST(DisasmIa320) {
       __ pextrd(eax, xmm0, 1);
       __ pinsrd(xmm1, eax, 0);
       __ extractps(eax, xmm1, 0);
+      __ insertps(xmm1, xmm0, 0);
+      __ pmulld(xmm1, Operand(ebx, ecx, times_4, 10000));
+      __ pmulld(xmm1, xmm0);
     }
   }
 
