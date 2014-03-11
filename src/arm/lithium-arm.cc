@@ -1184,6 +1184,41 @@ LInstruction* LChunkBuilder::DoMathPowHalf(HUnaryMathOperation* instr) {
 }
 
 
+LInstruction* LChunkBuilder::DoNullarySIMDOperation(
+    HNullarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+
+LInstruction* LChunkBuilder::DoUnarySIMDOperation(
+    HUnarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+
+LInstruction* LChunkBuilder::DoBinarySIMDOperation(
+    HBinarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+
+LInstruction* LChunkBuilder::DoTernarySIMDOperation(
+    HTernarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+
+LInstruction* LChunkBuilder::DoQuarternarySIMDOperation(
+    HQuarternarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+
 LInstruction* LChunkBuilder::DoCallNew(HCallNew* instr) {
   LOperand* context = UseFixed(instr->context(), cp);
   LOperand* constructor = UseFixed(instr->constructor(), r1);
