@@ -908,6 +908,13 @@ class MacroAssembler: public Assembler {
   inline bool AllowThisStubCall(CodeStub* stub);
 
   // ---------------------------------------------------------------------------
+  // SIMD macros.
+  void absps(XMMRegister dst);
+  void negateps(XMMRegister dst);
+  void notps(XMMRegister dst);
+  void pnegd(XMMRegister dst);
+
+  // ---------------------------------------------------------------------------
   // String utilities.
 
   // Generate code to do a lookup in the number string cache. If the number in

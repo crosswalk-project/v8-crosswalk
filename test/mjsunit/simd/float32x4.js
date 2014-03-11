@@ -42,6 +42,9 @@ function testConstructor() {
 }
 
 testConstructor();
+testConstructor();
+%OptimizeFunctionOnNextCall(testConstructor);
+testConstructor();
 
 function testZeroConstructor() {
   var z4 = SIMD.float32x4.zero();

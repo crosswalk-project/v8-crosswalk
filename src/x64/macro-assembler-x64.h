@@ -737,6 +737,14 @@ class MacroAssembler: public Assembler {
 
 
   // ---------------------------------------------------------------------------
+  // SIMD macros.
+  void absps(XMMRegister dst);
+  void negateps(XMMRegister dst);
+  void notps(XMMRegister dst);
+  void pnegd(XMMRegister dst);
+
+
+  // ---------------------------------------------------------------------------
   // String macros.
 
   // Generate code to do a lookup in the number string cache. If the number in
