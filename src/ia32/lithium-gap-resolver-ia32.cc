@@ -529,6 +529,7 @@ void LGapResolver::EmitSwap(int index) {
 
   } else if ((source->IsSIMD128StackSlot() &&
               destination->IsSIMD128StackSlot())) {
+    CpuFeatureScope scope(cgen_->masm(), SSE2);
     // Swap two XMM stack slots.
     Operand src = cgen_->ToOperand(source);
     Operand dst = cgen_->ToOperand(destination);
@@ -541,6 +542,7 @@ void LGapResolver::EmitSwap(int index) {
     __ movups(dst, xmm0);
 
   } else if (source->IsSIMD128Register() && destination->IsSIMD128Register()) {
+    CpuFeatureScope scope(cgen_->masm(), SSE2);
     // Swap two XMM registers.
     XMMRegister source_reg = cgen_->ToSIMD128Register(source);
     XMMRegister destination_reg = cgen_->ToSIMD128Register(destination);
@@ -549,6 +551,7 @@ void LGapResolver::EmitSwap(int index) {
     __ movaps(destination_reg, xmm0);
 
   } else if (source->IsSIMD128Register() || destination->IsSIMD128Register()) {
+    CpuFeatureScope scope(cgen_->masm(), SSE2);
     // Swap a xmm register and a xmm stack slot.
     ASSERT((source->IsSIMD128Register() &&
             destination->IsSIMD128StackSlot()) ||
