@@ -1117,12 +1117,13 @@ void MacroAssembler::EnterExitFrameEpilogue(int argc, bool save_doubles) {
   // Optionally save all XMM registers.
   if (save_doubles) {
     CpuFeatureScope scope(this, SSE2);
-    int space = XMMRegister::kNumRegisters * kDoubleSize + argc * kPointerSize;
+    int space = XMMRegister::kNumRegisters * kSIMD128Size +
+        argc * kPointerSize;
     sub(esp, Immediate(space));
     const int offset = -2 * kPointerSize;
     for (int i = 0; i < XMMRegister::kNumRegisters; i++) {
       XMMRegister reg = XMMRegister::from_code(i);
-      movsd(Operand(ebp, offset - ((i + 1) * kDoubleSize)), reg);
+      movups(Operand(ebp, offset - ((i + 1) * kSIMD128Size)), reg);
     }
   } else {
     sub(esp, Immediate(argc * kPointerSize));
@@ -1166,7 +1167,7 @@ void MacroAssembler::LeaveExitFrame(bool save_doubles) {
     const int offset = -2 * kPointerSize;
     for (int i = 0; i < XMMRegister::kNumRegisters; i++) {
       XMMRegister reg = XMMRegister::from_code(i);
-      movsd(reg, Operand(ebp, offset - ((i + 1) * kDoubleSize)));
+      movups(reg, Operand(ebp, offset - ((i + 1) * kSIMD128Size)));
     }
   }
 
@@ -1829,6 +1830,29 @@ void MacroAssembler::AllocateHeapNumber(Register result,
   // Set the map.
   mov(FieldOperand(result, HeapObject::kMapOffset),
       Immediate(isolate()->factory()->heap_number_map()));
+}
+
+
+void MacroAssembler::AllocateSIMDHeapObject(int size,
+                                            Register result,
+                                            Register scratch,
+                                            Label* gc_required,
+                                            Heap::RootListIndex map_index) {
+  Allocate(size, result, scratch, no_reg, gc_required, TAG_OBJECT);
+
+  // Set the map.
+  switch (map_index) {
+    case Heap::kFloat32x4MapRootIndex:
+      mov(FieldOperand(result, HeapObject::kMapOffset),
+          Immediate(isolate()->factory()->float32x4_map()));
+      break;
+    case Heap::kInt32x4MapRootIndex:
+      mov(FieldOperand(result, HeapObject::kMapOffset),
+          Immediate(isolate()->factory()->int32x4_map()));
+      break;
+    default:
+      UNREACHABLE();
+  }
 }
 
 
@@ -3646,6 +3670,63 @@ void MacroAssembler::JumpIfDictionaryInPrototypeChain(
   cmp(current, Immediate(factory->null_value()));
   j(not_equal, &loop_again);
 }
+
+
+void MacroAssembler::absps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_absolute_constant =
+      { 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF };
+  andps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_absolute_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::notps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_not_constant =
+      { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+  xorps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_not_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::negateps(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } float_negate_constant =
+      { 0x80000000, 0x80000000, 0x80000000, 0x80000000 };
+  xorps(dst,
+        Operand(reinterpret_cast<int32_t>(&float_negate_constant),
+                RelocInfo::NONE32));
+}
+
+
+void MacroAssembler::pnegd(XMMRegister dst) {
+  static const struct V8_ALIGNED(16) {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+  } int32_one_constant = { 0x1, 0x1, 0x1, 0x1 };
+  notps(dst);
+  paddd(dst,
+        Operand(reinterpret_cast<int32_t>(&int32_one_constant),
+                RelocInfo::NONE32));
+}
+
 
 } }  // namespace v8::internal
 

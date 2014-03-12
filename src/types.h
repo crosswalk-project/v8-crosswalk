@@ -104,30 +104,32 @@ namespace internal {
   V(OtherSigned32,       1 << 4)         \
   V(Unsigned32,          1 << 5)         \
   V(Double,              1 << 6)         \
-  V(Symbol,              1 << 7)         \
-  V(InternalizedString,  1 << 8)         \
-  V(OtherString,         1 << 9)         \
-  V(Undetectable,        1 << 10)        \
-  V(Array,               1 << 11)        \
-  V(Function,            1 << 12)        \
-  V(RegExp,              1 << 13)        \
-  V(OtherObject,         1 << 14)        \
-  V(Proxy,               1 << 15)        \
-  V(Internal,            1 << 16)        \
+  V(Float32x4,           1 << 7)         \
+  V(Int32x4,             1 << 8)         \
+  V(Symbol,              1 << 9)         \
+  V(InternalizedString,  1 << 10)        \
+  V(OtherString,         1 << 11)        \
+  V(Undetectable,        1 << 12)        \
+  V(Array,               1 << 13)        \
+  V(Function,            1 << 14)        \
+  V(RegExp,              1 << 15)        \
+  V(OtherObject,         1 << 16)        \
+  V(Proxy,               1 << 17)        \
+  V(Internal,            1 << 18)        \
   \
-  V(Oddball,         kBoolean | kNull | kUndefined)                 \
-  V(Signed32,        kSmi | kOtherSigned32)                         \
-  V(Number,          kSigned32 | kUnsigned32 | kDouble)             \
-  V(String,          kInternalizedString | kOtherString)            \
-  V(UniqueName,      kSymbol | kInternalizedString)                 \
-  V(Name,            kSymbol | kString)                             \
-  V(NumberOrString,  kNumber | kString)                             \
-  V(Object,          kUndetectable | kArray | kFunction |           \
-                     kRegExp | kOtherObject)                        \
-  V(Receiver,        kObject | kProxy)                              \
-  V(Allocated,       kDouble | kName | kReceiver)                   \
-  V(Any,             kOddball | kNumber | kAllocated | kInternal)   \
-  V(NonNumber,       kAny - kNumber)                                \
+  V(Oddball,         kBoolean | kNull | kUndefined)                        \
+  V(Signed32,        kSmi | kOtherSigned32)                                \
+  V(Number,          kSigned32 | kUnsigned32 | kDouble)                    \
+  V(String,          kInternalizedString | kOtherString)                   \
+  V(UniqueName,      kSymbol | kInternalizedString)                        \
+  V(Name,            kSymbol | kString)                                    \
+  V(NumberOrString,  kNumber | kString)                                    \
+  V(Object,          kUndetectable | kArray | kFunction |                  \
+                     kRegExp | kOtherObject)                               \
+  V(Receiver,        kObject | kProxy)                                     \
+  V(Allocated,       kDouble | kFloat32x4 | kInt32x4 | kName | kReceiver)  \
+  V(Any,             kOddball | kNumber | kAllocated | kInternal)          \
+  V(NonNumber,       kAny - kNumber)                                       \
   V(Detectable,      kAllocated - kUndetectable)
 
 

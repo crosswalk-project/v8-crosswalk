@@ -652,6 +652,15 @@ class MacroAssembler: public Assembler {
                           Register scratch2,
                           Label* gc_required);
 
+  // Allocate a float32x4 or int32x4 object in new space with undefined value.
+  // Returns tagged pointer in result register, or jumps to gc_required if new
+  // space is full.
+  void AllocateSIMDHeapObject(int size,
+                              Register result,
+                              Register scratch,
+                              Label* gc_required,
+                              Heap::RootListIndex map_index);
+
   // Allocate a sequential string. All the header fields of the string object
   // are initialized.
   void AllocateTwoByteString(Register result,
@@ -897,6 +906,13 @@ class MacroAssembler: public Assembler {
   void set_has_frame(bool value) { has_frame_ = value; }
   bool has_frame() { return has_frame_; }
   inline bool AllowThisStubCall(CodeStub* stub);
+
+  // ---------------------------------------------------------------------------
+  // SIMD macros.
+  void absps(XMMRegister dst);
+  void negateps(XMMRegister dst);
+  void notps(XMMRegister dst);
+  void pnegd(XMMRegister dst);
 
   // ---------------------------------------------------------------------------
   // String utilities.

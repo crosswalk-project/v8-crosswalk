@@ -336,6 +336,8 @@ const char* HType::ToString() {
     case kTaggedNumber: return "number";
     case kSmi: return "smi";
     case kHeapNumber: return "heap-number";
+    case kFloat32x4: return "float32x4";
+    case kInt32x4: return "int32x4";
     case kString: return "string";
     case kBoolean: return "boolean";
     case kNonPrimitive: return "non-primitive";
@@ -353,6 +355,10 @@ HType HType::TypeFromValue(Handle<Object> value) {
     result = HType::Smi();
   } else if (value->IsHeapNumber()) {
     result = HType::HeapNumber();
+  } else if (value->IsFloat32x4()) {
+    result = HType::Float32x4();
+  } else if (value->IsInt32x4()) {
+    result = HType::Int32x4();
   } else if (value->IsString()) {
     result = HType::String();
   } else if (value->IsBoolean()) {
@@ -361,6 +367,21 @@ HType HType::TypeFromValue(Handle<Object> value) {
     result = HType::JSObject();
   } else if (value->IsJSArray()) {
     result = HType::JSArray();
+  }
+  return result;
+}
+
+
+HType HType::TypeFromRepresentation(Representation representation) {
+  HType result = HType::Tagged();
+  if (representation.IsSmi()) {
+    result = HType::Smi();
+  } else if (representation.IsDouble()) {
+    result = HType::HeapNumber();
+  } else if (representation.IsFloat32x4()) {
+    result = HType::Float32x4();
+  } else if (representation.IsInt32x4()) {
+    result = HType::Int32x4();
   }
   return result;
 }
@@ -1213,7 +1234,22 @@ bool HTypeofIsAndBranch::KnownSuccessorBlock(HBasicBlock** block) {
       *block = SecondSuccessor();
     }
     return true;
+  } else if (value()->representation().IsFloat32x4()) {
+    if (compares_float32x4_type()) {
+      *block = FirstSuccessor();
+    } else {
+      *block = SecondSuccessor();
+    }
+    return true;
+  } else if (value()->representation().IsInt32x4()) {
+    if (compares_int32x4_type()) {
+      *block = FirstSuccessor();
+    } else {
+      *block = SecondSuccessor();
+    }
+    return true;
   }
+
   *block = NULL;
   return false;
 }
@@ -4473,5 +4509,159 @@ void HObjectAccess::PrintTo(StringStream* stream) {
 
   stream->Add("@%d", offset());
 }
+
+
+HInstruction* HNullarySIMDOperation::New(
+    Zone* zone, HValue* context, BuiltinFunctionId op) {
+  return new(zone) HNullarySIMDOperation(context, op);
+}
+
+
+HInstruction* HUnarySIMDOperation::New(
+    Zone* zone, HValue* context, HValue* value, BuiltinFunctionId op,
+    Representation to) {
+  return new(zone) HUnarySIMDOperation(context, value, op, to);
+}
+
+
+HInstruction* HBinarySIMDOperation::New(
+    Zone* zone, HValue* context, HValue* left, HValue* right,
+    BuiltinFunctionId op) {
+  return new(zone) HBinarySIMDOperation(context, left, right, op);
+}
+
+
+HInstruction* HTernarySIMDOperation::New(
+    Zone* zone, HValue* context, HValue* mask, HValue* left, HValue* right,
+    BuiltinFunctionId op) {
+  return new(zone) HTernarySIMDOperation(context, mask, left, right, op);
+}
+
+
+HInstruction* HQuarternarySIMDOperation::New(
+    Zone* zone, HValue* context, HValue* x, HValue* y, HValue* z, HValue* w,
+    BuiltinFunctionId op) {
+  return new(zone) HQuarternarySIMDOperation(context, x, y, z, w, op);
+}
+
+
+const char* HNullarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_NULLARY_OPERATION_CASE_ITEM(module, function, name, p4)           \
+    case k##name:                                                              \
+      return #module "." #function;
+SIMD_NULLARY_OPERATIONS(SIMD_NULLARY_OPERATION_CASE_ITEM)
+#undef SIMD_NULLARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+void HNullarySIMDOperation::PrintDataTo(StringStream* stream) {
+  const char* name = OpName();
+  stream->Add("%s", name);
+}
+
+
+const char* HUnarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_UNARY_OPERATION_CASE_ITEM(module, function, name, p4, p5)         \
+    case k##name:                                                              \
+      return #module "." #function;
+SIMD_UNARY_OPERATIONS(SIMD_UNARY_OPERATION_CASE_ITEM)
+SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(SIMD_UNARY_OPERATION_CASE_ITEM)
+#undef SIMD_UNARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+void HUnarySIMDOperation::PrintDataTo(StringStream* stream) {
+  const char* name = OpName();
+  stream->Add("%s ", name);
+  value()->PrintNameTo(stream);
+}
+
+
+const char* HBinarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_BINARY_OPERATION_CASE_ITEM(module, function, name, p4, p5, p6)    \
+    case k##name:                                                              \
+      return #module "." #function;
+SIMD_BINARY_OPERATIONS(SIMD_BINARY_OPERATION_CASE_ITEM)
+#undef SIMD_BINARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+void HBinarySIMDOperation::PrintDataTo(StringStream* stream) {
+  const char* name = OpName();
+  stream->Add("%s ", name);
+  left()->PrintNameTo(stream);
+  stream->Add(" ");
+  right()->PrintNameTo(stream);
+}
+
+
+const char* HTernarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_TERNARY_OPERATION_CASE_ITEM(module, function, name, p4, p5, p6,   \
+                                         p7)                                   \
+    case k##name:                                                              \
+      return #module "." #function;
+SIMD_TERNARY_OPERATIONS(SIMD_TERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_TERNARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+void HTernarySIMDOperation::PrintDataTo(StringStream* stream) {
+  const char* name = OpName();
+  stream->Add("%s ", name);
+  first()->PrintNameTo(stream);
+  stream->Add(" ");
+  second()->PrintNameTo(stream);
+  stream->Add(" ");
+  third()->PrintNameTo(stream);
+}
+
+
+const char* HQuarternarySIMDOperation::OpName() const {
+  switch (op()) {
+#define SIMD_QUARTERNARY_OPERATION_CASE_ITEM(module, function, name, p4, p5,   \
+                                             p6, p7, p8)                       \
+    case k##name:                                                              \
+      return #module "." #function;
+SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUARTERNARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+void HQuarternarySIMDOperation::PrintDataTo(StringStream* stream) {
+  const char* name = OpName();
+  stream->Add("%s ", name);
+  x()->PrintNameTo(stream);
+  stream->Add(" ");
+  y()->PrintNameTo(stream);
+  stream->Add(" ");
+  z()->PrintNameTo(stream);
+  stream->Add(" ");
+  w()->PrintNameTo(stream);
+}
+
 
 } }  // namespace v8::internal

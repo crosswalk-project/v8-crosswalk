@@ -104,6 +104,8 @@
 //           - ExternalInt32Array
 //           - ExternalUint32Array
 //           - ExternalFloat32Array
+//           - ExternalFloat32x4Array
+//           - ExternalInt32x4Array
 //       - Name
 //         - String
 //           - SeqString
@@ -124,6 +126,8 @@
 //               - ExternalTwoByteInternalizedString
 //         - Symbol
 //       - HeapNumber
+//       - Float32x4
+//       - Int32x4
 //       - Cell
 //         - PropertyCell
 //       - Code
@@ -371,6 +375,8 @@ const int kStubMinorKeyBits = kBitsPerInt - kSmiTagSize - kStubMajorKeyBits;
   V(PROPERTY_CELL_TYPE)                                                        \
                                                                                \
   V(HEAP_NUMBER_TYPE)                                                          \
+  V(FLOAT32x4_TYPE)                                                            \
+  V(INT32x4_TYPE)                                                              \
   V(FOREIGN_TYPE)                                                              \
   V(BYTE_ARRAY_TYPE)                                                           \
   V(FREE_SPACE_TYPE)                                                           \
@@ -384,6 +390,8 @@ const int kStubMinorKeyBits = kBitsPerInt - kSmiTagSize - kStubMajorKeyBits;
   V(EXTERNAL_INT32_ARRAY_TYPE)                                                 \
   V(EXTERNAL_UINT32_ARRAY_TYPE)                                                \
   V(EXTERNAL_FLOAT32_ARRAY_TYPE)                                               \
+  V(EXTERNAL_FLOAT32x4_ARRAY_TYPE)                                             \
+  V(EXTERNAL_INT32x4_ARRAY_TYPE)                                               \
   V(EXTERNAL_FLOAT64_ARRAY_TYPE)                                               \
   V(EXTERNAL_UINT8_CLAMPED_ARRAY_TYPE)                                         \
                                                                                \
@@ -392,8 +400,10 @@ const int kStubMinorKeyBits = kBitsPerInt - kSmiTagSize - kStubMajorKeyBits;
   V(FIXED_INT16_ARRAY_TYPE)                                                    \
   V(FIXED_UINT16_ARRAY_TYPE)                                                   \
   V(FIXED_INT32_ARRAY_TYPE)                                                    \
+  V(FIXED_INT32x4_ARRAY_TYPE)                                                  \
   V(FIXED_UINT32_ARRAY_TYPE)                                                   \
   V(FIXED_FLOAT32_ARRAY_TYPE)                                                  \
+  V(FIXED_FLOAT32x4_ARRAY_TYPE)                                                \
   V(FIXED_FLOAT64_ARRAY_TYPE)                                                  \
   V(FIXED_UINT8_CLAMPED_ARRAY_TYPE)                                            \
                                                                                \
@@ -719,6 +729,8 @@ enum InstanceType {
   // "Data", objects that cannot contain non-map-word pointers to heap
   // objects.
   HEAP_NUMBER_TYPE,
+  FLOAT32x4_TYPE,
+  INT32x4_TYPE,
   FOREIGN_TYPE,
   BYTE_ARRAY_TYPE,
   FREE_SPACE_TYPE,
@@ -730,6 +742,8 @@ enum InstanceType {
   EXTERNAL_INT32_ARRAY_TYPE,
   EXTERNAL_UINT32_ARRAY_TYPE,
   EXTERNAL_FLOAT32_ARRAY_TYPE,
+  EXTERNAL_FLOAT32x4_ARRAY_TYPE,
+  EXTERNAL_INT32x4_ARRAY_TYPE,
   EXTERNAL_FLOAT64_ARRAY_TYPE,
   EXTERNAL_UINT8_CLAMPED_ARRAY_TYPE,  // LAST_EXTERNAL_ARRAY_TYPE
 
@@ -738,8 +752,10 @@ enum InstanceType {
   FIXED_INT16_ARRAY_TYPE,
   FIXED_UINT16_ARRAY_TYPE,
   FIXED_INT32_ARRAY_TYPE,
+  FIXED_INT32x4_ARRAY_TYPE,
   FIXED_UINT32_ARRAY_TYPE,
   FIXED_FLOAT32_ARRAY_TYPE,
+  FIXED_FLOAT32x4_ARRAY_TYPE,
   FIXED_FLOAT64_ARRAY_TYPE,
   FIXED_UINT8_CLAMPED_ARRAY_TYPE,  // LAST_FIXED_TYPED_ARRAY_TYPE
 
@@ -991,6 +1007,8 @@ class MaybeObject BASE_EMBEDDED {
 
 #define HEAP_OBJECT_TYPE_LIST(V)               \
   V(HeapNumber)                                \
+  V(Float32x4)                                 \
+  V(Int32x4)                                  \
   V(Name)                                      \
   V(UniqueName)                                \
   V(String)                                    \
@@ -1013,6 +1031,8 @@ class MaybeObject BASE_EMBEDDED {
   V(ExternalInt32Array)                        \
   V(ExternalUint32Array)                       \
   V(ExternalFloat32Array)                      \
+  V(ExternalFloat32x4Array)                    \
+  V(ExternalInt32x4Array)                      \
   V(ExternalFloat64Array)                      \
   V(ExternalUint8ClampedArray)                 \
   V(FixedTypedArrayBase)                       \
@@ -1023,6 +1043,8 @@ class MaybeObject BASE_EMBEDDED {
   V(FixedUint32Array)                          \
   V(FixedInt32Array)                           \
   V(FixedFloat32Array)                         \
+  V(FixedFloat32x4Array)                       \
+  V(FixedInt32x4Array)                         \
   V(FixedFloat64Array)                         \
   V(FixedUint8ClampedArray)                    \
   V(ByteArray)                                 \
@@ -1942,6 +1964,84 @@ class HeapNumber: public HeapObject {
 };
 
 
+class Float32x4: public HeapObject {
+ public:
+  typedef float32x4_value_t value_t;
+  static const int kLanes = 4;
+  static const int kValueSize = kFloat32x4Size;
+  static const InstanceType kInstanceType = FLOAT32x4_TYPE;
+  static inline const char* Name();
+  static inline int kRuntimeAllocatorId();
+  static inline int kMapRootIndex();
+
+  // [value]: float32x4 value.
+  inline float32x4_value_t value();
+  inline void set_value(float32x4_value_t value);
+
+  // Casting.
+  static inline Float32x4* cast(Object* obj);
+
+  inline void Float32x4Print() {
+    Float32x4Print(stdout);
+  }
+  void Float32x4Print(FILE* out);
+  void Float32x4Print(StringStream* accumulator);
+  DECLARE_VERIFIER(Float32x4)
+
+  inline float getAt(int index);
+  inline float x() { return getAt(0); }
+  inline float y() { return getAt(1); }
+  inline float z() { return getAt(2); }
+  inline float w() { return getAt(3); }
+
+  // Layout description.
+  static const int kValueOffset = HeapObject::kHeaderSize;
+  static const int kSize = kValueOffset + kValueSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Float32x4);
+};
+
+
+class Int32x4: public HeapObject {
+ public:
+  typedef int32x4_value_t value_t;
+  static const int kValueSize = kInt32x4Size;
+  static const InstanceType kInstanceType = INT32x4_TYPE;
+  static inline const char* Name();
+  static inline int kRuntimeAllocatorId();
+  static inline int kMapRootIndex();
+
+  // [value]: int32x4 value.
+  inline int32x4_value_t value();
+  inline void set_value(int32x4_value_t value);
+
+  // Casting.
+  static inline Int32x4* cast(Object* obj);
+
+  inline void Int32x4Print() {
+    Int32x4Print(stdout);
+  }
+  void Int32x4Print(FILE* out);
+  void Int32x4Print(StringStream* accumulator);
+  DECLARE_VERIFIER(Int32x4)
+
+  static const int kLanes = 4;
+  inline int32_t getAt(int32_t index);
+  inline int32_t x() { return getAt(0); }
+  inline int32_t y() { return getAt(1); }
+  inline int32_t z() { return getAt(2); }
+  inline int32_t w() { return getAt(3); }
+
+  // Layout description.
+  static const int kValueOffset = HeapObject::kHeaderSize;
+  static const int kSize = kValueOffset + kValueSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Int32x4);
+};
+
+
 enum EnsureElementsMode {
   DONT_ALLOW_DOUBLE_ELEMENTS,
   ALLOW_COPIED_DOUBLE_ELEMENTS,
@@ -2151,6 +2251,8 @@ class JSObject: public JSReceiver {
   inline bool HasExternalInt32Elements();
   inline bool HasExternalUint32Elements();
   inline bool HasExternalFloat32Elements();
+  inline bool HasExternalFloat32x4Elements();
+  inline bool HasExternalInt32x4Elements();
   inline bool HasExternalFloat64Elements();
 
   inline bool HasFixedTypedArrayElements();
@@ -4577,6 +4679,8 @@ class FreeSpace: public HeapObject {
   V(Int32, int32, INT32, int32_t, 4)                                           \
   V(Float32, float32, FLOAT32, float, 4)                                       \
   V(Float64, float64, FLOAT64, double, 8)                                      \
+  V(Float32x4, float32x4, FLOAT32x4, v8::internal::float32x4_value_t, 16)      \
+  V(Int32x4, int32x4, INT32x4, v8::internal::int32x4_value_t, 16)              \
   V(Uint8Clamped, uint8_clamped, UINT8_CLAMPED, uint8_t, 1)
 
 
@@ -4843,6 +4947,59 @@ class ExternalFloat32Array: public ExternalArray {
 };
 
 
+class ExternalFloat32x4Array: public ExternalArray {
+ public:
+  // Setter and getter.
+  inline float32x4_value_t get_scalar(int index);
+  MUST_USE_RESULT inline MaybeObject* get(int index);
+  inline void set(int index, const float32x4_value_t& value);
+
+  static Handle<Object> SetValue(Handle<ExternalFloat32x4Array> array,
+                                 uint32_t index,
+                                 Handle<Object> value);
+
+  // This accessor applies the correct conversion from Smi, HeapNumber
+  // and undefined.
+  MUST_USE_RESULT MaybeObject* SetValue(uint32_t index, Object* value);
+
+  // Casting.
+  static inline ExternalFloat32x4Array* cast(Object* obj);
+
+  // Dispatched behavior.
+  DECLARE_PRINTER(ExternalFloat32x4Array)
+  DECLARE_VERIFIER(ExternalFloat32x4Array)
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ExternalFloat32x4Array);
+};
+
+
+class ExternalInt32x4Array: public ExternalArray {
+ public:
+  // Setter and getter.
+  inline int32x4_value_t get_scalar(int index);
+  MUST_USE_RESULT inline MaybeObject* get(int index);
+  inline void set(int index, const int32x4_value_t& value);
+
+  static Handle<Object> SetValue(Handle<ExternalInt32x4Array> array,
+                                 uint32_t index,
+                                 Handle<Object> value);
+  // This accessor applies the correct conversion from Smi, HeapNumber
+  // and undefined.
+  MUST_USE_RESULT MaybeObject* SetValue(uint32_t index, Object* value);
+
+  // Casting.
+  static inline ExternalInt32x4Array* cast(Object* obj);
+
+  // Dispatched behavior.
+  DECLARE_PRINTER(ExternalInt32x4Array)
+  DECLARE_VERIFIER(ExternalInt32x4Array)
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ExternalInt32x4Array);
+};
+
+
 class ExternalFloat64Array: public ExternalArray {
  public:
   // Setter and getter.
@@ -4927,7 +5084,7 @@ class FixedTypedArray: public FixedTypedArrayBase {
       static const InstanceType kInstanceType = FIXED_##TYPE##_ARRAY_TYPE;    \
       static const char* Designator() { return #type " array"; }              \
       static inline MaybeObject* ToObject(Heap* heap, elementType scalar);    \
-      static elementType defaultValue() { return 0; }                         \
+      static elementType defaultValue() { return elementType(); }             \
   };                                                                          \
                                                                               \
   typedef FixedTypedArray<Type##ArrayTraits> Fixed##Type##Array;
@@ -6635,15 +6792,151 @@ class Script: public Struct {
   V(Math, min, MathMin)                             \
   V(Math, imul, MathImul)
 
+#define SIMD_NULLARY_OPERATIONS(V)                                             \
+  V(SIMD.float32x4, zero, Float32x4Zero, Float32x4)                            \
+  V(SIMD.int32x4, zero, Int32x4Zero, Int32x4)
+
+#define SIMD_UNARY_OPERATIONS(V)                                               \
+  V(SIMD.float32x4, abs, Float32x4Abs, Float32x4, Float32x4)                   \
+  V(SIMD.float32x4, bitsToInt32x4, Float32x4BitsToInt32x4, Int32x4, Float32x4) \
+  V(SIMD.float32x4, neg, Float32x4Neg, Float32x4, Float32x4)                   \
+  V(SIMD.float32x4, reciprocal, Float32x4Reciprocal, Float32x4, Float32x4)     \
+  V(SIMD.float32x4, reciprocalSqrt, Float32x4ReciprocalSqrt,                   \
+    Float32x4, Float32x4)                                                      \
+  V(SIMD.float32x4, splat, Float32x4Splat, Float32x4, Double)                  \
+  V(SIMD.float32x4, sqrt, Float32x4Sqrt, Float32x4, Float32x4)                 \
+  V(SIMD.float32x4, toInt32x4, Float32x4ToInt32x4, Int32x4, Float32x4)         \
+  V(SIMD.int32x4, bitsToFloat32x4, Int32x4BitsToFloat32x4, Float32x4, Int32x4) \
+  V(SIMD.int32x4, neg, Int32x4Neg, Int32x4, Int32x4)                           \
+  V(SIMD.int32x4, not, Int32x4Not, Int32x4, Int32x4)                           \
+  V(SIMD.int32x4, splat, Int32x4Splat, Int32x4, Integer32)                     \
+  V(SIMD.int32x4, toFloat32x4, Int32x4ToFloat32x4, Float32x4, Int32x4)
+
+// Do not need to install them in InstallExperimentalSIMDBuiltinFunctionIds.
+#define SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(V)                           \
+  V(SIMD.float32x4.prototype, signMask, Float32x4GetSignMask, Integer32,       \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4.prototype, x, Float32x4GetX, Double, Float32x4)             \
+  V(SIMD.float32x4.prototype, y, Float32x4GetY, Double, Float32x4)             \
+  V(SIMD.float32x4.prototype, z, Float32x4GetZ, Double, Float32x4)             \
+  V(SIMD.float32x4.prototype, w, Float32x4GetW, Double, Float32x4)             \
+  V(SIMD.int32x4.prototype, signMask, Int32x4GetSignMask, Integer32, Int32x4)  \
+  V(SIMD.int32x4.prototype, x, Int32x4GetX, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, y, Int32x4GetY, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, z, Int32x4GetZ, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, w, Int32x4GetW, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, flagX, Int32x4GetFlagX, Tagged, Int32x4)           \
+  V(SIMD.int32x4.prototype, flagY, Int32x4GetFlagY, Tagged, Int32x4)           \
+  V(SIMD.int32x4.prototype, flagZ, Int32x4GetFlagZ, Tagged, Int32x4)           \
+  V(SIMD.int32x4.prototype, flagW, Int32x4GetFlagW, Tagged, Int32x4)
+
+#define SIMD_BINARY_OPERATIONS(V)                                              \
+  V(SIMD.float32x4, add, Float32x4Add, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, div, Float32x4Div, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, max, Float32x4Max, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, min, Float32x4Min, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, mul, Float32x4Mul, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, sub, Float32x4Sub, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, equal, Float32x4Equal, Int32x4, Float32x4, Float32x4)      \
+  V(SIMD.float32x4, notEqual, Float32x4NotEqual, Int32x4, Float32x4,           \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, greaterThan, Float32x4GreaterThan, Int32x4, Float32x4,     \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, greaterThanOrEqual, Float32x4GreaterThanOrEqual, Int32x4,  \
+    Float32x4, Float32x4)                                                      \
+  V(SIMD.float32x4, lessThan, Float32x4LessThan, Int32x4, Float32x4,           \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, lessThanOrEqual, Float32x4LessThanOrEqual, Int32x4,        \
+    Float32x4, Float32x4)                                                      \
+  V(SIMD.float32x4, shuffle, Float32x4Shuffle, Float32x4, Float32x4,           \
+    Integer32)                                                                 \
+  V(SIMD.float32x4, scale, Float32x4Scale, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withX, Float32x4WithX, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withY, Float32x4WithY, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withZ, Float32x4WithZ, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withW, Float32x4WithW, Float32x4, Float32x4, Double)       \
+  V(SIMD.int32x4, add, Int32x4Add, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, and, Int32x4And, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, mul, Int32x4Mul, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, or, Int32x4Or, Int32x4, Int32x4, Int32x4)                    \
+  V(SIMD.int32x4, sub, Int32x4Sub, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, xor, Int32x4Xor, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, shuffle, Int32x4Shuffle, Int32x4, Int32x4, Integer32)        \
+  V(SIMD.int32x4, withX, Int32x4WithX, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withY, Int32x4WithY, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withZ, Int32x4WithZ, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withW, Int32x4WithW, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withFlagX, Int32x4WithFlagX, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, withFlagY, Int32x4WithFlagY, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, withFlagZ, Int32x4WithFlagZ, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, withFlagW, Int32x4WithFlagW, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, greaterThan, Int32x4GreaterThan, Int32x4, Int32x4, Int32x4)  \
+  V(SIMD.int32x4, equal, Int32x4Equal, Int32x4, Int32x4, Int32x4)              \
+  V(SIMD.int32x4, lessThan, Int32x4LessThan, Int32x4, Int32x4, Int32x4)        \
+  V(SIMD.int32x4, shiftLeft, Int32x4ShiftLeft, Int32x4, Int32x4, Integer32)    \
+  V(SIMD.int32x4, shiftRight, Int32x4ShiftRight, Int32x4, Int32x4, Integer32)  \
+  V(SIMD.int32x4, shiftRightArithmetic, Int32x4ShiftRightArithmetic, Int32x4,  \
+    Int32x4, Integer32)
+
+#define SIMD_TERNARY_OPERATIONS(V)                                             \
+  V(SIMD.float32x4, clamp, Float32x4Clamp, Float32x4, Float32x4, Float32x4,    \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, shuffleMix, Float32x4ShuffleMix, Float32x4, Float32x4,     \
+    Float32x4, Integer32)                                                      \
+  V(SIMD.int32x4, select, Int32x4Select, Float32x4, Int32x4, Float32x4,        \
+    Float32x4)
+
+#define SIMD_QUARTERNARY_OPERATIONS(V)                                         \
+  V(SIMD, float32x4, Float32x4Constructor, Float32x4, Double, Double, Double,  \
+    Double)                                                                    \
+  V(SIMD, int32x4, Int32x4Constructor, Int32x4, Integer32, Integer32,          \
+    Integer32, Integer32)                                                      \
+  V(SIMD.int32x4, bool, Int32x4Bool, Int32x4, Tagged, Tagged, Tagged, Tagged)
+
+#define SIMD_ARRAY_OPERATIONS(V)                                               \
+  V(Float32x4Array.prototype, getAt, Float32x4ArrayGetAt)                      \
+  V(Float32x4Array.prototype, setAt, Float32x4ArraySetAt)                      \
+  V(Int32x4Array.prototype, getAt, Int32x4ArrayGetAt)                          \
+  V(Int32x4Array.prototype, setAt, Int32x4ArraySetAt)
+
+// Do not need to install them in InstallExperimentalSIMDBuiltinFunctionIds.
+#define SIMD_FAKE_ID_LISTS(V)                                                  \
+  V(SIMD, unreachable, SIMD128Unreachable)                                     \
+  V(SIMD, change, SIMD128Change)
+
 enum BuiltinFunctionId {
   kArrayCode,
 #define DECLARE_FUNCTION_ID(ignored1, ignore2, name)    \
   k##name,
   FUNCTIONS_WITH_ID_LIST(DECLARE_FUNCTION_ID)
-#undef DECLARE_FUNCTION_ID
   // Fake id for a special case of Math.pow. Note, it continues the
   // list of math functions.
-  kMathPowHalf
+  kMathPowHalf,
+  SIMD_FAKE_ID_LISTS(DECLARE_FUNCTION_ID)
+  SIMD_ARRAY_OPERATIONS(DECLARE_FUNCTION_ID)
+#undef DECLARE_FUNCTION_ID
+#define DECLARE_SIMD_NULLARY_FUNCTION_ID(i1, i2, name, i3)                     \
+  k##name,
+  SIMD_NULLARY_OPERATIONS(DECLARE_SIMD_NULLARY_FUNCTION_ID)
+#undef DECLARE_SIMD_NULLARY_FUNCTION_ID
+#define DECLARE_SIMD_UNARY_FUNCTION_ID(i1, i2, name, i3, i4)                   \
+  k##name,
+  SIMD_UNARY_OPERATIONS(DECLARE_SIMD_UNARY_FUNCTION_ID)
+  SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(DECLARE_SIMD_UNARY_FUNCTION_ID)
+#undef DECLARE_SIMD_UNARY_FUNCTION_ID
+#define DECLARE_SIMD_BINARY_FUNCTION_ID(i1, i2, name, i3, i4, i5)              \
+  k##name,
+  SIMD_BINARY_OPERATIONS(DECLARE_SIMD_BINARY_FUNCTION_ID)
+#undef DECLARE_SIMD_BINARY_FUNCTION_ID
+#define DECLARE_SIMD_TERNARY_FUNCTION_ID(i1, i2, name, i3, i4, i5, i6)         \
+  k##name,
+  SIMD_TERNARY_OPERATIONS(DECLARE_SIMD_TERNARY_FUNCTION_ID)
+#undef DECLARE_SIMD_TERNARY_FUNCTION_ID
+#define DECLARE_SIMD_QUARTERNARY_FUNCTION_ID(i1, i2, name, i3, i4, i5, i6, i7) \
+  k##name,
+  SIMD_QUARTERNARY_OPERATIONS(DECLARE_SIMD_QUARTERNARY_FUNCTION_ID)
+#undef DECLARE_SIMD_QUARTERNARY_FUNCTION_ID
+  kNumberOfBuiltinFunction
 };
 
 
@@ -7670,7 +7963,8 @@ class JSBuiltinsObject: public GlobalObject {
 };
 
 
-// Representation for JS Wrapper objects, String, Number, Boolean, etc.
+// Representation for JS Wrapper objects, String, Number, Float32x4, Int32x4,
+// Boolean, etc.
 class JSValue: public JSObject {
  public:
   // [value]: the object being wrapped.

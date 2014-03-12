@@ -25,58 +25,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// CPU specific code for ia32 independent of OS goes here.
+// Flags: --simd_object
 
-#ifdef __GNUC__
-#include "third_party/valgrind/valgrind.h"
-#endif
+function testSIMDAbs() {
+  var a4 = SIMD.float32x4(1.0, -2.0, 3.0, -4.0);
+  var b4;
+  for (var i = 0; i < 100000; i++) {
+    b4 = SIMD.float32x4.abs(a4);
+  }
 
-#include "v8.h"
-
-#if V8_TARGET_ARCH_IA32
-
-#include "cpu.h"
-#include "macro-assembler.h"
-
-namespace v8 {
-namespace internal {
-
-void CPU::SetUp() {
-  CpuFeatures::Probe();
+  assertEquals(1.0, b4.x);
+  assertEquals(2.0, b4.y);
+  assertEquals(3.0, b4.z);
+  assertEquals(4.0, b4.w);
 }
 
-
-bool CPU::SupportsCrankshaft() {
-  return CpuFeatures::IsSupported(SSE2);
-}
-
-
-bool CPU::SupportsSIMD128InCrankshaft() {
-  return CpuFeatures::IsSupported(SSE2);
-}
-
-
-void CPU::FlushICache(void* start, size_t size) {
-  // No need to flush the instruction cache on Intel. On Intel instruction
-  // cache flushing is only necessary when multiple cores running the same
-  // code simultaneously. V8 (and JavaScript) is single threaded and when code
-  // is patched on an intel CPU the core performing the patching will have its
-  // own instruction cache updated automatically.
-
-  // If flushing of the instruction cache becomes necessary Windows has the
-  // API function FlushInstructionCache.
-
-  // By default, valgrind only checks the stack for writes that might need to
-  // invalidate already cached translated code.  This leads to random
-  // instability when code patches or moves are sometimes unnoticed.  One
-  // solution is to run valgrind with --smc-check=all, but this comes at a big
-  // performance cost.  We can notify valgrind to invalidate its cache.
-#ifdef VALGRIND_DISCARD_TRANSLATIONS
-  unsigned res = VALGRIND_DISCARD_TRANSLATIONS(start, size);
-  USE(res);
-#endif
-}
-
-} }  // namespace v8::internal
-
-#endif  // V8_TARGET_ARCH_IA32
+testSIMDAbs();
