@@ -36,8 +36,7 @@ void EventHandler(const v8::JitCodeEvent* event);
 class XDKAgent : public v8engine::Thread {
  public:
   static XDKAgent& instance() {
-    static XDKAgent instance;
-    return instance;
+    return instance_;
   }
 
   void Run();
@@ -103,6 +102,8 @@ class XDKAgent : public v8engine::Thread {
   LineMaps m_lineMaps;
 
   bool m_terminate;  // Termination flag for listening thread.
+
+  static XDKAgent instance_;
 };
 
 } }  // namespace xdk::internal

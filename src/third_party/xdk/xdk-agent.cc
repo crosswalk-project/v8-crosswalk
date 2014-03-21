@@ -24,6 +24,8 @@ static const char* XDK_TRACE_FILE =
 static const char* XDK_MARKER_FILE =
   "/data/data/com.intel.app_analyzer/files/profiler.run";
 
+XDKAgent XDKAgent::instance_;
+
 // SetIdle has the same semantics as CpuProfiler::SetIdle has (v8/src/api.cc)
 // It is used to tell the sampler that XDK agent is idle (it is not busy with
 // some tasks). If the agent is idle that the sampler put a IDLE VM state into
@@ -125,6 +127,9 @@ struct ObjectDeallocator {
 
 
 XDKAgent::~XDKAgent() {
+  CHECK(m_server != NULL);
+  CHECK(m_agent_access != NULL);
+
   if (m_alive) {
     CHECK(m_isolate != NULL);
 
