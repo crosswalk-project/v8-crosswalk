@@ -125,21 +125,29 @@ struct ObjectDeallocator {
 
 
 XDKAgent::~XDKAgent() {
-  if (!m_alive) return;
-
-  CHECK(m_isolate);
-
-  m_terminate = true;
   CHECK(m_server);
+  CHECK(m_agent_access);
 
-  std::for_each(m_lineMaps.begin(), m_lineMaps.end(), ObjectDeallocator());
-  m_lineMaps.clear();
+  if (m_alive) {
+    CHECK(m_isolate);
 
-  m_server->Shutdown();
+    m_terminate = true;
 
-  Join();
+    std::for_each(m_lineMaps.begin(), m_lineMaps.end(), ObjectDeallocator());
+    m_lineMaps.clear();
+
+    m_server->Shutdown();
+
+    Join();
+  }
 
   delete m_server;
+  m_server = NULL;
+
+  delete m_agent_access;
+  m_agent_access = NULL;
+
+  m_isolate = NULL;
 }
 
 
