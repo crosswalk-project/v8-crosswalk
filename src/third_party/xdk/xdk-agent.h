@@ -62,6 +62,8 @@ class XDKAgent : public v8engine::Thread {
         m_agent_access(new v8engine::Mutex()),
         m_isolate(NULL),
         m_terminate(false) {
+    CHECK(m_server != NULL);
+    CHECK(m_agent_access != NULL);
   }
   XDKAgent(const XDKAgent&);
   XDKAgent& operator=(const XDKAgent&);

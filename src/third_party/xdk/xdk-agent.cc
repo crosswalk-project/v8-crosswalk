@@ -125,11 +125,11 @@ struct ObjectDeallocator {
 
 
 XDKAgent::~XDKAgent() {
-  CHECK(m_server);
-  CHECK(m_agent_access);
+  CHECK(m_server != NULL);
+  CHECK(m_agent_access != NULL);
 
   if (m_alive) {
-    CHECK(m_isolate);
+    CHECK(m_isolate != NULL);
 
     m_terminate = true;
 
