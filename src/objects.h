@@ -4670,7 +4670,7 @@ class FreeSpace: public HeapObject {
 
 
 // V has parameters (Type, type, TYPE, C type, element_size)
-#define TYPED_ARRAYS(V) \
+#define BUILTIN_TYPED_ARRAY(V) \
   V(Uint8, uint8, UINT8, uint8_t, 1)                                           \
   V(Int8, int8, INT8, int8_t, 1)                                               \
   V(Uint16, uint16, UINT16, uint16_t, 2)                                       \
@@ -4679,10 +4679,17 @@ class FreeSpace: public HeapObject {
   V(Int32, int32, INT32, int32_t, 4)                                           \
   V(Float32, float32, FLOAT32, float, 4)                                       \
   V(Float64, float64, FLOAT64, double, 8)                                      \
-  V(Float32x4, float32x4, FLOAT32x4, v8::internal::float32x4_value_t, 16)      \
-  V(Int32x4, int32x4, INT32x4, v8::internal::int32x4_value_t, 16)              \
   V(Uint8Clamped, uint8_clamped, UINT8_CLAMPED, uint8_t, 1)
 
+
+#define SIMD128_TYPED_ARRAY(V) \
+  V(Float32x4, float32x4, FLOAT32x4, v8::internal::float32x4_value_t, 16)      \
+  V(Int32x4, int32x4, INT32x4, v8::internal::int32x4_value_t, 16)
+
+
+#define TYPED_ARRAYS(V) \
+  BUILTIN_TYPED_ARRAY(V) \
+  SIMD128_TYPED_ARRAY(V)
 
 
 // An ExternalArray represents a fixed-size array of primitive values
