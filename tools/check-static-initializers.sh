@@ -33,6 +33,9 @@
 #  - _GLOBAL__I__ZN2v810LineEditor6first_E
 #  - _GLOBAL__I__ZN2v88internal32AtomicOps_Internalx86CPUFeaturesE
 #  - _GLOBAL__I__ZN2v88internal8ThreadId18highest_thread_id_E
+
+# The XDK CPU profiler patch adds one more static initializer.
+# - _GLOBAL__sub_I__ZN3xdk8internal8XDKAgent9instance_E
 expected_static_init_count=4
 
 v8_root=$(readlink -f $(dirname $BASH_SOURCE)/../)
