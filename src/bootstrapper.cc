@@ -1101,7 +1101,7 @@ void Genesis::InitializeGlobal(Handle<GlobalObject> inner_global,
           EXTERNAL_##TYPE##_ELEMENTS);                                        \
       native_context()->set_##type##_array_fun(*fun);                         \
     }
-    TYPED_ARRAYS(INSTALL_TYPED_ARRAY)
+    BUILTIN_TYPED_ARRAY(INSTALL_TYPED_ARRAY)
 #undef INSTALL_TYPED_ARRAY
 
     Handle<JSFunction> data_view_fun =
