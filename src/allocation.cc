@@ -67,6 +67,11 @@ void* Embedded::operator new(size_t size) {
   return invalid;
 }
 
+void* Embedded::operator new(size_t size, void* ptr) {
+  UNREACHABLE();
+  return invalid;
+}
+
 
 void Embedded::operator delete(void* p) {
   UNREACHABLE();

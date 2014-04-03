@@ -61,6 +61,7 @@ class Malloced {
 class Embedded {
  public:
   void* operator new(size_t size);
+  void* operator new(size_t size, void* ptr);
   void  operator delete(void* p);
 };
 #define BASE_EMBEDDED : public Embedded
