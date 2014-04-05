@@ -8888,7 +8888,33 @@ HValue* HOptimizedGraphBuilder::BuildAllocateFixedTypedArray(
   Add<HStoreNamedField>(elements,
       HObjectAccess::ForFixedArrayLength(),
       length);
+
   HValue* filler = Add<HConstant>(static_cast<int32_t>(0));
+  if (IsFixedFloat32x4ElementsKind(fixed_elements_kind)) {
+    if (CPU::SupportsSIMD128InCrankshaft()) {
+      filler = AddUncasted<HNullarySIMDOperation>(kFloat32x4Zero);
+    } else {
+      HValue* size = Add<HConstant>(Float32x4::kSize);
+      filler = Add<HAllocate>(size, HType::Tagged(), NOT_TENURED,
+          Float32x4::kInstanceType);
+      AddStoreMapConstant(filler, isolate()->factory()->float32x4_map());
+      HValue* zero = Add<HConstant>(static_cast<double>(0.0));
+      Add<HStoreNamedField>(filler, HObjectAccess::ForSIMD128XYLanes(), zero);
+      Add<HStoreNamedField>(filler, HObjectAccess::ForSIMD128ZWLanes(), zero);
+    }
+  } else if (IsFixedInt32x4ElementsKind(fixed_elements_kind)) {
+    if (CPU::SupportsSIMD128InCrankshaft()) {
+      filler = AddUncasted<HNullarySIMDOperation>(kInt32x4Zero);
+    } else {
+      HValue* size = Add<HConstant>(Int32x4::kSize);
+      filler = Add<HAllocate>(size, HType::Tagged(), NOT_TENURED,
+          Int32x4::kInstanceType);
+      AddStoreMapConstant(filler, isolate()->factory()->int32x4_map());
+      HValue* zero = Add<HConstant>(static_cast<double>(0.0));
+      Add<HStoreNamedField>(filler, HObjectAccess::ForSIMD128XYLanes(), zero);
+      Add<HStoreNamedField>(filler, HObjectAccess::ForSIMD128ZWLanes(), zero);
+    }
+  }
 
   {
     LoopBuilder builder(this, context(), LoopBuilder::kPostIncrement);

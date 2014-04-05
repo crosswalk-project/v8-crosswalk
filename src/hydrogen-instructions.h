@@ -5895,6 +5895,17 @@ class HObjectAccess V8_FINAL {
                          Representation::Integer32());
   }
 
+  static HObjectAccess ForSIMD128XYLanes() {
+    return HObjectAccess(
+        kDouble, Float32x4::kValueOffset, Representation::Double());
+  }
+
+  static HObjectAccess ForSIMD128ZWLanes() {
+    return HObjectAccess(kDouble,
+                         Float32x4::kValueOffset + kDoubleSize,
+                         Representation::Double());
+  }
+
   static HObjectAccess ForElementsPointer() {
     return HObjectAccess(kElementsPointer, JSObject::kElementsOffset);
   }
