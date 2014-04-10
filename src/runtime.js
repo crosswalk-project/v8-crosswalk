@@ -72,17 +72,45 @@ function EQUALS(y) {
         if (IS_NUMBER(y)) return %NumberEquals(%ToNumber(x), y);
         if (IS_BOOLEAN(y)) return %NumberEquals(%ToNumber(x), %ToNumber(y));
         if (IS_NULL_OR_UNDEFINED(y)) return 1;  // not equal
+        if (IsFloat32x4(y) || IsInt32x4(y)) {
+          return %StringEquals(x, %ToString(y));
+        }
         y = %ToPrimitive(y, NO_HINT);
       }
     } else if (IS_SYMBOL(x)) {
       if (IS_SYMBOL(y)) return %_ObjectEquals(x, y) ? 0 : 1;
       return 1; // not equal
+    } else if (IsFloat32x4(x)) {
+      while (true) {
+        if (IsFloat32x4(y) || IsInt32x4(y)) {
+          return (x.x == y.x && x.y == y.y && x.z == y.z && x.w == y.w) ? 0 : 1;
+        }
+        if (IS_STRING(y)) return %StringEquals(%ToString(x), y);
+        if (IS_NUMBER(y)) return 1;  // not equal
+        if (IS_SYMBOL(y)) return 1;  // not equal
+        if (IS_BOOLEAN(y)) return y ? 0 : 1;
+        if (IS_NULL_OR_UNDEFINED(y)) return 1;  // not equal
+        y = %ToPrimitive(y, NO_HINT);
+      }
+    } else if (IsInt32x4(x)) {
+      while (true) {
+        if (IsFloat32x4(y) || IsInt32x4(y)) {
+          return (x.x == y.x && x.y == y.y && x.z == y.z && x.w == y.w) ? 0 : 1;
+        }
+        if (IS_STRING(y)) return %StringEquals(%ToString(x), y);
+        if (IS_NUMBER(y)) return 1;  // not equal
+        if (IS_SYMBOL(y)) return 1;  // not equal
+        if (IS_BOOLEAN(y)) return y ? 0 : 1;
+        if (IS_NULL_OR_UNDEFINED(y)) return 1;  // not equal
+        y = %ToPrimitive(y, NO_HINT);
+      }
     } else if (IS_BOOLEAN(x)) {
       if (IS_BOOLEAN(y)) return %_ObjectEquals(x, y) ? 0 : 1;
       if (IS_NULL_OR_UNDEFINED(y)) return 1;
       if (IS_NUMBER(y)) return %NumberEquals(%ToNumber(x), y);
       if (IS_STRING(y)) return %NumberEquals(%ToNumber(x), %ToNumber(y));
       if (IS_SYMBOL(y)) return 1;  // not equal
+      if (IsFloat32x4(y) || IsInt32x4(y)) return x ? 0 : 1;
       // y is object.
       x = %ToNumber(x);
       y = %ToPrimitive(y, NO_HINT);
@@ -111,6 +139,18 @@ function STRICT_EQUALS(x) {
   if (IS_NUMBER(this)) {
     if (!IS_NUMBER(x)) return 1;  // not equal
     return %NumberEquals(this, x);
+  }
+
+  if (IsFloat32x4(this)) {
+    if (!IsFloat32x4(x)) return 1;  // not equal
+    return (this.x == x.x && this.y == x.y &&
+            this.z == x.z && this.w == x.w) ? 0 : 1;
+  }
+
+  if (IsInt32x4(this)) {
+    if (!IsInt32x4(x)) return 1;  // not equal
+    return (this.x == x.x && this.y == x.y &&
+            this.z == x.z && this.w == x.w) ? 0 : 1;
   }
 
   // If anything else gets here, we just do simple identity check.
@@ -149,6 +189,20 @@ function COMPARE(x, ncr) {
   right = %ToPrimitive(x, NUMBER_HINT);
   if (IS_STRING(left) && IS_STRING(right)) {
     return %_StringCompare(left, right);
+  } else if ((IsFloat32x4(left)  || IsInt32x4(left)) &&
+             (IsFloat32x4(right) || IsInt32x4(right))) {
+    if ((left.x == right.x) && (left.y == right.y) &&
+        (left.z == right.z) && (left.w == right.w)) {
+      return 0;  // equal
+    }
+    if ((left.x < right.x) && (left.y < right.y) &&
+        (left.z < right.z) && (left.w < right.w)) {
+      return -1;  // less
+    }
+    if ((left.x > right.x) && (left.y > right.y) &&
+        (left.z > right.z) && (left.w > right.w)) {
+      return 1;  // great
+    }
   } else {
     var left_number = %ToNumber(left);
     var right_number = %ToNumber(right);
@@ -525,6 +579,8 @@ function ToNumber(x) {
   if (IS_BOOLEAN(x)) return x ? 1 : 0;
   if (IS_UNDEFINED(x)) return NAN;
   if (IS_SYMBOL(x)) return NAN;
+  if (IsFloat32x4(x)) return NAN;
+  if (IsInt32x4(x)) return NAN;
   return (IS_NULL(x)) ? 0 : ToNumber(%DefaultNumber(x));
 }
 
@@ -536,8 +592,8 @@ function NonNumberToNumber(x) {
   if (IS_BOOLEAN(x)) return x ? 1 : 0;
   if (IS_UNDEFINED(x)) return NAN;
   if (IS_SYMBOL(x)) return NAN;
-  if (IsFloat32x4(x)) return NaN;
-  if (IsInt32x4(x)) return NaN;
+  if (IsFloat32x4(x)) return NAN;
+  if (IsInt32x4(x)) return NAN;
   return (IS_NULL(x)) ? 0 : ToNumber(%DefaultNumber(x));
 }
 
@@ -572,6 +628,8 @@ function ToObject(x) {
   if (IS_STRING(x)) return new $String(x);
   if (IS_NUMBER(x)) return new $Number(x);
   if (IS_BOOLEAN(x)) return new $Boolean(x);
+  if (IsFloat32x4(x)) return new $Float32x4(x.x, x.y, x.z, x.w);
+  if (IsInt32x4(x)) return new $Int32x4(x.x, x.y, x.z, x.w);
   if (IS_SYMBOL(x)) return %NewSymbolWrapper(x);
   if (IS_NULL_OR_UNDEFINED(x) && !IS_UNDETECTABLE(x)) {
     throw %MakeTypeError('undefined_or_null_to_object', []);
