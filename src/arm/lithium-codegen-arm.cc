@@ -2243,6 +2243,18 @@ void LCodeGen::DoBranch(LBranch* instr) {
         __ b(eq, instr->TrueLabel(chunk_));
       }
 
+      if (expected.Contains(ToBooleanStub::FLOAT32x4)) {
+        // Float32x4 value -> true.
+        __ CompareInstanceType(map, ip, FLOAT32x4_TYPE);
+        __ b(eq, instr->TrueLabel(chunk_));
+      }
+
+      if (expected.Contains(ToBooleanStub::INT32x4)) {
+        // Int32x4 value -> true.
+        __ CompareInstanceType(map, ip, INT32x4_TYPE);
+        __ b(eq, instr->TrueLabel(chunk_));
+      }
+
       if (expected.Contains(ToBooleanStub::HEAP_NUMBER)) {
         // heap number -> false iff +0, -0, or NaN.
         DwVfpRegister dbl_scratch = double_scratch0();
