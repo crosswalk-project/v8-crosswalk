@@ -2399,6 +2399,9 @@ void LCodeGen::DoBranch(LBranch* instr) {
     __ xorps(xmm_scratch, xmm_scratch);
     __ ucomisd(reg, xmm_scratch);
     EmitBranch(instr, not_equal);
+  } else if (r.IsSIMD128()) {
+    ASSERT(!info()->IsStub());
+    EmitBranch(instr, no_condition);
   } else {
     ASSERT(r.IsTagged());
     Register reg = ToRegister(instr->value());
@@ -2412,6 +2415,9 @@ void LCodeGen::DoBranch(LBranch* instr) {
       __ test(reg, Operand(reg));
       EmitBranch(instr, not_equal);
     } else if (type.IsJSArray()) {
+      ASSERT(!info()->IsStub());
+      EmitBranch(instr, no_condition);
+    } else if (type.IsSIMD128()) {
       ASSERT(!info()->IsStub());
       EmitBranch(instr, no_condition);
     } else if (type.IsHeapNumber()) {
@@ -2493,6 +2499,18 @@ void LCodeGen::DoBranch(LBranch* instr) {
       if (expected.Contains(ToBooleanStub::SYMBOL)) {
         // Symbol value -> true.
         __ CmpInstanceType(map, SYMBOL_TYPE);
+        __ j(equal, instr->TrueLabel(chunk_));
+      }
+
+      if (expected.Contains(ToBooleanStub::FLOAT32x4)) {
+        // Float32x4 value -> true.
+        __ CmpInstanceType(map, FLOAT32x4_TYPE);
+        __ j(equal, instr->TrueLabel(chunk_));
+      }
+
+      if (expected.Contains(ToBooleanStub::INT32x4)) {
+        // Int32x4 value -> true.
+        __ CmpInstanceType(map, INT32x4_TYPE);
         __ j(equal, instr->TrueLabel(chunk_));
       }
 
