@@ -982,7 +982,8 @@ LInstruction* LChunkBuilder::DoBranch(HBranch* instr) {
   if (expected.IsEmpty()) expected = ToBooleanStub::Types::Generic();
 
   bool easy_case = !r.IsTagged() || type.IsBoolean() || type.IsSmi() ||
-      type.IsJSArray() || type.IsHeapNumber() || type.IsString();
+      type.IsJSArray() || type.IsHeapNumber() || type.IsSIMD128() ||
+      type.IsString();
   LInstruction* branch = new(zone()) LBranch(UseRegister(value));
   if (!easy_case &&
       ((!expected.Contains(ToBooleanStub::SMI) && expected.NeedsMap()) ||

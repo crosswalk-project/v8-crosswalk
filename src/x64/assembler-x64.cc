@@ -2622,7 +2622,7 @@ void Assembler::movups(const Operand& dst, XMMRegister src) {
 void Assembler::shufps(XMMRegister dst, XMMRegister src, byte imm8) {
   ASSERT(is_uint8(imm8));
   EnsureSpace ensure_space(this);
-  emit_optional_rex_32(src, dst);
+  emit_optional_rex_32(dst, src);
   emit(0x0F);
   emit(0xC6);
   emit_sse_operand(dst, src);
