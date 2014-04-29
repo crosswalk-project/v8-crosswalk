@@ -614,6 +614,9 @@
         }, {
           'toolsets': ['target'],
         }],
+       ['v8_enable_xdkprof==1', {
+          'dependencies': ['../../src/third_party/xdk/xdk-v8.gyp:v8_xdk',],
+        }],
         ['v8_target_arch=="arm"', {
           'sources': [  ### gcmole(arch:arm) ###
             '../../src/arm/assembler-arm-inl.h',
