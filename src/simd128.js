@@ -892,7 +892,7 @@ macro TYPED_ARRAY_CONSTRUCTOR(ARRAY_ID, NAME, ELEMENT_SIZE)
         length = ToPositiveInteger(length, "invalid_typed_array_length");
     }
 
-    var bufferByteLength = %ArrayBufferGetByteLength(buffer);
+    var bufferByteLength = %_ArrayBufferGetByteLength(buffer);
     var offset;
     if (IS_UNDEFINED(byteOffset)) {
       offset = 0;
@@ -960,7 +960,6 @@ macro TYPED_ARRAY_CONSTRUCTOR(ARRAY_ID, NAME, ELEMENT_SIZE)
   }
 
   function NAMEConstructor(arg1, arg2, arg3) {
-
     if (%_IsConstructCall()) {
       if (IS_ARRAYBUFFER(arg1)) {
         NAMEConstructByArrayBuffer(this, arg1, arg2, arg3);
@@ -974,9 +973,105 @@ macro TYPED_ARRAY_CONSTRUCTOR(ARRAY_ID, NAME, ELEMENT_SIZE)
       throw MakeTypeError("constructor_not_function", ["NAME"])
     }
   }
+
+  function NAME_GetBuffer() {
+    if (!(%_ClassOf(this) === 'NAME')) {
+      throw MakeTypeError('incompatible_method_receiver',
+                          ["NAME.buffer", this]);
+    }
+    return %TypedArrayGetBuffer(this);
+  }
+
+  function NAME_GetByteLength() {
+    if (!(%_ClassOf(this) === 'NAME')) {
+      throw MakeTypeError('incompatible_method_receiver',
+                          ["NAME.byteLength", this]);
+    }
+    return %_ArrayBufferViewGetByteLength(this);
+  }
+
+  function NAME_GetByteOffset() {
+    if (!(%_ClassOf(this) === 'NAME')) {
+      throw MakeTypeError('incompatible_method_receiver',
+                          ["NAME.byteOffset", this]);
+    }
+    return %_ArrayBufferViewGetByteOffset(this);
+  }
+
+  function NAME_GetLength() {
+    if (!(%_ClassOf(this) === 'NAME')) {
+      throw MakeTypeError('incompatible_method_receiver',
+                          ["NAME.length", this]);
+    }
+    return %_TypedArrayGetLength(this);
+  }
+
+  var $NAME = global.NAME;
+
+  function NAMESubArray(begin, end) {
+    if (!(%_ClassOf(this) === 'NAME')) {
+      throw MakeTypeError('incompatible_method_receiver',
+                          ["NAME.subarray", this]);
+    }
+    var beginInt = TO_INTEGER(begin);
+    if (!IS_UNDEFINED(end)) {
+      end = TO_INTEGER(end);
+    }
+
+    var srcLength = %_TypedArrayGetLength(this);
+    if (beginInt < 0) {
+      beginInt = MathMax(0, srcLength + beginInt);
+    } else {
+      beginInt = MathMin(srcLength, beginInt);
+    }
+
+    var endInt = IS_UNDEFINED(end) ? srcLength : end;
+    if (endInt < 0) {
+      endInt = MathMax(0, srcLength + endInt);
+    } else {
+      endInt = MathMin(endInt, srcLength);
+    }
+    if (endInt < beginInt) {
+      endInt = beginInt;
+    }
+    var newLength = endInt - beginInt;
+    var beginByteOffset =
+        %_ArrayBufferViewGetByteOffset(this) + beginInt * ELEMENT_SIZE;
+    return new $NAME(%TypedArrayGetBuffer(this),
+                     beginByteOffset, newLength);
+  }
 endmacro
 
 SIMD128_TYPED_ARRAYS(TYPED_ARRAY_CONSTRUCTOR)
+
+function SetupSIMD128TypedArrays() {
+macro SETUP_TYPED_ARRAY(ARRAY_ID, NAME, ELEMENT_SIZE)
+  %CheckIsBootstrapping();
+  %SetCode(global.NAME, NAMEConstructor);
+  %FunctionSetPrototype(global.NAME, new $Object());
+
+  %SetProperty(global.NAME, "BYTES_PER_ELEMENT", ELEMENT_SIZE,
+               READ_ONLY | DONT_ENUM | DONT_DELETE);
+  %SetProperty(global.NAME.prototype,
+               "constructor", global.NAME, DONT_ENUM);
+  %SetProperty(global.NAME.prototype,
+               "BYTES_PER_ELEMENT", ELEMENT_SIZE,
+               READ_ONLY | DONT_ENUM | DONT_DELETE);
+  InstallGetter(global.NAME.prototype, "buffer", NAME_GetBuffer);
+  InstallGetter(global.NAME.prototype, "byteOffset", NAME_GetByteOffset);
+  InstallGetter(global.NAME.prototype, "byteLength", NAME_GetByteLength);
+  InstallGetter(global.NAME.prototype, "length", NAME_GetLength);
+
+  InstallFunctions(global.NAME.prototype, DONT_ENUM, $Array(
+        "subarray", NAMESubArray,
+        "set", TypedArraySet
+  ));
+endmacro
+
+SIMD128_TYPED_ARRAYS(SETUP_TYPED_ARRAY)
+}
+
+SetupSIMD128TypedArrays();
 
 macro DECLARE_TYPED_ARRAY_FUNCTION(NAME)
 function NAMEArrayGet(i) {
@@ -990,9 +1085,6 @@ function NAMEArraySet(i, v) {
 }
 
 function SetUpNAMEArray() {
-  // Keep synced with typedarray.js.
-  SetupTypedArray(global.NAMEArray, NAMEArrayConstructor, 16);
-
   InstallFunctions(global.NAMEArray.prototype, DONT_ENUM, $Array(
     "getAt", NAMEArrayGet,
     "setAt", NAMEArraySet
