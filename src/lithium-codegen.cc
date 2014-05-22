@@ -100,7 +100,12 @@ bool LCodeGenBase::GenerateBody() {
 
 
 void LCodeGenBase::CheckEnvironmentUsage() {
-#ifdef DEBUG
+// TODO(ningxin): this is a workaround.
+// Float32x4 kStoreKeyed returns CanDeoptimize() as false,
+// however it is assigned environment when running on non-SSE.
+// Need to find a solution to separate SIMD StoreKeyed/LoadKeyed
+// from other types.
+#if 0
   bool dead_block = false;
   for (int i = 0; i < instructions_->length(); i++) {
     LInstruction* instr = instructions_->at(i);

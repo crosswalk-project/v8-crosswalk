@@ -43,6 +43,9 @@ namespace internal {
   V(Map, shared_function_info_map, SharedFunctionInfoMap)                      \
   V(Map, meta_map, MetaMap)                                                    \
   V(Map, heap_number_map, HeapNumberMap)                                       \
+  V(Map, float32x4_map, Float32x4Map)                                          \
+  V(Map, float64x2_map, Float64x2Map)                                          \
+  V(Map, int32x4_map, Int32x4Map)                                              \
   V(Map, native_context_map, NativeContextMap)                                 \
   V(Map, fixed_array_map, FixedArrayMap)                                       \
   V(Map, code_map, CodeMap)                                                    \
@@ -114,8 +117,11 @@ namespace internal {
   V(Map, external_int16_array_map, ExternalInt16ArrayMap)                      \
   V(Map, external_uint16_array_map, ExternalUint16ArrayMap)                    \
   V(Map, external_int32_array_map, ExternalInt32ArrayMap)                      \
+  V(Map, external_int32x4_array_map, ExternalInt32x4ArrayMap)                  \
   V(Map, external_uint32_array_map, ExternalUint32ArrayMap)                    \
   V(Map, external_float32_array_map, ExternalFloat32ArrayMap)                  \
+  V(Map, external_float32x4_array_map, ExternalFloat32x4ArrayMap)              \
+  V(Map, external_float64x2_array_map, ExternalFloat64x2ArrayMap)              \
   V(Map, external_float64_array_map, ExternalFloat64ArrayMap)                  \
   V(Map, external_uint8_clamped_array_map, ExternalUint8ClampedArrayMap)       \
   V(ExternalArray, empty_external_int8_array,                                  \
@@ -126,9 +132,12 @@ namespace internal {
   V(ExternalArray, empty_external_uint16_array,                                \
       EmptyExternalUint16Array)                                                \
   V(ExternalArray, empty_external_int32_array, EmptyExternalInt32Array)        \
+  V(ExternalArray, empty_external_int32x4_array, EmptyExternalInt32x4Array)    \
   V(ExternalArray, empty_external_uint32_array,                                \
       EmptyExternalUint32Array)                                                \
   V(ExternalArray, empty_external_float32_array, EmptyExternalFloat32Array)    \
+  V(ExternalArray, empty_external_float32x4_array, EmptyExternalFloat32x4Array)\
+  V(ExternalArray, empty_external_float64x2_array, EmptyExternalFloat64x2Array)\
   V(ExternalArray, empty_external_float64_array, EmptyExternalFloat64Array)    \
   V(ExternalArray, empty_external_uint8_clamped_array,                         \
       EmptyExternalUint8ClampedArray)                                          \
@@ -138,7 +147,10 @@ namespace internal {
   V(Map, fixed_int16_array_map, FixedInt16ArrayMap)                            \
   V(Map, fixed_uint32_array_map, FixedUint32ArrayMap)                          \
   V(Map, fixed_int32_array_map, FixedInt32ArrayMap)                            \
+  V(Map, fixed_int32x4_array_map, FixedInt32x4ArrayMap)                        \
   V(Map, fixed_float32_array_map, FixedFloat32ArrayMap)                        \
+  V(Map, fixed_float32x4_array_map, FixedFloat32x4ArrayMap)                    \
+  V(Map, fixed_float64x2_array_map, FixedFloat64x2ArrayMap)                    \
   V(Map, fixed_float64_array_map, FixedFloat64ArrayMap)                        \
   V(Map, fixed_uint8_clamped_array_map, FixedUint8ClampedArrayMap)             \
   V(FixedTypedArrayBase, empty_fixed_uint8_array, EmptyFixedUint8Array)        \
@@ -148,6 +160,11 @@ namespace internal {
   V(FixedTypedArrayBase, empty_fixed_uint32_array, EmptyFixedUint32Array)      \
   V(FixedTypedArrayBase, empty_fixed_int32_array, EmptyFixedInt32Array)        \
   V(FixedTypedArrayBase, empty_fixed_float32_array, EmptyFixedFloat32Array)    \
+  V(FixedTypedArrayBase, empty_fixed_float32x4_array,                          \
+      EmptyFixedFloat32x4Array)                                                \
+  V(FixedTypedArrayBase, empty_fixed_float64x2_array,                          \
+      EmptyFixedFloat64x2Array)                                                \
+  V(FixedTypedArrayBase, empty_fixed_int32x4_array, EmptyFixedInt32x4Array)    \
   V(FixedTypedArrayBase, empty_fixed_float64_array, EmptyFixedFloat64Array)    \
   V(FixedTypedArrayBase, empty_fixed_uint8_clamped_array,                      \
       EmptyFixedUint8ClampedArray)                                             \
@@ -290,6 +307,9 @@ namespace internal {
   V(null_string, "null")                                                 \
   V(number_string, "number")                                             \
   V(Number_string, "Number")                                             \
+  V(float32x4_string, "float32x4")                                       \
+  V(float64x2_string, "float64x2")                                       \
+  V(int32x4_string, "int32x4")                                           \
   V(nan_string, "NaN")                                                   \
   V(RegExp_string, "RegExp")                                             \
   V(source_string, "source")                                             \
@@ -358,6 +378,16 @@ namespace internal {
   V(throw_string, "throw")                                               \
   V(done_string, "done")                                                 \
   V(value_string, "value")                                               \
+  V(signMask, "signMask")                                                \
+  V(x, "x")                                                              \
+  V(y, "y")                                                              \
+  V(z, "z")                                                              \
+  V(w, "w")                                                              \
+  V(flagX, "flagX")                                                      \
+  V(flagY, "flagY")                                                      \
+  V(flagZ, "flagZ")                                                      \
+  V(flagW, "flagW")                                                      \
+  V(simd, "SIMD")                                                        \
   V(next_string, "next")                                                 \
   V(byte_length_string, "byteLength")                                    \
   V(byte_offset_string, "byteOffset")                                    \
@@ -1456,6 +1486,21 @@ class Heap {
   // Allocated a HeapNumber from value.
   MUST_USE_RESULT AllocationResult AllocateHeapNumber(
       double value, PretenureFlag pretenure = NOT_TENURED);
+
+  // Allocated a Float32x4 from value.
+  MUST_USE_RESULT AllocationResult AllocateFloat32x4(
+      float32x4_value_t value,
+      PretenureFlag pretenure = NOT_TENURED);
+
+  // Allocated a Float64x2 from value.
+  MUST_USE_RESULT AllocationResult AllocateFloat64x2(
+      float64x2_value_t value,
+      PretenureFlag pretenure = NOT_TENURED);
+
+  // Allocated a Int32x4 from value.
+  MUST_USE_RESULT AllocationResult AllocateInt32x4(
+      int32x4_value_t value,
+      PretenureFlag pretenure = NOT_TENURED);
 
   // Allocate a byte array of the specified length
   MUST_USE_RESULT AllocationResult AllocateByteArray(
