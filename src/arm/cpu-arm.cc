@@ -23,22 +23,6 @@
 namespace v8 {
 namespace internal {
 
-void CPU::SetUp() {
-  CpuFeatures::Probe(false);
-}
-
-
-bool CPU::SupportsCrankshaft() {
-  return CpuFeatures::IsSupported(VFP3);
-}
-
-
-bool CPU::SupportsSIMD128InCrankshaft() {
-  // Not Implemented.
-  return false;
-}
-
-
 void CPU::FlushICache(void* start, size_t size) {
   // Nothing to do flushing no instructions.
   if (size == 0) {
