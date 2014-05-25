@@ -872,7 +872,6 @@ bool HInstruction::CanDeoptimize() {
     case HValue::kSar:
     case HValue::kSeqStringGetChar:
     case HValue::kStoreCodeEntry:
-    case HValue::kStoreKeyed:
     case HValue::kStoreNamedGeneric:
     case HValue::kStringCharCodeAt:
     case HValue::kStringCharFromCode:
@@ -881,6 +880,14 @@ bool HInstruction::CanDeoptimize() {
     case HValue::kUnknownOSRValue:
     case HValue::kUseConst:
       return false;
+
+    case HValue::kStoreKeyed:
+      if (IsFloat32x4ElementsKind(HStoreKeyed::cast(this)->elements_kind()) ||
+          IsFloat64x2ElementsKind(HStoreKeyed::cast(this)->elements_kind()) ||
+          IsInt32x4ElementsKind(HStoreKeyed::cast(this)->elements_kind()))
+        return true;
+      else
+        return false;
 
     case HValue::kAdd:
     case HValue::kApplyArguments:
