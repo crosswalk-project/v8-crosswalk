@@ -487,6 +487,11 @@ class CpuFeatures : public AllStatic {
 
   static bool SupportsCrankshaft() { return true; }
 
+  static bool SupportsSIMD128InCrankshaft() {
+    return false;
+  }
+
+
  private:
   static bool Check(CpuFeature f, uint64_t set) {
     return (set & flag2set(f)) != 0;
