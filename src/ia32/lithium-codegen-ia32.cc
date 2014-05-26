@@ -6251,17 +6251,17 @@ Condition LCodeGen::EmitTypeofIs(LTypeofIsAndBranch* instr, Register input) {
            factory()->heap_number_map());
     final_branch_condition = equal;
 
-  } else if (String::Equals(type_name, factory->float32x4_string())) {
+  } else if (String::Equals(type_name, factory()->float32x4_string())) {
     __ JumpIfSmi(input, false_label, false_distance);
     __ CmpObjectType(input, FLOAT32x4_TYPE, input);
     final_branch_condition = equal;
 
-  } else if (String::Equals(type_name, factory->float64x2_string())) {
+  } else if (String::Equals(type_name, factory()->float64x2_string())) {
     __ JumpIfSmi(input, false_label, false_distance);
     __ CmpObjectType(input, FLOAT64x2_TYPE, input);
     final_branch_condition = equal;
 
-  } else if (String::Equals(type_name, factory->int32x4_string())) {
+  } else if (String::Equals(type_name, factory()->int32x4_string())) {
     __ JumpIfSmi(input, false_label, false_distance);
     __ CmpObjectType(input, INT32x4_TYPE, input);
     final_branch_condition = equal;
