@@ -91,6 +91,11 @@ class CpuFeatures : public AllStatic {
 
   static bool SupportsCrankshaft() { return CpuFeatures::IsSupported(VFP3); }
 
+  static bool SupportsSIMD128InCrankshaft() {
+    // Not Implemented.
+    return false;
+  }
+
  private:
   static bool Check(CpuFeature f, unsigned set) {
     return (set & flag2set(f)) != 0;
