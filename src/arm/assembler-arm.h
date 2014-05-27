@@ -91,6 +91,11 @@ class CpuFeatures : public AllStatic {
 
   static bool SupportsCrankshaft() { return CpuFeatures::IsSupported(VFP3); }
 
+  static bool SupportsSIMD128InCrankshaft() {
+    // Not Implemented.
+    return false;
+  }
+
  private:
   static bool Check(CpuFeature f, unsigned set) {
     return (set & flag2set(f)) != 0;
@@ -367,6 +372,34 @@ struct QwNeonRegister {
     return r;
   }
 
+  static int ToAllocationIndex(QwNeonRegister reg) {
+    ASSERT(reg.code() < kMaxNumRegisters);
+    return reg.code();
+  }
+
+  static const char* AllocationIndexToString(int index) {
+    ASSERT(index >= 0 && index < kMaxNumRegisters);
+    const char* const names[] = {
+      "q0",
+      "q1",
+      "q2",
+      "q3",
+      "q4",
+      "q5",
+      "q6",
+      "q7",
+      "q8",
+      "q9",
+      "q10",
+      "q11",
+      "q12",
+      "q13",
+      "q14",
+      "q15",
+    };
+    return names[index];
+  }
+
   bool is_valid() const {
     return (0 <= code_) && (code_ < kMaxNumRegisters);
   }
@@ -387,6 +420,7 @@ struct QwNeonRegister {
 
 
 typedef QwNeonRegister QuadRegister;
+typedef QwNeonRegister SIMD128Register;
 
 
 // Support for the VFP registers s0 to s31 (d0 to d15).

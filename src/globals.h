@@ -261,6 +261,7 @@ const int kFloatSize     = sizeof(float);                // NOLINT
 const int kFloat32x4Size = sizeof(float32x4_value_t);    // NOLINT
 const int kFloat64x2Size = sizeof(float64x2_value_t);    // NOLINT
 const int kInt32x4Size   = sizeof(int32x4_value_t);      // NOLINT
+const int kSIMD128Size   = sizeof(simd128_value_t);      // NOLINT
 const int kIntptrSize    = sizeof(intptr_t);             // NOLINT
 const int kPointerSize   = sizeof(void*);                // NOLINT
 const int kRegisterSize  = kPointerSize;

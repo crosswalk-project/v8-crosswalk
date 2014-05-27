@@ -354,23 +354,41 @@ void LAccessArgumentsAt::PrintDataTo(StringStream* stream) {
 
 
 int LPlatformChunk::GetNextSpillIndex(RegisterKind kind) {
-  // Skip a slot if for a double-width slot.
-  if (kind == DOUBLE_REGISTERS) {
-    spill_slot_count_++;
-    spill_slot_count_ |= 1;
-    num_double_slots_++;
+  switch (kind) {
+    case GENERAL_REGISTERS: return spill_slot_count_++;
+    case DOUBLE_REGISTERS: {
+      // Skip a slot if for a double-width slot.
+      spill_slot_count_++;
+      spill_slot_count_ |= 1;
+      num_double_slots_++;
+      return spill_slot_count_++;
+    }
+    case FLOAT32x4_REGISTERS:
+    case FLOAT64x2_REGISTERS:
+    case INT32x4_REGISTERS: {
+      // Skip three slots if for a quad-width slot.
+      spill_slot_count_ += 3;
+      num_double_slots_ += 2;  // for dynamic frame alignment
+      return spill_slot_count_++;
+    }
+    default:
+      UNREACHABLE();
+      return -1;
   }
-  return spill_slot_count_++;
 }
 
 
 LOperand* LPlatformChunk::GetNextSpillSlot(RegisterKind kind) {
   int index = GetNextSpillIndex(kind);
-  if (kind == DOUBLE_REGISTERS) {
-    return LDoubleStackSlot::Create(index, zone());
-  } else {
-    ASSERT(kind == GENERAL_REGISTERS);
-    return LStackSlot::Create(index, zone());
+  switch (kind) {
+    case GENERAL_REGISTERS: return LStackSlot::Create(index, zone());
+    case DOUBLE_REGISTERS: return LDoubleStackSlot::Create(index, zone());
+    case FLOAT32x4_REGISTERS: return LFloat32x4StackSlot::Create(index, zone());
+    case FLOAT64x2_REGISTERS: return LFloat64x2StackSlot::Create(index, zone());
+    case INT32x4_REGISTERS: return LInt32x4StackSlot::Create(index, zone());
+    default:
+      UNREACHABLE();
+      return NULL;
   }
 }
 
@@ -1905,6 +1923,11 @@ LInstruction* LChunkBuilder::DoChange(HChange* instr) {
           DefineAsRegister(new(zone()) LNumberUntagD(value, temp));
       if (!val->representation().IsSmi()) result = AssignEnvironment(result);
       return result;
+    } else if (to.IsSIMD128()) {
+      LOperand* value = UseRegister(instr->value());
+      LOperand* temp = TempRegister();
+      LTaggedToSIMD128* res = new(zone()) LTaggedToSIMD128(value, temp, to);
+      return AssignEnvironment(DefineAsRegister(res));
     } else if (to.IsSmi()) {
       LOperand* value = UseRegister(val);
       if (val->type().IsSmi()) {
@@ -1988,6 +2011,16 @@ LInstruction* LChunkBuilder::DoChange(HChange* instr) {
         return DefineAsRegister(new(zone()) LInteger32ToDouble(Use(val)));
       }
     }
+  } else if (from.IsSIMD128()) {
+    ASSERT(to.IsTagged());
+    info()->MarkAsDeferredCalling();
+    LOperand* value = UseRegister(instr->value());
+    LOperand* temp = TempRegister();
+
+    // Make sure that temp and result_temp are different registers.
+    LUnallocated* result_temp = TempRegister();
+    LSIMD128ToTagged* result = new(zone()) LSIMD128ToTagged(value, temp);
+    return AssignPointerMap(Define(result, result_temp));
   }
   UNREACHABLE();
   return NULL;
@@ -2206,7 +2239,8 @@ LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
       : UseRegisterOrConstantAtStart(instr->key());
   LInstruction* result = NULL;
 
-  bool load_128bits_without_sse2 = IsSIMD128ElementsKind(elements_kind);
+  bool load_128bits_without_sse2 = IsSIMD128ElementsKind(elements_kind) &&
+                                   !CpuFeatures::SupportsSIMD128InCrankshaft();
   if (!instr->is_typed_elements()) {
     LOperand* obj = UseRegisterAtStart(instr->elements());
     result = DefineAsRegister(new(zone()) LLoadKeyed(obj, key, NULL));
@@ -2216,8 +2250,18 @@ LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
          !(IsDoubleOrFloatElementsKind(instr->elements_kind()))) ||
         (instr->representation().IsDouble() &&
          (IsDoubleOrFloatElementsKind(instr->elements_kind()))) ||
-        (instr->representation().IsTagged() &&
-         (IsSIMD128ElementsKind(instr->elements_kind()))));
+        (CPU::SupportsSIMD128InCrankshaft()
+            ? instr->representation().IsFloat32x4()
+            : instr->representation().IsTagged() &&
+         (IsFloat32x4ElementsKind(instr->elements_kind()))) ||
+        (CPU::SupportsSIMD128InCrankshaft()
+            ? instr->representation().IsFloat64x2()
+            : instr->representation().IsTagged() &&
+         (IsFloat64x2ElementsKind(instr->elements_kind()))) ||
+        (CPU::SupportsSIMD128InCrankshaft()
+            ? instr->representation().IsInt32x4()
+            : instr->representation().IsTagged() &&
+         (IsInt32x4ElementsKind(instr->elements_kind()))));
     LOperand* backing_store = UseRegister(instr->elements());
     result = DefineAsRegister(new(zone()) LLoadKeyed(backing_store, key,
         load_128bits_without_sse2 ? TempRegister() : NULL));
@@ -2312,8 +2356,18 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
        !IsDoubleOrFloatElementsKind(elements_kind)) ||
       (instr->value()->representation().IsDouble() &&
        IsDoubleOrFloatElementsKind(elements_kind)) ||
-      (instr->value()->representation().IsTagged() &&
-       IsSIMD128ElementsKind(elements_kind)));
+      (CPU::SupportsSIMD128InCrankshaft()
+          ? instr->value()->representation().IsFloat32x4()
+          : instr->value()->representation().IsTagged() &&
+       IsFloat32x4ElementsKind(elements_kind)) ||
+      (CPU::SupportsSIMD128InCrankshaft()
+          ? instr->value()->representation().IsFloat64x2()
+          : instr->value()->representation().IsTagged() &&
+       IsFloat64x2ElementsKind(elements_kind)) ||
+      (CPU::SupportsSIMD128InCrankshaft()
+          ? instr->value()->representation().IsInt32x4()
+          : instr->value()->representation().IsTagged() &&
+       IsInt32x4ElementsKind(elements_kind)));
   ASSERT((instr->is_fixed_typed_array() &&
           instr->elements()->representation().IsTagged()) ||
          (instr->is_external() &&
@@ -2326,7 +2380,8 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
   LOperand* key = clobbers_key
       ? UseTempRegister(instr->key())
       : UseRegisterOrConstantAtStart(instr->key());
-  bool store_128bits_without_sse2 = IsSIMD128ElementsKind(elements_kind);
+  bool store_128bits_without_sse2 = IsSIMD128ElementsKind(elements_kind) &&
+                                    !CpuFeatures::SupportsSIMD128InCrankshaft();
   LStoreKeyed* result =
       new(zone()) LStoreKeyed(backing_store, key, val,
           store_128bits_without_sse2 ? TempRegister() : NULL);
