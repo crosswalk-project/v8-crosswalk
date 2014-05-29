@@ -2250,15 +2250,15 @@ LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
          !(IsDoubleOrFloatElementsKind(instr->elements_kind()))) ||
         (instr->representation().IsDouble() &&
          (IsDoubleOrFloatElementsKind(instr->elements_kind()))) ||
-        (CPU::SupportsSIMD128InCrankshaft()
+        (CpuFeatures::SupportsSIMD128InCrankshaft()
             ? instr->representation().IsFloat32x4()
             : instr->representation().IsTagged() &&
          (IsFloat32x4ElementsKind(instr->elements_kind()))) ||
-        (CPU::SupportsSIMD128InCrankshaft()
+        (CpuFeatures::SupportsSIMD128InCrankshaft()
             ? instr->representation().IsFloat64x2()
             : instr->representation().IsTagged() &&
          (IsFloat64x2ElementsKind(instr->elements_kind()))) ||
-        (CPU::SupportsSIMD128InCrankshaft()
+        (CpuFeatures::SupportsSIMD128InCrankshaft()
             ? instr->representation().IsInt32x4()
             : instr->representation().IsTagged() &&
          (IsInt32x4ElementsKind(instr->elements_kind()))));
@@ -2356,15 +2356,15 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
        !IsDoubleOrFloatElementsKind(elements_kind)) ||
       (instr->value()->representation().IsDouble() &&
        IsDoubleOrFloatElementsKind(elements_kind)) ||
-      (CPU::SupportsSIMD128InCrankshaft()
+      (CpuFeatures::SupportsSIMD128InCrankshaft()
           ? instr->value()->representation().IsFloat32x4()
           : instr->value()->representation().IsTagged() &&
        IsFloat32x4ElementsKind(elements_kind)) ||
-      (CPU::SupportsSIMD128InCrankshaft()
+      (CpuFeatures::SupportsSIMD128InCrankshaft()
           ? instr->value()->representation().IsFloat64x2()
           : instr->value()->representation().IsTagged() &&
        IsFloat64x2ElementsKind(elements_kind)) ||
-      (CPU::SupportsSIMD128InCrankshaft()
+      (CpuFeatures::SupportsSIMD128InCrankshaft()
           ? instr->value()->representation().IsInt32x4()
           : instr->value()->representation().IsTagged() &&
        IsInt32x4ElementsKind(elements_kind)));
