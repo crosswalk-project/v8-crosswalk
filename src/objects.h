@@ -7180,7 +7180,7 @@ class Script: public Struct {
     Float32x4, Integer32)                                                      \
   V(SIMD.float64x2, clamp, Float64x2Clamp, Float64x2, Float64x2, Float64x2,    \
     Float64x2)                                                                 \
-  V(SIMD.int32x4, select, Int32x4Select, Float64x2, Int32x4, Float64x2,        \
+  V(SIMD.int32x4, select, Int32x4Select, Float32x4, Int32x4, Float32x4,        \
     Float32x4)
 
 #define SIMD_QUARTERNARY_OPERATIONS(V)                                         \
