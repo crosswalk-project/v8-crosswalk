@@ -341,6 +341,13 @@ class Logger {
   // When data collection is paused, CPU Tick events are discarded.
   void StopProfiler();
 
+  // Resumes collection of CPU Tick events.
+  void XDKResumeProfiler();
+
+  // XDK agent uses it log code map (list of CodeAdded event
+  // before resume CPU Tick events.
+  Log* XDKGetLog() { return log_; }
+
   void LogExistingFunction(Handle<SharedFunctionInfo> shared,
                            Handle<Code> code);
   // Logs all compiled functions found in the heap.
@@ -509,15 +516,15 @@ class CodeEventLogger : public CodeEventListener {
   virtual void SharedFunctionInfoMoveEvent(Address from, Address to) { }
   virtual void CodeMovingGCEvent() { }
 
- private:
+ protected:
   class NameBuffer;
+  NameBuffer* name_buffer_;
 
+ private:
   virtual void LogRecordedBuffer(Code* code,
                                  SharedFunctionInfo* shared,
                                  const char* name,
                                  int length) = 0;
-
-  NameBuffer* name_buffer_;
 };
 
 

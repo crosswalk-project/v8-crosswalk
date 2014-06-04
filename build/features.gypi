@@ -41,6 +41,9 @@
 
     'v8_use_snapshot%': 'true',
 
+    # Enable XDK profiling support by default.
+    'v8_enable_xdkprof': 1,
+
     # With post mortem support enabled, metadata is embedded into libv8 that
     # describes various parameters of the VM for use by debuggers. See
     # tools/gen-postmortem-metadata.py for details.

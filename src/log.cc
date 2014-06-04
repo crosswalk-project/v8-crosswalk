@@ -20,6 +20,9 @@
 #include "string-stream.h"
 #include "vm-state-inl.h"
 
+// XDK support
+#include "third_party/xdk/xdk-v8.h"
+
 namespace v8 {
 namespace internal {
 
@@ -132,6 +135,15 @@ class CodeEventLogger::NameBuffer {
     Vector<char> buffer(utf8_buffer_ + utf8_pos_,
                         kUtf8BufferSize - utf8_pos_);
     int size = OS::SNPrintF(buffer, "%x", n);
+    if (size > 0 && utf8_pos_ + size <= kUtf8BufferSize) {
+      utf8_pos_ += size;
+    }
+  }
+
+  // XDK needs this function temporarily. It will be removed later.
+  void AppendAddress(Address address) {
+    Vector<char> buffer(utf8_buffer_ + utf8_pos_, kUtf8BufferSize - utf8_pos_);
+    int size = OS::SNPrintF(buffer, "0x%x", address);
     if (size > 0 && utf8_pos_ + size <= kUtf8BufferSize) {
       utf8_pos_ += size;
     }
@@ -632,6 +644,226 @@ class JitLogger : public CodeEventLogger {
 
   void* StartCodePosInfoEvent();
   void EndCodePosInfoEvent(Code* code, void* jit_handler_data);
+
+
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  // XDK needs all this stuff below to generate the strings like
+  // "code-creation:..." in the same format as Logger generates.
+  // This string is sent to XDK by code_event_handler and then used for
+  // postprocessing. All these CodeCreateEvent(...) functions and helpers
+  // will be removed before commit.
+  void AppendCodeCreateHeader(NameBuffer* msg,
+                              Logger::LogEventsAndTags tag,
+                              Code* code) {
+    CHECK(msg);
+    msg->AppendBytes(kLogEventsNames[Logger::CODE_CREATION_EVENT]);
+    msg->AppendByte(',');
+    msg->AppendBytes(kLogEventsNames[tag]);
+    msg->AppendByte(',');
+    msg->AppendInt(code->kind());
+    msg->AppendByte(',');
+    msg->AppendAddress(code->instruction_start());
+    msg->AppendByte(',');
+    msg->AppendInt(code->instruction_size());
+    msg->AppendByte(',');
+  }
+
+
+  void AppendDetailed(NameBuffer* msg, String* str, bool show_impl_info) {
+    CHECK(msg);
+    if (str == NULL) return;
+    DisallowHeapAllocation no_gc;  // Ensure string stay valid.
+    int len = str->length();
+    if (len > 0x1000)
+      len = 0x1000;
+    if (show_impl_info) {
+      msg->AppendByte(str->IsOneByteRepresentation() ? 'a' : '2');
+      if (StringShape(str).IsExternal())
+        msg->AppendByte('e');
+      if (StringShape(str).IsInternalized())
+        msg->AppendByte('#');
+      msg->AppendByte(':');
+      msg->AppendInt(str->length());
+      msg->AppendByte(':');
+    }
+    for (int i = 0; i < len; i++) {
+      uc32 c = str->Get(i);
+      if (c > 0xff) {
+        msg->AppendBytes("\\u");
+        msg->AppendHex(c);
+      } else if (c < 32 || c > 126) {
+        msg->AppendBytes("\\x");
+        msg->AppendHex(c);
+      } else if (c == ',') {
+        msg->AppendBytes("\\,");
+      } else if (c == '\\') {
+        msg->AppendBytes("\\\\");
+      } else if (c == '\"') {
+        msg->AppendBytes("\"\"");
+      } else {
+        msg->AppendByte(c);
+      }
+    }
+  }
+
+
+  void AppendDoubleQuotedString(NameBuffer* msg, const char* string) {
+    CHECK(msg);
+    msg->AppendByte('"');
+    for (const char* p = string; *p != '\0'; p++) {
+      if (*p == '"') {
+        msg->AppendByte('\\');
+     }
+      msg->AppendByte(*p);
+    }
+    msg->AppendByte('"');
+  }
+
+
+  void AppendSymbolName(NameBuffer* msg, Symbol* symbol) {
+    CHECK(msg);
+    ASSERT(symbol);
+    msg->AppendBytes("symbol(");
+    if (!symbol->name()->IsUndefined()) {
+      msg->AppendByte('"');
+      AppendDetailed(msg, String::cast(symbol->name()), false);
+      msg->AppendBytes("\" ");
+    }
+    msg->AppendBytes("hash ");
+    msg->AppendHex(symbol->Hash());
+    msg->AppendByte(')');
+  }
+
+
+  virtual void CodeCreateEvent(Logger::LogEventsAndTags tag,
+                               Code* code, const char* comment) {
+    if (!xdk::XDKIsAgentAlive()) {
+      CodeEventLogger::CodeCreateEvent(tag, code, comment);
+      return;
+    }
+
+    name_buffer_->Reset();
+    AppendCodeCreateHeader(name_buffer_, tag, code);
+    AppendDoubleQuotedString(name_buffer_, comment);
+    LogRecordedBuffer(code, NULL, name_buffer_->get(), name_buffer_->size());
+  }
+
+
+  virtual void CodeCreateEvent(Logger::LogEventsAndTags tag,
+                               Code* code, Name* name) {
+    if (!xdk::XDKIsAgentAlive()) {
+       CodeEventLogger::CodeCreateEvent(tag, code, name);
+       return;
+    }
+
+    name_buffer_->Reset();
+    AppendCodeCreateHeader(name_buffer_, tag, code);
+    if (name->IsString()) {
+      name_buffer_->AppendByte('"');
+      AppendDetailed(name_buffer_, String::cast(name), false);
+      name_buffer_->AppendByte('"');
+    } else {
+      AppendSymbolName(name_buffer_, Symbol::cast(name));
+    }
+    LogRecordedBuffer(code, NULL, name_buffer_->get(), name_buffer_->size());
+  }
+
+
+  virtual void CodeCreateEvent(Logger::LogEventsAndTags tag,
+                               Code* code,
+                               SharedFunctionInfo* shared,
+                               CompilationInfo* info,
+                               Name* name) {
+    if (!xdk::XDKIsAgentAlive()) {
+      CodeEventLogger::CodeCreateEvent(tag, code, shared, info, name);
+      return;
+    }
+
+    name_buffer_->Reset();
+    AppendCodeCreateHeader(name_buffer_, tag, code);
+    if (name->IsString()) {
+      SmartArrayPointer<char> str =
+         String::cast(name)->ToCString(DISALLOW_NULLS, ROBUST_STRING_TRAVERSAL);
+      name_buffer_->AppendByte('"');
+      name_buffer_->AppendBytes(str.get());
+      name_buffer_->AppendByte('"');
+    } else {
+      AppendSymbolName(name_buffer_, Symbol::cast(name));
+    }
+    name_buffer_->AppendByte(',');
+    name_buffer_->AppendAddress(shared->address());
+    name_buffer_->AppendByte(',');
+    name_buffer_->AppendBytes(ComputeMarker(code));
+    LogRecordedBuffer(code, shared, name_buffer_->get(), name_buffer_->size());
+  }
+
+  virtual void CodeCreateEvent(Logger::LogEventsAndTags tag,
+                               Code* code,
+                               SharedFunctionInfo* shared,
+                               CompilationInfo* info,
+                               Name* source,
+                               int line, int column) {
+    if (!xdk::XDKIsAgentAlive()) {
+      CodeEventLogger::CodeCreateEvent(tag, code, shared,
+                                       info, source, line, column);
+      return;
+    }
+
+    name_buffer_->Reset();
+    AppendCodeCreateHeader(name_buffer_, tag, code);
+    SmartArrayPointer<char> name =
+        shared->DebugName()->ToCString(DISALLOW_NULLS, ROBUST_STRING_TRAVERSAL);
+    name_buffer_->AppendByte('"');
+    name_buffer_->AppendBytes(name.get());
+    name_buffer_->AppendByte(' ');
+    if (source->IsString()) {
+        SmartArrayPointer<char> sourcestr =
+           String::cast(source)->ToCString(DISALLOW_NULLS,
+                                           ROBUST_STRING_TRAVERSAL);
+        name_buffer_->AppendBytes(sourcestr.get());
+    } else {
+        AppendSymbolName(name_buffer_, Symbol::cast(source));
+    }
+    name_buffer_->AppendByte(':');
+    name_buffer_->AppendInt(line);
+    name_buffer_->AppendByte(':');
+    name_buffer_->AppendInt(column);
+    name_buffer_->AppendBytes("\",");
+    name_buffer_->AppendAddress(shared->address());
+    name_buffer_->AppendByte(',');
+    name_buffer_->AppendBytes(ComputeMarker(code));
+    LogRecordedBuffer(code, shared, name_buffer_->get(), name_buffer_->size());
+  }
+
+
+  virtual void CodeCreateEvent(Logger::LogEventsAndTags tag,
+                               Code* code,
+                               int args_count) {
+    if (!xdk::XDKIsAgentAlive()) {
+      CodeEventLogger::CodeCreateEvent(tag, code, args_count);
+      return;
+    }
+
+    name_buffer_->Reset();
+    AppendCodeCreateHeader(name_buffer_, tag, code);
+    name_buffer_->AppendBytes("\"args_count: ");
+    name_buffer_->AppendInt(args_count);
+    name_buffer_->AppendByte('"');
+  }
+
+
+  virtual void RegExpCodeCreateEvent(Code* code, String* source) {
+    if (!xdk::XDKIsAgentAlive()) {
+      CodeEventLogger::RegExpCodeCreateEvent(code, source);
+      return;
+    }
+
+    name_buffer_->Reset();
+    AppendCodeCreateHeader(name_buffer_, Logger::REG_EXP_TAG, code);
+    name_buffer_->AppendByte('"');
+    AppendDetailed(name_buffer_, source, false);
+    name_buffer_->AppendByte('"');
+  }
 
  private:
   virtual void LogRecordedBuffer(Code* code,
@@ -1359,8 +1591,13 @@ static void AppendCodeCreateHeader(Log::MessageBuilder* msg,
               kLogEventsNames[Logger::CODE_CREATION_EVENT],
               kLogEventsNames[tag],
               code->kind());
-  msg->AppendAddress(code->address());
-  msg->Append(",%d,", code->ExecutableSize());
+  if (xdk::XDKIsAgentAlive()) {
+    msg->AppendAddress(code->instruction_start());
+    msg->Append(",%d,", code->instruction_size());
+  } else {
+    msg->AppendAddress(code->address());
+    msg->Append(",%d,", code->ExecutableSize());
+  }
 }
 
 
@@ -1606,11 +1843,30 @@ void Logger::MoveEventInternal(LogEventsAndTags event,
                                Address from,
                                Address to) {
   if (!FLAG_log_code || !log_->IsEnabled()) return;
+
+  Code* from_code = NULL;
+  Address to_code = NULL;
+  if (xdk::XDKIsAgentAlive()) {
+    from_code = Code::cast(HeapObject::FromAddress(from));
+    const size_t header_size =
+      from_code->instruction_start() - reinterpret_cast<byte*>(from_code);
+    to_code =
+      reinterpret_cast<byte*>(HeapObject::FromAddress(to)) + header_size;
+  }
+
   Log::MessageBuilder msg(log_);
   msg.Append("%s,", kLogEventsNames[event]);
-  msg.AppendAddress(from);
+  if (xdk::XDKIsAgentAlive()) {
+    msg.AppendAddress(from_code->instruction_start());
+  } else {
+    msg.AppendAddress(from);
+  }
   msg.Append(',');
-  msg.AppendAddress(to);
+  if (xdk::XDKIsAgentAlive()) {
+    msg.AppendAddress(to_code);
+  } else {
+    msg.AppendAddress(to);
+  }
   msg.Append('\n');
   msg.WriteToLogFile();
 }
@@ -1728,6 +1984,15 @@ void Logger::TickEvent(TickSample* sample, bool overflow) {
   }
   msg.Append('\n');
   msg.WriteToLogFile();
+}
+
+
+void Logger::XDKResumeProfiler() {
+  if (!log_->IsEnabled()) return;
+  if (profiler_ != NULL) {
+    profiler_->resume();
+    is_logging_ = true;
+  }
 }
 
 
@@ -1873,6 +2138,12 @@ void Logger::LogCodeObject(Object* object) {
 
 
 void Logger::LogCodeObjects() {
+  // Starting from Chromium v34 this function is also called from
+  // V8::Initialize. This causes reading the heap to collect already
+  // compiled methods. For XDK that must be done because XDK profiler
+  // consumes CODE_ADDED events and mantains a map of compiled methods.
+  if (xdk::XDKIsAgentAlive()) return;
+
   Heap* heap = isolate_->heap();
   heap->CollectAllGarbage(Heap::kMakeHeapIterableMask,
                           "Logger::LogCodeObjects");
@@ -1933,6 +2204,12 @@ void Logger::LogExistingFunction(Handle<SharedFunctionInfo> shared,
 
 
 void Logger::LogCompiledFunctions() {
+  // Starting from Chromium v34 this function is also called from
+  // V8::Initialize. This causes reading the heap to collect already
+  // compiled methods. For XDK that must be done because XDK profiler
+  // consumes CODE_ADDED events and mantains a map of compiled methods.
+  if (xdk::XDKIsAgentAlive()) return;
+
   Heap* heap = isolate_->heap();
   heap->CollectAllGarbage(Heap::kMakeHeapIterableMask,
                           "Logger::LogCompiledFunctions");
@@ -2068,10 +2345,19 @@ bool Logger::SetUp(Isolate* isolate) {
     is_logging_ = true;
   }
 
+  xdk::XDKInitializeForV8(isolate);
+
   if (FLAG_prof) {
     profiler_ = new Profiler(isolate);
     is_logging_ = true;
     profiler_->Engage();
+
+    if (xdk::XDKIsAgentAlive()) {
+      // A way to to start profiler in pause mode was removed.
+      // To pause collection of the CPU ticks we need to emulate pause.
+      // This will be removed later once XDK agent will have own sampler.
+      profiler_->pause();
+    }
   }
 
   if (FLAG_log_internal_timer_events || FLAG_prof) timer_.Start();
