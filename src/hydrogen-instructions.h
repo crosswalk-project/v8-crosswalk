@@ -7785,6 +7785,9 @@ SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(SIMD_UNARY_OPERATION_CASE_ITEM)
       case k##name:                                                       \
         set_representation(Representation::representation());             \
         set_type(HType::TypeFromRepresentation(representation_));         \
+        if (Representation::p5().IsInteger32())  {                        \
+          SetFlag(kTruncatingToInt32);                                    \
+        }                                                                 \
         break;
 SIMD_UNARY_OPERATIONS(SIMD_UNARY_OPERATION_CASE_ITEM)
 SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(SIMD_UNARY_OPERATION_CASE_ITEM)
@@ -7858,6 +7861,10 @@ SIMD_BINARY_OPERATIONS(SIMD_BINARY_OPERATION_CASE_ITEM)
       case k##name:                                                            \
         set_representation(Representation::representation());                  \
         set_type(HType::TypeFromRepresentation(representation_));              \
+        if (Representation::p5().IsInteger32() ||                              \
+            Representation::p6().IsInteger32())  {                             \
+          SetFlag(kTruncatingToInt32);                                         \
+        }                                                                      \
         break;
 SIMD_BINARY_OPERATIONS(SIMD_BINARY_OPERATION_CASE_ITEM)
 #undef SIMD_BINARY_OPERATION_CASE_ITEM
@@ -7939,6 +7946,11 @@ SIMD_TERNARY_OPERATIONS(SIMD_TERNARY_OPERATION_CASE_ITEM)
       case k##name:                                                            \
         set_representation(Representation::representation());                  \
         set_type(HType::TypeFromRepresentation(representation_));              \
+        if (Representation::p5().IsInteger32() ||                              \
+            Representation::p6().IsInteger32() ||                              \
+            Representation::p7().IsInteger32())  {                             \
+          SetFlag(kTruncatingToInt32);                                         \
+        }                                                                      \
         break;
 SIMD_TERNARY_OPERATIONS(SIMD_TERNARY_OPERATION_CASE_ITEM)
 #undef SIMD_TERNARY_OPERATION_CASE_ITEM
@@ -8025,6 +8037,12 @@ SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
       case k##name:                                                            \
         set_representation(Representation::representation());                  \
         set_type(HType::TypeFromRepresentation(representation_));              \
+        if (Representation::p5().IsInteger32() ||                              \
+            Representation::p6().IsInteger32() ||                              \
+            Representation::p7().IsInteger32() ||                              \
+            Representation::p8().IsInteger32())  {                             \
+          SetFlag(kTruncatingToInt32);                                         \
+        }                                                                      \
         break;
 SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
 #undef SIMD_QUARTERNARY_OPERATION_CASE_ITEM
