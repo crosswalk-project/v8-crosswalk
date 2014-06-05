@@ -2621,6 +2621,17 @@ void Assembler::psrlq(XMMRegister dst, XMMRegister src) {
 }
 
 
+void Assembler::psrldq(XMMRegister dst, int8_t shift) {
+  ASSERT(IsEnabled(SSE2));
+  EnsureSpace ensure_space(this);
+  EMIT(0x66);
+  EMIT(0x0F);
+  EMIT(0x73);
+  emit_sse_operand(ebx, dst);   // ebx == 3
+  EMIT(shift);
+}
+
+
 void Assembler::pshufd(XMMRegister dst, XMMRegister src, uint8_t shuffle) {
   ASSERT(IsEnabled(SSE2));
   EnsureSpace ensure_space(this);
