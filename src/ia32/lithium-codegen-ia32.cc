@@ -7141,8 +7141,8 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
             XMMRegister xmm_scratch = xmm0;
             __ movaps(xmm_scratch, left_reg);
             __ pmuludq(left_reg, right_reg);
-            __ psrlq(xmm_scratch, 4);
-            __ psrlq(right_reg, 4);
+            __ psrldq(xmm_scratch, 4);
+            __ psrldq(right_reg, 4);
             __ pmuludq(xmm_scratch, right_reg);
             __ pshufd(left_reg, left_reg, 8);
             __ pshufd(xmm_scratch, xmm_scratch, 8);

@@ -1184,6 +1184,7 @@ class Assembler : public AssemblerBase {
   void psrad(XMMRegister dst, XMMRegister src);
   void psrlq(XMMRegister reg, int8_t shift);
   void psrlq(XMMRegister dst, XMMRegister src);
+  void psrldq(XMMRegister dst, int8_t shift);
   void pshufd(XMMRegister dst, XMMRegister src, uint8_t shuffle);
   void pextrd(Register dst, XMMRegister src, int8_t offset) {
     pextrd(Operand(dst), src, offset);
