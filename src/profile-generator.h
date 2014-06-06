@@ -53,7 +53,8 @@ class CodeEntry {
                    const char* name_prefix = CodeEntry::kEmptyNamePrefix,
                    const char* resource_name = CodeEntry::kEmptyResourceName,
                    int line_number = v8::CpuProfileNode::kNoLineNumberInfo,
-                   int column_number = v8::CpuProfileNode::kNoColumnNumberInfo);
+                   int column_number = v8::CpuProfileNode::kNoColumnNumberInfo,
+                   JITLineInfoTable* line_info = NULL);
   ~CodeEntry();
 
   bool is_js_function() const { return is_js_function_tag(tag_); }
@@ -63,6 +64,7 @@ class CodeEntry {
   const char* resource_name() const { return resource_name_; }
   int line_number() const { return line_number_; }
   int column_number() const { return column_number_; }
+  const JITLineInfoTable& line_info() const { return line_info_; }
   void set_shared_id(int shared_id) { shared_id_ = shared_id; }
   int script_id() const { return script_id_; }
   void set_script_id(int script_id) { script_id_ = script_id; }
@@ -96,6 +98,7 @@ class CodeEntry {
   const char* resource_name_;
   int line_number_;
   int column_number_;
+  JITLineInfoTable line_info_;
   int shared_id_;
   int script_id_;
   List<OffsetRange>* no_frame_ranges_;
@@ -115,11 +118,14 @@ class ProfileNode {
   ProfileNode* FindOrAddChild(CodeEntry* entry);
   void IncrementSelfTicks() { ++self_ticks_; }
   void IncreaseSelfTicks(unsigned amount) { self_ticks_ += amount; }
+  void IncrementLineTicks(int src_line);
 
   CodeEntry* entry() const { return entry_; }
   unsigned self_ticks() const { return self_ticks_; }
   const List<ProfileNode*>* children() const { return &children_list_; }
   unsigned id() const { return id_; }
+  unsigned int GetHitLineCount() const { return line_ticks_.occupancy(); }
+  bool GetLineTicks(LineTick* entries, unsigned int number) const;
 
   void Print(int indent);
 
@@ -140,6 +146,7 @@ class ProfileNode {
   HashMap children_;
   List<ProfileNode*> children_list_;
   unsigned id_;
+  HashMap line_ticks_;
 
   DISALLOW_COPY_AND_ASSIGN(ProfileNode);
 };
@@ -150,8 +157,10 @@ class ProfileTree {
   ProfileTree();
   ~ProfileTree();
 
-  ProfileNode* AddPathFromEnd(const Vector<CodeEntry*>& path);
-  void AddPathFromStart(const Vector<CodeEntry*>& path);
+  ProfileNode* AddPathFromEnd(const Vector<CodeEntry*>& path,
+    int src_line = v8::CpuProfileNode::kNoLineNumberInfo);
+  void AddPathFromStart(const Vector<CodeEntry*>& path,
+    int src_line = v8::CpuProfileNode::kNoLineNumberInfo);
   ProfileNode* root() const { return root_; }
   unsigned next_node_id() { return next_node_id_++; }
 
@@ -176,7 +185,8 @@ class CpuProfile {
   CpuProfile(const char* title, bool record_samples);
 
   // Add pc -> ... -> main() call path to the profile.
-  void AddPath(TimeTicks timestamp, const Vector<CodeEntry*>& path);
+  void AddPath(TimeTicks timestamp, const Vector<CodeEntry*>& path,
+               int src_line);
   void CalculateTotalTicksAndSamplingRate();
 
   const char* title() const { return title_; }
@@ -281,11 +291,12 @@ class CpuProfilesCollection {
       const char* name_prefix = CodeEntry::kEmptyNamePrefix,
       const char* resource_name = CodeEntry::kEmptyResourceName,
       int line_number = v8::CpuProfileNode::kNoLineNumberInfo,
-      int column_number = v8::CpuProfileNode::kNoColumnNumberInfo);
+      int column_number = v8::CpuProfileNode::kNoColumnNumberInfo,
+      JITLineInfoTable* line_info = NULL);
 
   // Called from profile generator thread.
   void AddPathToCurrentProfiles(
-      TimeTicks timestamp, const Vector<CodeEntry*>& path);
+      TimeTicks timestamp, const Vector<CodeEntry*>& path, int src_line);
 
   // Limits the number of profiles that can be simultaneously collected.
   static const int kMaxSimultaneousProfiles = 100;
