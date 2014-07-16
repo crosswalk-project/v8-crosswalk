@@ -145,6 +145,76 @@ class LowLevelLogger;
 class PerfJitLogger;
 class Sampler;
 
+// Mapping from the offset within generated code to source line number.
+class JITLineInfoTable : public Malloced {
+ public:
+  JITLineInfoTable() : pc_offset_infos_(20) {}
+
+  void SetPosition(unsigned int pc_offset, unsigned int src_line) {
+    AddPcOffsetInfo(PcOffsetInfo(pc_offset, src_line));
+  }
+
+  int GetSourceLineNumber(unsigned int pc_offset) const {
+    int length = pc_offset_infos_.length();
+    if (0 == length) return 0;
+
+    int low = 0;
+    int high = length - 1;
+
+    if (pc_offset > pc_offset_infos_[high].pc_offset_) {
+      return 0;  // out of range
+    }
+
+    while (low < high) {
+      int mid = (low + high) / 2;
+      const JITLineInfoTable::PcOffsetInfo& elem = pc_offset_infos_[mid];
+      if (elem.pc_offset_ > pc_offset) {
+        high = mid;
+        continue;
+      }
+      if (elem.pc_offset_ < pc_offset) {
+        low = mid + 1;
+        continue;
+      }
+      return elem.line_;  // found the element
+    }
+
+    int line = pc_offset_infos_[high].line_;
+    return line;
+  }
+
+  struct PcOffsetInfo {
+    PcOffsetInfo(unsigned int pc_offset, unsigned int src_line)
+      : pc_offset_(pc_offset), line_(src_line) { }
+
+      unsigned int pc_offset_;
+      unsigned int line_;
+  };
+
+  List<PcOffsetInfo>* entries() { return &pc_offset_infos_; }
+  const List<PcOffsetInfo>* entries() const { return &pc_offset_infos_; }
+
+  JITLineInfoTable& operator=(const JITLineInfoTable& other) {
+    if (this != &other) {
+      const List<PcOffsetInfo>* entries = other.entries();
+      if (entries) {
+        pc_offset_infos_.Clear();
+        pc_offset_infos_.AddAll(*entries);
+      }
+    }
+    return *this;
+  }
+
+ private:
+  void AddPcOffsetInfo(const PcOffsetInfo& pc_offset_info) {
+    pc_offset_infos_.Add(pc_offset_info);
+  }
+
+  // The data reported by code generator.
+  List<PcOffsetInfo> pc_offset_infos_;
+};
+
+
 class Logger {
  public:
 #define DECLARE_ENUM(enum_item, ignore) enum_item,

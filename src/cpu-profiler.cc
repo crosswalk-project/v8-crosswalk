@@ -257,17 +257,34 @@ void CpuProfiler::CodeCreateEvent(Logger::LogEventsAndTags tag,
   CodeEventsContainer evt_rec(CodeEventRecord::CODE_CREATION);
   CodeCreateEventRecord* rec = &evt_rec.CodeCreateEventRecord_;
   rec->start = code->address();
+  // Get line info from the relocation information.
+  ASSERT(Script::cast(shared->script()));
+  JITLineInfoTable line_table;
+  if (line > 0) {
+    for (RelocIterator it(code); !it.done(); it.next()) {
+      RelocInfo::Mode mode = it.rinfo()->rmode();
+      if (RelocInfo::IsPosition(mode)) {
+        int pc_offset = static_cast<int>(it.rinfo()->pc() - code->address());
+        int position = static_cast<int>(it.rinfo()->data());
+        int lineno =
+          Script::cast(shared->script())->GetLineNumber(position) + 1;
+        if (position >= 0 && lineno > 0) {
+          line_table.SetPosition(pc_offset, lineno);
+        }
+      }
+    }
+  }
   rec->entry = profiles_->NewCodeEntry(
       tag,
       profiles_->GetFunctionName(shared->DebugName()),
       CodeEntry::kEmptyNamePrefix,
       profiles_->GetName(source),
       line,
-      column);
+      column,
+      line_table.entries()->length() ? &line_table : NULL);
   if (info) {
     rec->entry->set_no_frame_ranges(info->ReleaseNoFrameRanges());
   }
-  ASSERT(Script::cast(shared->script()));
   Script* script = Script::cast(shared->script());
   rec->entry->set_script_id(script->id()->value());
   rec->size = code->ExecutableSize();

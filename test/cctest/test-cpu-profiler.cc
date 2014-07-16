@@ -1073,6 +1073,157 @@ TEST(BoundFunctionCall) {
 }
 
 
+// Check that the profile tree for the script below will look like the
+// following:
+//
+// [Top down]:
+//  0  (root)0 #1
+//  15    start 20 #3 no reason
+//  3      foo 20 #4 TryCatchStatement
+//  121        bar 20 #5 TryCatchStatement
+//  223          loop 20 #6 no reason
+//
+// This tests checks distribution of the samples through the source lines.
+// The optimizing compiler is disabled for the hotest function to make
+// the test deterministic.
+
+static int GetHitLineSampleCount(const v8::CpuProfileNode* node) {
+  int sampleCount = 0;
+  unsigned int lineCount = node->GetHitLineCount();
+  if (lineCount) {
+    v8::LineTick* entries = new v8::LineTick[lineCount];
+    CHECK_EQ(true, node->GetLineTicks(entries, lineCount));
+    for (unsigned int i = 0; i < lineCount; i++) {
+      sampleCount += entries[i].ticks;
+    }
+    delete [] entries;
+  }
+  return sampleCount;
+}
+
+
+void CheckHitLine(unsigned int lineNo,
+                  const v8::CpuProfileNode* node,
+                  unsigned int sampleTotal,
+                  unsigned int threshold) {
+  bool found = false;
+
+  unsigned int lineCount = node->GetHitLineCount();
+  CHECK_GT(lineCount, 0);
+
+  v8::LineTick* entries = new v8::LineTick[lineCount];
+  CHECK_EQ(true, node->GetLineTicks(entries, lineCount));
+
+  unsigned int i = 0;
+  for (i = 0; i < lineCount; i++) {
+    if (entries[i].line == lineNo) {
+      found = true;
+      break;
+    }
+  }
+
+  CHECK_EQ(true, found);
+  CHECK_GT(entries[i].ticks * 100 / sampleTotal, threshold);
+
+  delete[] entries;
+}
+
+
+static void CheckBranchWithTickLines(v8::Isolate* isolate,
+                                     const v8::CpuProfile* profile) {
+  const v8::CpuProfileNode* root = profile->GetTopDownRoot();
+
+  const v8::CpuProfileNode* startNode =
+      GetChild(isolate, root, "start");
+  CHECK_EQ(1, startNode->GetChildrenCount());
+  CHECK_EQ(startNode->GetHitCount(), GetHitLineSampleCount(startNode));
+
+  const v8::CpuProfileNode* fooNode =
+      GetChild(isolate, startNode, "foo");
+  CHECK_EQ(1, fooNode->GetChildrenCount());
+  CHECK_EQ(fooNode->GetHitCount(), GetHitLineSampleCount(fooNode));
+
+  const v8::CpuProfileNode* barNode =
+      GetChild(isolate, fooNode, "bar");
+  CHECK_EQ(1, barNode->GetChildrenCount());
+  CHECK_EQ(barNode->GetHitCount(), GetHitLineSampleCount(barNode));
+  // Check that line #14 collects at least 90% of the samples.
+  CheckHitLine(14, barNode, barNode->GetHitCount(), 90);
+
+  const v8::CpuProfileNode* loopNode =
+     GetChild(isolate, barNode, "loop");
+  CHECK_EQ(0, loopNode->GetChildrenCount());
+  CHECK_EQ(loopNode->GetHitCount(), GetHitLineSampleCount(loopNode));
+
+  // Check that line #8 collects at least 70% of the samples
+  CheckHitLine(8, loopNode, loopNode->GetHitCount(), 70);
+}
+
+
+static const char* cpu_profiler_test_source3 = "function loop(timeout) {\n"
+"  with({}); // disable the optimizing compiler for this function"
+"  this.mmm = 0;\n"
+"  var start = Date.now();\n"
+"  while (Date.now() - start < timeout) {\n"
+"    var n = 100*1000;\n"
+"    while(n > 1) {\n"
+"      n--;\n"
+"      this.mmm += n * n * n;\n"
+"    }\n"
+"  }\n"
+"}\n"
+"function bar() {\n"
+"    try {\n"
+"       loop(10);\n"
+"    } catch(e) { }\n"
+"}\n"
+"function foo() {\n"
+"    try {\n"
+"       bar();\n"
+"    } catch (e) { }\n"
+"}\n"
+"function start(timeout) {\n"
+"  var start = Date.now();\n"
+"  do {\n"
+"    foo();\n"
+"    var duration = Date.now() - start;\n"
+"  } while (duration < timeout);\n"
+"  return duration;\n"
+"}\n";
+
+
+TEST(TickLines) {
+  LocalContext env;
+  v8::HandleScope scope(env->GetIsolate());
+  v8::Script::Compile(v8::String::NewFromUtf8(env->GetIsolate(),
+    cpu_profiler_test_source3))->Run();
+  v8::Local<v8::Function> function = v8::Local<v8::Function>::Cast(
+    env->Global()->Get(v8::String::NewFromUtf8(env->GetIsolate(), "start")));
+
+  int32_t profiling_interval_ms = 200;
+  v8::Handle<v8::Value> args[] = {
+      v8::Integer::New(env->GetIsolate(), profiling_interval_ms)
+  };
+
+  // The first run tests distribution of the samples through the source
+  // line information taken from "relocation info" created during code
+  // generation.
+  v8::CpuProfile* profile =
+      RunProfiler(env.local(), function, args, ARRAY_SIZE(args), 200);
+  function->Call(env->Global(), ARRAY_SIZE(args), args);
+  CheckBranchWithTickLines(env->GetIsolate(), profile);
+  profile->Delete();
+
+  // This is a case when the precompiled functions located on the heap
+  // are profiled. The second run tests that same source lines collect
+  // the expected number of samples.
+  profile = RunProfiler(env.local(), function, args, ARRAY_SIZE(args), 200);
+  function->Call(env->Global(), ARRAY_SIZE(args), args);
+  CheckBranchWithTickLines(env->GetIsolate(), profile);
+  profile->Delete();
+}
+
+
 static const char* call_function_test_source = "function bar(iterations) {\n"
 "}\n"
 "function start(duration) {\n"
