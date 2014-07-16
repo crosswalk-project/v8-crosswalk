@@ -207,6 +207,41 @@ ProfileNode* ProfileNode::FindOrAddChild(CodeEntry* entry) {
 }
 
 
+void ProfileNode::IncrementLineTicks(int src_line) {
+  if (src_line == v8::CpuProfileNode::kNoLineNumberInfo) return;
+  // Increment a hit counter of a certain source line.
+  // Add a new source line if not found.
+  HashMap::Entry* e =
+    line_ticks_.Lookup(reinterpret_cast<void*>(src_line), src_line, true);
+  if (NULL != e) {
+    e->value = static_cast<char*>(e->value) + 1;
+  }
+}
+
+
+bool ProfileNode::GetLineTicks(LineTick* entries,
+                               unsigned int number) const {
+  if (NULL == entries || number == 0) {
+    return false;
+  }
+
+  unsigned lineNumber = line_ticks_.occupancy();
+  if (lineNumber == 0) return false;
+  if (number < lineNumber) return false;
+
+  LineTick* entry = entries;
+
+  for (HashMap::Entry* p = line_ticks_.Start();
+       p != NULL;
+       p = line_ticks_.Next(p), entry++) {
+    entry->line = reinterpret_cast<intptr_t>(p->key);
+    entry->ticks = reinterpret_cast<intptr_t>(p->value);
+  }
+
+  return true;
+}
+
+
 void ProfileNode::Print(int indent) {
   OS::Print("%5u %*s %s%s %d #%d %s",
             self_ticks_,
@@ -252,7 +287,8 @@ ProfileTree::~ProfileTree() {
 }
 
 
-ProfileNode* ProfileTree::AddPathFromEnd(const Vector<CodeEntry*>& path) {
+ProfileNode* ProfileTree::AddPathFromEnd(const Vector<CodeEntry*>& path,
+                                         int src_line) {
   ProfileNode* node = root_;
   for (CodeEntry** entry = path.start() + path.length() - 1;
        entry != path.start() - 1;
@@ -262,11 +298,15 @@ ProfileNode* ProfileTree::AddPathFromEnd(const Vector<CodeEntry*>& path) {
     }
   }
   node->IncrementSelfTicks();
+  if (src_line != v8::CpuProfileNode::kNoLineNumberInfo) {
+    node->IncrementLineTicks(src_line);
+  }
   return node;
 }
 
 
-void ProfileTree::AddPathFromStart(const Vector<CodeEntry*>& path) {
+void ProfileTree::AddPathFromStart(const Vector<CodeEntry*>& path,
+                                   int src_line) {
   ProfileNode* node = root_;
   for (CodeEntry** entry = path.start();
        entry != path.start() + path.length();
@@ -276,6 +316,9 @@ void ProfileTree::AddPathFromStart(const Vector<CodeEntry*>& path) {
     }
   }
   node->IncrementSelfTicks();
+  if (src_line != v8::CpuProfileNode::kNoLineNumberInfo) {
+    node->IncrementLineTicks(src_line);
+  }
 }
 
 
@@ -336,8 +379,9 @@ CpuProfile::CpuProfile(const char* title, bool record_samples)
 }
 
 
-void CpuProfile::AddPath(TimeTicks timestamp, const Vector<CodeEntry*>& path) {
-  ProfileNode* top_frame_node = top_down_.AddPathFromEnd(path);
+void CpuProfile::AddPath(TimeTicks timestamp, const Vector<CodeEntry*>& path,
+                         int src_line) {
+  ProfileNode* top_frame_node = top_down_.AddPathFromEnd(path, src_line);
   if (record_samples_) {
     timestamps_.Add(timestamp);
     samples_.Add(top_frame_node);
@@ -525,13 +569,13 @@ void CpuProfilesCollection::RemoveProfile(CpuProfile* profile) {
 
 
 void CpuProfilesCollection::AddPathToCurrentProfiles(
-    TimeTicks timestamp, const Vector<CodeEntry*>& path) {
+    TimeTicks timestamp, const Vector<CodeEntry*>& path, int src_line) {
   // As starting / stopping profiles is rare relatively to this
   // method, we don't bother minimizing the duration of lock holding,
   // e.g. copying contents of the list to a local vector.
   current_profiles_semaphore_.Wait();
   for (int i = 0; i < current_profiles_.length(); ++i) {
-    current_profiles_[i]->AddPath(timestamp, path);
+    current_profiles_[i]->AddPath(timestamp, path, src_line);
   }
   current_profiles_semaphore_.Signal();
 }
@@ -543,13 +587,15 @@ CodeEntry* CpuProfilesCollection::NewCodeEntry(
       const char* name_prefix,
       const char* resource_name,
       int line_number,
-      int column_number) {
+      int column_number,
+      JITLineInfoTable* line_info) {
   CodeEntry* code_entry = new CodeEntry(tag,
                                         name,
                                         name_prefix,
                                         resource_name,
                                         line_number,
-                                        column_number);
+                                        column_number,
+                                        line_info);
   code_entries_.Add(code_entry);
   return code_entry;
 }
@@ -582,6 +628,15 @@ ProfileGenerator::ProfileGenerator(CpuProfilesCollection* profiles)
 }
 
 
+static int GetSourceLine(unsigned int pc_offset, CodeEntry* entry) {
+  int src_line = v8::CpuProfileNode::kNoLineNumberInfo;
+  const JITLineInfoTable& table = entry->line_info();
+  if (!table.entries()->length()) return src_line;
+  src_line = table.GetSourceLineNumber(pc_offset);
+  return src_line;
+}
+
+
 void ProfileGenerator::RecordTickSample(const TickSample& sample) {
   // Allocate space for stack frames + pc + function + vm-state.
   ScopedVector<CodeEntry*> entries(sample.frames_count + 3);
@@ -589,6 +644,7 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
   // entries vector with NULL values.
   CodeEntry** entry = entries.start();
   memset(entry, 0, entries.length() * sizeof(*entry));
+  int src_line = v8::CpuProfileNode::kNoLineNumberInfo;
   if (sample.pc != NULL) {
     if (sample.has_external_callback && sample.state == EXTERNAL &&
         sample.top_frame_type == StackFrame::EXIT) {
@@ -604,9 +660,11 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
       // ebp contains return address of the current function and skips caller's
       // frame. Check for this case and just skip such samples.
       if (pc_entry) {
+        Code* code = Code::cast(HeapObject::FromAddress(start));
         List<OffsetRange>* ranges = pc_entry->no_frame_ranges();
+        src_line = GetSourceLine(sample.pc - code->instruction_start(),
+                                 pc_entry);
         if (ranges) {
-          Code* code = Code::cast(HeapObject::FromAddress(start));
           int pc_offset = static_cast<int>(
               sample.pc - code->instruction_start());
           for (int i = 0; i < ranges->length(); i++) {
@@ -632,11 +690,25 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
       }
     }
 
+    bool unresolved_src = (src_line == v8::CpuProfileNode::kNoLineNumberInfo) ?
+                          true : false;
+
     for (const Address* stack_pos = sample.stack,
            *stack_end = stack_pos + sample.frames_count;
          stack_pos != stack_end;
          ++stack_pos) {
-      *entry++ = code_map_.FindEntry(*stack_pos);
+      Address start = NULL;
+      *entry = code_map_.FindEntry(*stack_pos, &start);
+      if (unresolved_src && NULL != *entry) {
+          Code* code = Code::cast(HeapObject::FromAddress(start));
+          src_line = GetSourceLine(*stack_pos - code->instruction_start(),
+                                   *entry);
+          if (src_line == v8::CpuProfileNode::kNoLineNumberInfo) {
+            src_line = (*entry)->line_number();
+          }
+          unresolved_src = false;
+      }
+      entry++;
     }
   }
 
@@ -654,7 +726,7 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
     }
   }
 
-  profiles_->AddPathToCurrentProfiles(sample.timestamp, entries);
+  profiles_->AddPathToCurrentProfiles(sample.timestamp, entries, src_line);
 }
 
 
