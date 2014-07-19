@@ -161,9 +161,6 @@ bool Object::IsHeapObject() {
 
 
 TYPE_CHECKER(HeapNumber, HEAP_NUMBER_TYPE)
-TYPE_CHECKER(Float32x4, FLOAT32x4_TYPE)
-TYPE_CHECKER(Float64x2, FLOAT64x2_TYPE)
-TYPE_CHECKER(Int32x4, INT32x4_TYPE)
 TYPE_CHECKER(Symbol, SYMBOL_TYPE)
 
 
@@ -803,6 +800,9 @@ TYPE_CHECKER(JSArrayBuffer, JS_ARRAY_BUFFER_TYPE)
 TYPE_CHECKER(JSTypedArray, JS_TYPED_ARRAY_TYPE)
 TYPE_CHECKER(JSDataView, JS_DATA_VIEW_TYPE)
 
+TYPE_CHECKER(Float32x4, FLOAT32x4_TYPE)
+TYPE_CHECKER(Float64x2, FLOAT64x2_TYPE)
+TYPE_CHECKER(Int32x4, INT32x4_TYPE)
 
 bool Object::IsJSArrayBufferView() {
   return IsJSDataView() || IsJSTypedArray();
@@ -1488,11 +1488,6 @@ int Float32x4::kRuntimeAllocatorId() {
 }
 
 
-int Float32x4::kMapRootIndex() {
-  return Heap::kFloat32x4MapRootIndex;
-}
-
-
 float32x4_value_t Float32x4::value() {
   return READ_FLOAT32x4_FIELD(this, kValueOffset);
 }
@@ -1519,11 +1514,6 @@ int Float64x2::kRuntimeAllocatorId() {
 }
 
 
-int Float64x2::kMapRootIndex() {
-  return Heap::kFloat64x2MapRootIndex;
-}
-
-
 float64x2_value_t Float64x2::value() {
   return READ_FLOAT64x2_FIELD(this, kValueOffset);
 }
@@ -1547,11 +1537,6 @@ const char* Int32x4::Name() {
 
 int Int32x4::kRuntimeAllocatorId() {
   return Runtime::kAllocateInt32x4;
-}
-
-
-int Int32x4::kMapRootIndex() {
-  return Heap::kInt32x4MapRootIndex;
 }
 
 
@@ -1985,6 +1970,12 @@ int JSObject::GetHeaderSize() {
       return JSTypedArray::kSize;
     case JS_DATA_VIEW_TYPE:
       return JSDataView::kSize;
+    case FLOAT32x4_TYPE:
+      return Float32x4::kSize;
+    case FLOAT64x2_TYPE:
+      return Float64x2::kSize;
+    case INT32x4_TYPE:
+      return Int32x4::kSize;
     case JS_SET_TYPE:
       return JSSet::kSize;
     case JS_MAP_TYPE:
