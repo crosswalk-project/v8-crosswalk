@@ -960,8 +960,7 @@ LInstruction* LChunkBuilder::DoBranch(HBranch* instr) {
   if (expected.IsEmpty()) expected = ToBooleanStub::Types::Generic();
 
   bool easy_case = !r.IsTagged() || type.IsBoolean() || type.IsSmi() ||
-      type.IsJSArray() || type.IsHeapNumber() ||
-      type.IsString();
+      type.IsJSArray() || type.IsHeapNumber() || type.IsString();
   LInstruction* branch = new(zone()) LBranch(UseRegister(value));
   if (!easy_case &&
       ((!expected.Contains(ToBooleanStub::SMI) && expected.NeedsMap()) ||
@@ -2269,7 +2268,7 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
         ? UseTempRegister(instr->key())
         : UseRegisterOrConstantAtStart(instr->key());
     clobbers_key = ExternalArrayOpRequiresPreScale(elements_kind);
-    LOperand* key = clobbers_key
+    key = clobbers_key
         ? UseTempRegisterOrConstant(instr->key())
         : UseRegisterOrConstantAtStart(instr->key());
   }

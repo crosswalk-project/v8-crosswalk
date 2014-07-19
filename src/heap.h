@@ -42,9 +42,6 @@ namespace internal {
   V(Map, shared_function_info_map, SharedFunctionInfoMap)                      \
   V(Map, meta_map, MetaMap)                                                    \
   V(Map, heap_number_map, HeapNumberMap)                                       \
-  V(Map, float32x4_map, Float32x4Map)                                          \
-  V(Map, float64x2_map, Float64x2Map)                                          \
-  V(Map, int32x4_map, Int32x4Map)                                              \
   V(Map, native_context_map, NativeContextMap)                                 \
   V(Map, fixed_array_map, FixedArrayMap)                                       \
   V(Map, code_map, CodeMap)                                                    \
@@ -1490,21 +1487,6 @@ class Heap {
   // Allocated a HeapNumber from value.
   MUST_USE_RESULT AllocationResult AllocateHeapNumber(
       double value, PretenureFlag pretenure = NOT_TENURED);
-
-  // Allocated a Float32x4 from value.
-  MUST_USE_RESULT AllocationResult AllocateFloat32x4(
-      float32x4_value_t value,
-      PretenureFlag pretenure = NOT_TENURED);
-
-  // Allocated a Float64x2 from value.
-  MUST_USE_RESULT AllocationResult AllocateFloat64x2(
-      float64x2_value_t value,
-      PretenureFlag pretenure = NOT_TENURED);
-
-  // Allocated a Int32x4 from value.
-  MUST_USE_RESULT AllocationResult AllocateInt32x4(
-      int32x4_value_t value,
-      PretenureFlag pretenure = NOT_TENURED);
 
   // Allocate a byte array of the specified length
   MUST_USE_RESULT AllocationResult AllocateByteArray(

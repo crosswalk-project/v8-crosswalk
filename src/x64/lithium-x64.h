@@ -1624,7 +1624,7 @@ inline static bool ExternalArrayOpRequiresTemp(
 }
 
 
-class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 0> {
+class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 1> {
  public:
   LLoadKeyed(LOperand* elements, LOperand* key, LOperand* temp) {
     inputs_[0] = elements;

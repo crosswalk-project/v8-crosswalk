@@ -42,72 +42,94 @@ FUNCTION(Float64x2, float64x2)
 FUNCTION(Int32x4, int32x4)
 endmacro
 
-function StringfyFloat32x4(f4) {
-  return "float32x4(" + f4.x + "," + f4.y + "," + f4.z + "," + f4.w + ")";
-}
-
-function StringfyFloat64x2(d2) {
-  return "float64x2(" + d2.x + "," + d2.y + ")";
-}
-
-function StringfyInt32x4(i4) {
-  return "int32x4(" + i4.x + "," + i4.y + "," + i4.z + "," + i4.w + ")";
-}
-
 macro DECLARE_DATA_TYPE_COMMON_FUNCTION(NAME, TYPE)
 function ThrowNAMETypeError() {
-  throw MakeTypeError("this is not a TYPE value.");
+  throw MakeTypeError("this is not a TYPE object.");
 }
 
-function NAMEToString() {
-  if (IsNAMEWrapper(this)) {
-    return ObjectToString.apply(this);
-  } else if (IsNAME(this)) {
-    return StringfyNAME(this);
-  } else {
-    throw MakeTypeError('TYPE_to_string');
-  }
-}
-
-function NAMEValueOf() {
-  if (!IsNAME(this) && !IsNAMEWrapper(this)) {
+function CheckNAME(arg) {
+  if (!(arg instanceof $NAME))
     ThrowNAMETypeError();
-  }
-  return %_ValueOf(this);
 }
 endmacro
 
 SIMD128_DATA_TYPES(DECLARE_DATA_TYPE_COMMON_FUNCTION)
+
+function StringfyFloat32x4() {
+  CheckFloat32x4(this);
+  return "float32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
+}
+
+function StringfyFloat64x2() {
+  CheckFloat64x2(this);
+  return "float64x2(" + this.x + "," + this.y + ")";
+}
+
+function StringfyInt32x4() {
+  CheckInt32x4(this);
+  return "int32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
+}
 
 macro SIMD128_DATA_TYPE_FUNCTIONS(FUNCTION)
 FUNCTION(Float32x4, GetX)
 FUNCTION(Float32x4, GetY)
 FUNCTION(Float32x4, GetZ)
 FUNCTION(Float32x4, GetW)
-FUNCTION(Float32x4, GetSignMask)
 FUNCTION(Float64x2, GetX)
 FUNCTION(Float64x2, GetY)
-FUNCTION(Float64x2, GetSignMask)
 FUNCTION(Int32x4, GetX)
 FUNCTION(Int32x4, GetY)
 FUNCTION(Int32x4, GetZ)
 FUNCTION(Int32x4, GetW)
-FUNCTION(Int32x4, GetFlagX)
-FUNCTION(Int32x4, GetFlagY)
-FUNCTION(Int32x4, GetFlagZ)
-FUNCTION(Int32x4, GetFlagW)
-FUNCTION(Int32x4, GetSignMask)
 endmacro
 
 macro DECLARE_DATA_TYPE_FUNCTION(TYPE, FUNCTION)
 function TYPEFUNCTION() {
-  var x4 = ToTYPE(this);
-  CheckTYPE(x4);
-  return %TYPEFUNCTION(x4);
+  CheckTYPE(this);
+  return %TYPEFUNCTION(this);
 }
 endmacro
 
 SIMD128_DATA_TYPE_FUNCTIONS(DECLARE_DATA_TYPE_FUNCTION)
+
+function Float32x4GetSignMask() {
+  var mx = this.x < 0.0 ? 1 : 0;
+  var my = this.y < 0.0 ? 1 : 0;
+  var mz = this.z < 0.0 ? 1 : 0;
+  var mw = this.w < 0.0 ? 1 : 0;
+  return mx | my << 1 | mz << 2 | mw << 3;
+}
+
+function Float64x2GetSignMask() {
+  var mx = this.x < 0.0 ? 1 : 0;
+  var my = this.y < 0.0 ? 1 : 0;
+  return mx | my << 1;
+}
+
+function Int32x4GetFlagX() {
+  return this.x != 0x0;
+}
+
+function Int32x4GetFlagY() {
+  return this.y != 0x0;
+}
+
+function Int32x4GetFlagZ() {
+  return this.z != 0x0;
+}
+
+function Int32x4GetFlagW() {
+  return this.w != 0x0;
+}
+
+function Int32x4GetSignMask() {
+  var i32x4 = new $Int32Array([this.x, this.y, this.z, this.w]);
+  var mx = (i32x4[0] & 0x80000000) >>> 31;
+  var my = (i32x4[1] & 0x80000000) >>> 31;
+  var mz = (i32x4[2] & 0x80000000) >>> 31;
+  var mw = (i32x4[3] & 0x80000000) >>> 31;
+  return mx | my << 1 | mz << 2 | mw << 3;
+}
 
 function Float32x4Constructor(x, y, z, w) {
   x = TO_NUMBER_INLINE(x);
@@ -115,11 +137,10 @@ function Float32x4Constructor(x, y, z, w) {
   z = TO_NUMBER_INLINE(z);
   w = TO_NUMBER_INLINE(w);
 
-  var value = %CreateFloat32x4(x, y, z, w);
   if (%_IsConstructCall()) {
-    %_SetValueOf(this, value);
+   %CreateFloat32x4(this, x, y, z, w);;
   } else {
-    return value;
+    return new $Float32x4(x, y, z, w);
   }
 }
 
@@ -127,11 +148,10 @@ function Float64x2Constructor(x, y) {
   x = TO_NUMBER_INLINE(x);
   y = TO_NUMBER_INLINE(y);
 
-  var value = %CreateFloat64x2(x, y);
   if (%_IsConstructCall()) {
-    %_SetValueOf(this, value);
+    %CreateFloat64x2(this, x, y);
   } else {
-    return value;
+    return new $Float64x2(x, y);
   }
 }
 
@@ -141,11 +161,10 @@ function Int32x4Constructor(x, y, z, w) {
   z = TO_INT32(z);
   w = TO_INT32(w);
 
-  var value = %CreateInt32x4(x, y, z, w);
   if (%_IsConstructCall()) {
-    %_SetValueOf(this, value);
+    %CreateInt32x4(this, x, y, z, w);
   } else {
-    return value;
+    return new $Int32x4(x, y, z, w);
   }
 }
 
@@ -163,8 +182,7 @@ function SetUpFloat32x4() {
   InstallGetter($Float32x4.prototype, "w", Float32x4GetW);
   InstallGetter($Float32x4.prototype, "signMask", Float32x4GetSignMask);
   InstallFunctions($Float32x4.prototype, DONT_ENUM, $Array(
-    "toString", Float32x4ToString,
-    "valueOf", Float32x4ValueOf
+    "toString", StringfyFloat32x4
   ));
 }
 
@@ -180,8 +198,7 @@ function SetUpFloat64x2() {
   InstallGetter($Float64x2.prototype, "y", Float64x2GetY);
   InstallGetter($Float64x2.prototype, "signMask", Float64x2GetSignMask);
   InstallFunctions($Float64x2.prototype, DONT_ENUM, $Array(
-    "toString", Float64x2ToString,
-    "valueOf", Float64x2ValueOf
+    "toString", StringfyFloat64x2
   ));
 }
 
@@ -203,8 +220,7 @@ function SetUpInt32x4() {
   InstallGetter($Int32x4.prototype, "flagW", Int32x4GetFlagW);
   InstallGetter($Int32x4.prototype, "signMask", Int32x4GetSignMask);
   InstallFunctions($Int32x4.prototype, DONT_ENUM, $Array(
-    "toString", Int32x4ToString,
-    "valueOf", Int32x4ValueOf
+    "toString", StringfyInt32x4
   ));
 }
 
@@ -213,7 +229,7 @@ SetUpFloat64x2();
 SetUpInt32x4();
 
 //------------------------------------------------------------------------------
-
+/*
 macro SIMD128_UNARY_FUNCTIONS(FUNCTION)
 FUNCTION(Float32x4, Abs)
 FUNCTION(Float32x4, BitsToInt32x4)
@@ -296,7 +312,6 @@ endmacro
 
 macro DECLARE_SIMD_UNARY_FUNCTION(TYPE, FUNCTION)
 function TYPEFUNCTION(x4) {
-  x4 = ToTYPE(x4);
   CheckTYPE(x4);
   return %TYPEFUNCTION(x4);
 }
@@ -304,9 +319,7 @@ endmacro
 
 macro DECLARE_SIMD_BINARY_FUNCTION(TYPE, FUNCTION)
 function TYPEFUNCTION(a4, b4) {
-  a4 = ToTYPE(a4);
   CheckTYPE(a4);
-  b4 = ToTYPE(b4);
   CheckTYPE(b4);
   return %TYPEFUNCTION(a4, b4);
 }
@@ -314,7 +327,6 @@ endmacro
 
 macro DECLARE_SIMD_BINARY_SHUFFLE_FUNCTION(TYPE)
 function TYPEShuffle(x4, mask) {
-  x4 = ToTYPE(x4);
   CheckTYPE(x4);
   var value = TO_INT32(mask);
   if ((value < 0) || (value > 0xFF)) {
@@ -326,7 +338,6 @@ endmacro
 
 macro DECLARE_FLOAT32x4_BINARY_FUNCTION_WITH_FLOAT32_PARAMETER(FUNCTION)
 function Float32x4FUNCTION(x4, f) {
-  x4 = ToFloat32x4(x4);
   CheckFloat32x4(x4);
   f = TO_NUMBER_INLINE(f);
   return %Float32x4FUNCTION(x4, f);
@@ -335,7 +346,6 @@ endmacro
 
 macro DECLARE_FLOAT64x2_BINARY_FUNCTION_WITH_FLOAT64_PARAMETER(FUNCTION)
 function Float64x2FUNCTION(x2, f) {
-  x2 = ToFloat64x2(x2);
   CheckFloat64x2(x2);
   f = TO_NUMBER_INLINE(f);
   return %Float64x2FUNCTION(x2, f);
@@ -344,7 +354,6 @@ endmacro
 
 macro DECLARE_INT32x4_BINARY_FUNCTION_WITH_INT32_PARAMETER(FUNCTION)
 function Int32x4FUNCTION(x4, i) {
-  x4 = ToInt32x4(x4);
   CheckInt32x4(x4);
   i = TO_INT32(i);
   return %Int32x4FUNCTION(x4, i);
@@ -353,7 +362,6 @@ endmacro
 
 macro DECLARE_INT32x4_BINARY_FUNCTION_WITH_BOOLEAN_PARAMETER(FUNCTION)
 function Int32x4FUNCTION(x4, b) {
-  x4 = ToInt32x4(x4);
   CheckInt32x4(x4);
   b = ToBoolean(b);
   return %Int32x4FUNCTION(x4, b);
@@ -499,6 +507,993 @@ function Int32x4ShiftRightArithmetic(t, s) {
   var z = t.z >> s;
   var w = t.w >> s;
   return %CreateInt32x4(x, y, z, w);
+}
+*/
+
+/**
+  * Construct a new instance of float32x4 number with 0.0 in all lanes.
+  * @constructor
+  */
+function Float32x4Zero() {
+  return $SIMD.float32x4(0.0, 0.0, 0.0, 0.0);
+}
+
+/**
+  * Construct a new instance of float32x4 number with the same value
+  * in all lanes.
+  * @param {double} value used for all lanes.
+  * @constructor
+  */
+function Float32x4Splat(s) {
+  return $SIMD.float32x4(s, s, s, s);
+}
+
+/**
+  * Construct a new instance of float64x2 number with 0.0 in all lanes.
+  * @constructor
+  */
+function Float64x2Zero() {
+  return $SIMD.float64x2(0.0, 0.0);
+}
+
+/**
+  * Construct a new instance of float64x2 number with the same value
+  * in all lanes.
+  * @param {double} value used for all lanes.
+  * @constructor
+  */
+function Float64x2Splat(s) {
+  return $SIMD.float32x4(s, s);
+}
+
+/**
+  * Construct a new instance of int32x4 number with 0 in all lanes.
+  * @constructor
+  */
+function Int32x4Zero() {
+  return $SIMD.int32x4(0, 0, 0, 0);
+}
+
+/**
+  * Construct a new instance of int32x4 number with 0xFFFFFFFF or 0x0 in each
+  * lane, depending on the truth value in x, y, z, and w.
+  * @param {boolean} flag used for x lane.
+  * @param {boolean} flag used for y lane.
+  * @param {boolean} flag used for z lane.
+  * @param {boolean} flag used for w lane.
+  * @constructor
+  */
+function Int32x4Bool(x, y, z, w) {
+  return $SIMD.int32x4(x ? -1 : 0x0,
+                      y ? -1 : 0x0,
+                      z ? -1 : 0x0,
+                      w ? -1 : 0x0);
+}
+
+/**
+  * Construct a new instance of int32x4 number with the same value
+  * in all lanes.
+  * @param {integer} value used for all lanes.
+  * @constructor
+  */
+function Int32x4Splat(s) {
+  return $SIMD.int32x4(s, s, s, s);
+}
+
+/**
+* @return {float32x4} New instance of float32x4 with absolute values of
+* t.
+*/
+function Float32x4Abs(t) {
+  return $SIMD.float32x4($Math.abs(t.x), $Math.abs(t.y), $Math.abs(t.z),
+                        $Math.abs(t.w));
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with negated values of
+  * t.
+  */
+function Float32x4Neg(t) {
+  return $SIMD.float32x4(-t.x, -t.y, -t.z, -t.w);
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with a + b.
+  */
+function Float32x4Add(a, b) {
+  return $SIMD.float32x4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with a - b.
+  */
+function Float32x4Sub(a, b) {
+  return $SIMD.float32x4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with a * b.
+  */
+function Float32x4Mul(a, b) {
+  return $SIMD.float32x4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with a / b.
+  */
+function Float32x4Div(a, b) {
+  return $SIMD.float32x4((a.x / b.x), (a.y / b.y), (a.z / b.z), (a.w / b.w));
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with t's values clamped
+  * between lowerLimit and upperLimit.
+  */
+function Float32x4Clamp(t, lowerLimit, upperLimit) {
+  var cx = t.x < lowerLimit.x ? lowerLimit.x : t.x;
+  var cy = t.y < lowerLimit.y ? lowerLimit.y : t.y;
+  var cz = t.z < lowerLimit.z ? lowerLimit.z : t.z;
+  var cw = t.w < lowerLimit.w ? lowerLimit.w : t.w;
+  cx = cx > upperLimit.x ? upperLimit.x : cx;
+  cy = cy > upperLimit.y ? upperLimit.y : cy;
+  cz = cz > upperLimit.z ? upperLimit.z : cz;
+  cw = cw > upperLimit.w ? upperLimit.w : cw;
+  return $SIMD.float32x4(cx, cy, cz, cw);
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with the minimum value of
+  * t and other.
+  */
+function Float32x4Min(t, other) {
+  var cx = t.x > other.x ? other.x : t.x;
+  var cy = t.y > other.y ? other.y : t.y;
+  var cz = t.z > other.z ? other.z : t.z;
+  var cw = t.w > other.w ? other.w : t.w;
+  return $SIMD.float32x4(cx, cy, cz, cw);
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with the maximum value of
+  * t and other.
+  */
+function Float32x4Max(t, other) {
+  var cx = t.x < other.x ? other.x : t.x;
+  var cy = t.y < other.y ? other.y : t.y;
+  var cz = t.z < other.z ? other.z : t.z;
+  var cw = t.w < other.w ? other.w : t.w;
+  return $SIMD.float32x4(cx, cy, cz, cw);
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with reciprocal value of
+  * t.
+  */
+function Float32x4Reciprocal(t) {
+  return $SIMD.float32x4((1.0 / t.x), (1.0 / t.y), (1.0 / t.z), (1.0 / t.w));
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with square root of the
+  * reciprocal value of t.
+  */
+function Float32x4ReciprocalSqrt(t) {
+  return $SIMD.float32x4($Math.sqrt(1.0 / t.x), $Math.sqrt(1.0 / t.y),
+                        $Math.sqrt(1.0 / t.z), $Math.sqrt(1.0 / t.w));
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with values of t
+  * scaled by s.
+  */
+function Float32x4Scale(t, s) {
+  return $SIMD.float32x4(s * t.x, s * t.y, s * t.z, s * t.w);
+}
+
+/**
+  * @return {float32x4} New instance of float32x4 with square root of
+  * values of t.
+  */
+function Float32x4Sqrt(t) {
+  return $SIMD.float32x4($Math.sqrt(t.x), $Math.sqrt(t.y),
+                        $Math.sqrt(t.z), $Math.sqrt(t.w));
+}
+
+/**
+  * @param {float32x4} t An instance of float32x4 to be shuffled.
+  * @param {integer} mask One of the 256 shuffle masks, for example, $SIMD.XXXX.
+  * @return {float32x4} New instance of float32x4 with lanes shuffled.
+  */
+function Float32x4Shuffle(t, mask) {
+  var _x = (mask) & 0x3;
+  var _y = (mask >> 2) & 0x3;
+  var _z = (mask >> 4) & 0x3;
+  var _w = (mask >> 6) & 0x3;
+  var f32x4 = new $Float32Array([t.x, t.y, t.z, t.w]);
+  return $SIMD.float32x4(f32x4[_x], f32x4[_y], f32x4[_z],
+                        f32x4[_w]);
+}
+
+/**
+  * @param {float32x4} t1 An instance of float32x4 to be shuffled. XY lanes in result
+  * @param {float32x4} t2 An instance of float32x4 to be shuffled. ZW lanes in result
+  * @param {integer} mask One of the 256 shuffle masks, for example, $SIMD.XXXX.
+  * @return {float32x4} New instance of float32x4 with lanes shuffled.
+  */
+function Float32x4ShuffleMix(t1, t2, mask) {
+  var _x = (mask) & 0x3;
+  var _y = (mask >> 2) & 0x3;
+  var _z = (mask >> 4) & 0x3;
+  var _w = (mask >> 6) & 0x3;
+  var f32x4_t1 = new $Float32Array([t1.x, t1.y, t1.z, t1.w]);
+  var f32x4_t2 = new $Float32Array([t2.x, t2.y, t2.z, t2.w]);
+  return $SIMD.float32x4(f32x4_t1[_x], f32x4_t1[_y], f32x4_t2[_z],
+                        f32x4_t2[_w]);
+}
+
+/**
+  * @param {double} value used for x lane.
+  * @return {float32x4} New instance of float32x4 with the values in t and
+  * x replaced with {x}.
+  */
+function Float32x4WithX(t, x) {
+  return $SIMD.float32x4(x, t.y, t.z, t.w);
+}
+
+/**
+  * @param {double} value used for y lane.
+  * @return {float32x4} New instance of float32x4 with the values in t and
+  * y replaced with {y}.
+  */
+function Float32x4WithY(t, y) {
+  return $SIMD.float32x4(t.x, y, t.z, t.w);
+}
+
+/**
+  * @param {double} value used for z lane.
+  * @return {float32x4} New instance of float32x4 with the values in t and
+  * z replaced with {z}.
+  */
+function Float32x4WithZ(t, z) {
+  return $SIMD.float32x4(t.x, t.y, z, t.w);
+}
+
+/**
+  * @param {double} value used for w lane.
+  * @return {float32x4} New instance of float32x4 with the values in t and
+  * w replaced with {w}.
+  */
+function Float32x4WithW(t, w) {
+  return $SIMD.float32x4(t.x, t.y, t.z, w);
+}
+
+/**
+  * @param {float32x4} t An instance of float32x4.
+  * @param {float32x4} other An instance of float32x4.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t < other.
+  */
+function Float32x4LessThan(t, other) {
+  var cx = t.x < other.x;
+  var cy = t.y < other.y;
+  var cz = t.z < other.z;
+  var cw = t.w < other.w;
+  return $SIMD.int32x4.bool(cx, cy, cz, cw);
+}
+
+/**
+  * @param {float32x4} t An instance of float32x4.
+  * @param {float32x4} other An instance of float32x4.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t <= other.
+  */
+function Float32x4LessThanOrEqual(t, other) {
+  var cx = t.x <= other.x;
+  var cy = t.y <= other.y;
+  var cz = t.z <= other.z;
+  var cw = t.w <= other.w;
+  return $SIMD.int32x4.bool(cx, cy, cz, cw);
+}
+
+/**
+  * @param {float32x4} t An instance of float32x4.
+  * @param {float32x4} other An instance of float32x4.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t == other.
+  */
+function Float32x4Equal(t, other) {
+  var cx = t.x == other.x;
+  var cy = t.y == other.y;
+  var cz = t.z == other.z;
+  var cw = t.w == other.w;
+  return $SIMD.int32x4.bool(cx, cy, cz, cw);
+}
+
+/**
+  * @param {float32x4} t An instance of float32x4.
+  * @param {float32x4} other An instance of float32x4.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t != other.
+  */
+function Float32x4NotEqual(t, other) {
+  var cx = t.x != other.x;
+  var cy = t.y != other.y;
+  var cz = t.z != other.z;
+  var cw = t.w != other.w;
+  return $SIMD.int32x4.bool(cx, cy, cz, cw);
+}
+
+/**
+  * @param {float32x4} t An instance of float32x4.
+  * @param {float32x4} other An instance of float32x4.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t >= other.
+  */
+function Float32x4GreaterThanOrEqual(t, other) {
+  var cx = t.x >= other.x;
+  var cy = t.y >= other.y;
+  var cz = t.z >= other.z;
+  var cw = t.w >= other.w;
+  return $SIMD.int32x4.bool(cx, cy, cz, cw);
+}
+
+/**
+  * @param {float32x4} t An instance of float32x4.
+  * @param {float32x4} other An instance of float32x4.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t > other.
+  */
+function Float32x4GreaterThan(t, other) {
+  var cx = t.x > other.x;
+  var cy = t.y > other.y;
+  var cz = t.z > other.z;
+  var cw = t.w > other.w;
+  return $SIMD.int32x4.bool(cx, cy, cz, cw);
+}
+
+/**
+  * @param {int32x4} t Selector mask. An instance of int32x4
+  * @param {float32x4} trueValue Pick lane from here if corresponding
+  * selector lane is 0xFFFFFFFF
+  * @param {float32x4} falseValue Pick lane from here if corresponding
+  * selector lane is 0x0
+  * @return {float32x4} Mix of lanes from trueValue or falseValue as
+  * indicated
+  */
+function Float32x4Select(t, trueValue, falseValue) {
+  var tv = $SIMD.float32x4.bitsToInt32x4(trueValue);
+  var fv = $SIMD.float32x4.bitsToInt32x4(falseValue);
+  var tr = $SIMD.int32x4.and(t, tv);
+  var fr = $SIMD.int32x4.and($SIMD.int32x4.not(t), fv);
+  return $SIMD.int32x4.bitsToFloat32x4($SIMD.int32x4.or(tr, fr));
+}
+
+/**
+  * @param {float32x4} t An instance of float32x4.
+  * @return {int32x4} a bit-wise copy of t as a int32x4.
+  */
+function Float32x4BitsToInt32x4(t) {
+  var f32x4 = new $Float32Array([t.x, t.y, t.z, t.w]);
+  var i32x4 = new $Int32Array(f32x4.buffer);
+  return $SIMD.int32x4(i32x4[0], i32x4[1], i32x4[2], i32x4[3]);
+}
+
+/**
+  * @param {float32x4} t An instance of float32x4.
+  * @return {int32x4} with a integer to float conversion of t.
+  */
+function Float32x4ToInt32x4(t) {
+  return $SIMD.int32x4(t.x, t.y, t.z, t.w);
+}
+
+/**
+  * @param {float32x4} t An instance of float32x4.
+  * @return {float64x2} with a float32 to float64 conversion of
+  * the x and y lanes
+  */
+function Float32x4ToFloat64x2(t) {
+  var a = $SIMD.float64x2(t.x, t.y);
+  return a;
+}
+
+/**
+  * @param {float32x4} a An instance of float32x4.
+  * @param {float32x4} b An instance of float32x4.
+  * @return {float32x4} New instance of float32x4 with values of a & b.
+  */
+function Float32x4And(a, b) {
+  var aInt = $SIMD.float32x4.bitsToInt32x4(a);
+  var bInt = $SIMD.float32x4.bitsToInt32x4(b);
+  return $SIMD.int32x4.bitsToFloat32x4($SIMD.int32x4.and(aInt, bInt));
+}
+
+/**
+  * @param {float32x4} a An instance of float32x4.
+  * @param {float32x4} b An instance of float32x4.
+  * @return {float32x4} New instance of float32x4 with values of a | b.
+  */
+function Float32x4Or(a, b) {
+  var aInt = $SIMD.float32x4.bitsToInt32x4(a);
+  var bInt = $SIMD.float32x4.bitsToInt32x4(b);
+  return $SIMD.int32x4.bitsToFloat32x4($SIMD.int32x4.or(aInt, bInt));
+}
+
+/**
+  * @param {float32x4} a An instance of float32x4.
+  * @param {float32x4} b An instance of float32x4.
+  * @return {float32x4} New instance of float32x4 with values of a ^ b.
+  */
+function Float32x4Xor(a, b) {
+  var aInt = $SIMD.float32x4.bitsToInt32x4(a);
+  var bInt = $SIMD.float32x4.bitsToInt32x4(b);
+  return $SIMD.int32x4.bitsToFloat32x4($SIMD.int32x4.xor(aInt, bInt));
+}
+
+/**
+  * @param {float32x4} a An instance of float32x4.
+  * @return {float32x4} New instance of float32x4 with values of ~a.
+  */
+function Float32x4Not(a) {
+  var aInt = $SIMD.float32x4.bitsToInt32x4(a);
+  return $SIMD.int32x4.bitsToFloat32x4($SIMD.int32x4.not(aInt));
+}
+
+/**
+* @return {float64x2} New instance of float64x2 with absolute values of
+* t.
+*/
+function Float64x2Abs(t) {
+  return $SIMD.float64x2($Math.abs(t.x), $Math.abs(t.y));
+}
+
+/**
+  * @return {float64x2} New instance of float64x2 with negated values of
+  * t.
+  */
+function Float64x2Neg(t) {
+  return $SIMD.float64x2(-t.x, -t.y);
+}
+
+/**
+  * @return {float64x2} New instance of float64x2 with a + b.
+  */
+function Float64x2Add(a, b) {
+  return $SIMD.float64x2(a.x + b.x, a.y + b.y);
+}
+
+/**
+  * @return {float64x2} New instance of float64x2 with a - b.
+  */
+function Float64x2Sub(a, b) {
+  return $SIMD.float64x2(a.x - b.x, a.y - b.y);
+}
+
+/**
+  * @return {float64x2} New instance of float64x2 with a * b.
+  */
+function Float64x2Mul(a, b) {
+  return $SIMD.float64x2(a.x * b.x, a.y * b.y);
+}
+
+/**
+  * @return {float64x2} New instance of float64x2 with a / b.
+  */
+function Float64x2Div(a, b) {
+  return $SIMD.float64x2((a.x / b.x), (a.y / b.y));
+}
+
+/**
+  * @return {float64x2} New instance of float64x2 with t's values clamped
+  * between lowerLimit and upperLimit.
+  */
+function Float64x2Clamp(t, lowerLimit, upperLimit) {
+  var cx = t.x < lowerLimit.x ? lowerLimit.x : t.x;
+  var cy = t.y < lowerLimit.y ? lowerLimit.y : t.y;
+  cx = cx > upperLimit.x ? upperLimit.x : cx;
+  cy = cy > upperLimit.y ? upperLimit.y : cy;
+  return $SIMD.float64x2(cx, cy);
+}
+
+/**
+  * @return {float64x2} New instance of float64x2 with the minimum value of
+  * t and other.
+  */
+function Float64x2Min(t, other) {
+  var cx = t.x > other.x ? other.x : t.x;
+  var cy = t.y > other.y ? other.y : t.y;
+  return $SIMD.float64x2(cx, cy);
+}
+
+/**
+  * @return {float64x2} New instance of float64x2 with the maximum value of
+  * t and other.
+  */
+function Float64x2Max(t, other) {
+  var cx = t.x < other.x ? other.x : t.x;
+  var cy = t.y < other.y ? other.y : t.y;
+  return $SIMD.float64x2(cx, cy);
+}
+
+/**
+  * @return {float64x2} New instance of float64x2 with reciprocal value of
+  * t.
+  */
+function Float64x2Reciprocal(t) {
+  return $SIMD.float64x2((1.0 / t.x), (1.0 / t.y));
+}
+
+/**
+  * @return {float64x2} New instance of float64x2 with square root of the
+  * reciprocal value of t.
+  */
+function Float64x2ReciprocalSqrt(t) {
+  return $SIMD.float64x2($Math.sqrt(1.0 / t.x), $Math.sqrt(1.0 / t.y));
+}
+
+/**
+  * @return {float64x2} New instance of float32x4 with values of t
+  * scaled by s.
+  */
+function Float64x2Scale(t, s) {
+  return $SIMD.float64x2(s * t.x, s * t.y);
+}
+
+/**
+  * @return {float64x2} New instance of float32x4 with square root of
+  * values of t.
+  */
+function Float64x2Sqrt(t) {
+  return $SIMD.float64x2($Math.sqrt(t.x), $Math.sqrt(t.y));
+}
+
+/**
+  * @param {float64x2} t An instance of float64x2 to be shuffled.
+  * @param {integer} mask One of the 4 shuffle masks, for example, $SIMD.XY.
+  * @return {float64x2} New instance of float64x2 with lanes shuffled.
+  */
+$SIMD.float64x2.shuffle = function(t, mask) {
+  var _x = (mask) & 0x1;
+  var _y = (mask >> 1) & 0x1;
+  var f64x2 = new $Float64Array([t.x, t.y]);
+  return $SIMD.float64x2(f64x2[_x], f64x2[_y]);
+}
+
+/**
+  * @param {float64x2} t1 An instance of float64x2 to be shuffled. X lane in result
+  * @param {float64x2} t2 An instance of float64x2 to be shuffled. Y lane in result
+  * @param {integer} mask One of the 4 shuffle masks, for example, $SIMD.XY.
+  * @return {float64x2} New instance of float64x2 with lanes shuffled.
+  */
+function Float64x2ShuffleMix(t1, t2, mask) {
+  var _x = (mask) & 0x1;
+  var _y = (mask >> 1) & 0x1;
+  var f64x2_t1 = new $Float64Array([t1.x, t1.y]);
+  var f64x2_t2 = new $Float64Array([t2.x, t2.y]);
+  return $SIMD.float64x2(f64x2_t1[_x], f64x2_t2[_y]);
+}
+
+/**
+  * @param {double} value used for x lane.
+  * @return {float64x2} New instance of float64x2 with the values in t and
+  * x replaced with {x}.
+  */
+function Float64x2WithX(t, x) {
+  return $SIMD.float64x2(x, t.y);
+}
+
+/**
+  * @param {double} value used for y lane.
+  * @return {float64x2} New instance of float64x2 with the values in t and
+  * y replaced with {y}.
+  */
+function Float64x2WithY(t, y) {
+  return $SIMD.float64x2(t.x, y);
+}
+
+/**
+  * @param {float64x2} t An instance of float64x2.
+  * @param {float64x2} other An instance of float64x2.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t < other.
+  */
+function Float64x2LessThan(t, other) {
+  var cx = t.x < other.x;
+  var cy = t.y < other.y;
+  return $SIMD.int32x4.bool(cx, cx, cy, cy);
+}
+
+/**
+  * @param {float64x2} t An instance of float64x2.
+  * @param {float64x2} other An instance of float64x2.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t <= other.
+  */
+function Float64x2LessThanOrEqual(t, other) {
+  var cx = t.x <= other.x;
+  var cy = t.y <= other.y;
+  return $SIMD.int32x4.bool(cx, cx, cy, cy);
+}
+
+/**
+  * @param {float64x2} t An instance of float64x2.
+  * @param {float64x2} other An instance of float64x2.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t == other.
+  */
+function Float64x2Equal(t, other) {
+  var cx = t.x == other.x;
+  var cy = t.y == other.y;
+  return $SIMD.int32x4.bool(cx, cx, cy, cy);
+}
+
+/**
+  * @param {float64x2} t An instance of float64x2.
+  * @param {float64x2} other An instance of float64x2.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t != other.
+  */
+function Float64x2NotEqual(t, other) {
+  var cx = t.x != other.x;
+  var cy = t.y != other.y;
+  return $SIMD.int32x4.bool(cx, cx, cy, cy);
+}
+
+/**
+  * @param {float64x2} t An instance of float64x2.
+  * @param {float64x2} other An instance of float64x2.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t >= other.
+  */
+function Float64x2GreaterThanOrEqual(t, other) {
+  var cx = t.x >= other.x;
+  var cy = t.y >= other.y;
+  return $SIMD.int32x4.bool(cx, cx, cy, cy);
+}
+
+/**
+  * @param {float64x2} t An instance of float64x2.
+  * @param {float64x2} other An instance of float64x2.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t > other.
+  */
+function Float64x2GreaterThan(t, other) {
+  var cx = t.x > other.x;
+  var cy = t.y > other.y;
+  return $SIMD.int32x4.bool(cx, cx, cy, cy);
+}
+
+/**
+  * @param {int32x4} t Selector mask. An instance of int32x4
+  * @param {float64x2} trueValue Pick lane from here if corresponding
+  * selector lanes are 0xFFFFFFFF
+  * @param {float64x2} falseValue Pick lane from here if corresponding
+  * selector lanes are 0x0
+  * @return {float64x2} Mix of lanes from trueValue or falseValue as
+  * indicated
+  */
+function Float64x2Select(t, trueValue, falseValue) {
+  var tv = $SIMD.float64x2.bitsToInt32x4(trueValue);
+  var fv = $SIMD.float64x2.bitsToInt32x4(falseValue);
+  var tr = $SIMD.int32x4.and(t, tv);
+  var fr = $SIMD.int32x4.and($SIMD.int32x4.not(t), fv);
+  return $SIMD.int32x4.bitsToFloat64x2($SIMD.int32x4.or(tr, fr));
+}
+
+/**
+  * @param {float64x2} t An instance of float64x2.
+  * @return {int32x4} a bit-wise copy of t as a int32x4.
+  */
+function Float64x2BitsToInt32x4(t) {
+  var f64x2 = new Float64(2);
+  f64x2[0] = t.x;
+  f64x2[1] = t.y;
+  var i32x4 = new $Int32Array(f64x2.buffer);
+  return $SIMD.int32x4(i32x4[0], i32x4[1], i32x4[2], i32x4[3]);
+}
+
+/**
+  * @param {int32x4} a An instance of int32x4.
+  * @param {int32x4} b An instance of int32x4.
+  * @return {int32x4} New instance of int32x4 with values of a & b.
+  */
+function Int32x4And(a, b) {
+  return $SIMD.int32x4(a.x & b.x, a.y & b.y, a.z & b.z, a.w & b.w);
+}
+
+/**
+  * @param {int32x4} a An instance of int32x4.
+  * @param {int32x4} b An instance of int32x4.
+  * @return {int32x4} New instance of int32x4 with values of a | b.
+  */
+function Int32x4Or(a, b) {
+  return $SIMD.int32x4(a.x | b.x, a.y | b.y, a.z | b.z, a.w | b.w);
+}
+
+/**
+  * @param {int32x4} a An instance of int32x4.
+  * @param {int32x4} b An instance of int32x4.
+  * @return {int32x4} New instance of int32x4 with values of a ^ b.
+  */
+function Int32x4Xor(a, b) {
+  return $SIMD.int32x4(a.x ^ b.x, a.y ^ b.y, a.z ^ b.z, a.w ^ b.w);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @return {int32x4} New instance of int32x4 with values of ~t
+  */
+function Int32x4Not(t) {
+  return $SIMD.int32x4(~t.x, ~t.y, ~t.z, ~t.w);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @return {int32x4} New instance of int32x4 with values of -t
+  */
+function Int32x4Neg(t) {
+  return $SIMD.int32x4(-t.x, -t.y, -t.z, -t.w);
+}
+
+/**
+  * @param {int32x4} a An instance of int32x4.
+  * @param {int32x4} b An instance of int32x4.
+  * @return {int32x4} New instance of int32x4 with values of a + b.
+  */
+function Int32x4Add(a, b) {
+  return $SIMD.int32x4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+
+/**
+  * @param {int32x4} a An instance of int32x4.
+  * @param {int32x4} b An instance of int32x4.
+  * @return {int32x4} New instance of int32x4 with values of a - b.
+  */
+function Int32x4Sub(a, b) {
+  return $SIMD.int32x4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+}
+
+/**
+  * @param {int32x4} a An instance of int32x4.
+  * @param {int32x4} b An instance of int32x4.
+  * @return {int32x4} New instance of int32x4 with values of a * b.
+  */
+function Int32x4Mul(a, b) {
+  return $SIMD.int32x4($Math.imul(a.x, b.x), $Math.imul(a.y, b.y),
+                      $Math.imul(a.z, b.z), $Math.imul(a.w, b.w));
+}
+
+/**
+  * @param {int32x4} t An instance of float32x4 to be shuffled.
+  * @param {integer} mask One of the 256 shuffle masks, for example, $SIMD.XXXX.
+  * @return {int32x4} New instance of float32x4 with lanes shuffled.
+  */
+function Int32x4Shuffle(t, mask) {
+  var _x = (mask) & 0x3;
+  var _y = (mask >> 2) & 0x3;
+  var _z = (mask >> 4) & 0x3;
+  var _w = (mask >> 6) & 0x3;
+  var i32x4 = new $Int32Array([t.x, t.y, t.z, t.w]);
+  return $SIMD.int32x4(i32x4[_x], i32x4[_y], i32x4[_z], i32x4[_w]);
+}
+
+/**
+  * @param {int32x4} t1 An instance of float32x4 to be shuffled. XY lanes in result
+  * @param {int32x4} t2 An instance of float32x4 to be shuffled. ZW lanes in result
+  * @param {integer} mask One of the 256 shuffle masks, for example, $SIMD.XXXX.
+  * @return {int32x4} New instance of float32x4 with lanes shuffled.
+  */
+function Int32x4ShuffleMix(t1, t2, mask) {
+  var _x = (mask) & 0x3;
+  var _y = (mask >> 2) & 0x3;
+  var _z = (mask >> 4) & 0x3;
+  var _w = (mask >> 6) & 0x3;
+  var i32x4_t1 = new $Int32Array([t1.x, t1.y, t1.z, t1.w]);
+  var i32x4_t2 = new $Int32Array([t2.x, t2.y, t2.z, t2.w]);
+  return $SIMD.int32x4(i32x4_t1[_x], i32x4_t1[_y], i32x4_t2[_z],
+                      i32x4_t2[_w]);
+}
+
+/**
+  * @param {float32x4}
+  */
+function Int32x4Select(t, trueValue, falseValue) {
+  var tv = $SIMD.float32x4.bitsToInt32x4(trueValue);
+  var fv = $SIMD.float32x4.bitsToInt32x4(falseValue);
+  var tr = $SIMD.int32x4.and(t, tv);
+  var fr = $SIMD.int32x4.and($SIMD.int32x4.not(t), fv);
+  return $SIMD.int32x4.bitsToFloat32x4($SIMD.int32x4.or(tr, fr));
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @param {integer} 32-bit value used for x lane.
+  * @return {int32x4} New instance of int32x4 with the values in t and
+  * x lane replaced with {x}.
+  */
+function Int32x4WithX(t, x) {
+  return $SIMD.int32x4(x, t.y, t.z, t.w);
+}
+
+/**
+  * param {int32x4} t An instance of int32x4.
+  * @param {integer} 32-bit value used for y lane.
+  * @return {int32x4} New instance of int32x4 with the values in t and
+  * y lane replaced with {y}.
+  */
+function Int32x4WithY(t, y) {
+  return $SIMD.int32x4(t.x, y, t.z, t.w);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @param {integer} 32-bit value used for z lane.
+  * @return {int32x4} New instance of int32x4 with the values in t and
+  * z lane replaced with {z}.
+  */
+function Int32x4WithZ(t, z) {
+  return $SIMD.int32x4(t.x, t.y, z, t.w);
+}
+
+/**
+  * @param {integer} 32-bit value used for w lane.
+  * @return {int32x4} New instance of int32x4 with the values in t and
+  * w lane replaced with {w}.
+  */
+function Int32x4WithW(t, w) {
+  return $SIMD.int32x4(t.x, t.y, t.z, w);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @param {boolean} x flag used for x lane.
+  * @return {int32x4} New instance of int32x4 with the values in t and
+  * x lane replaced with {x}.
+  */
+function Int32x4WithFlagX(t, flagX) {
+  var x = flagX ? 0xFFFFFFFF : 0x0;
+  return $SIMD.int32x4(x, t.y, t.z, t.w);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @param {boolean} y flag used for y lane.
+  * @return {int32x4} New instance of int32x4 with the values in t and
+  * y lane replaced with {y}.
+  */
+function Int32x4WithFlagY(t, flagY) {
+  var y = flagY ? 0xFFFFFFFF : 0x0;
+  return $SIMD.int32x4(t.x, y, t.z, t.w);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @param {boolean} z flag used for z lane.
+  * @return {int32x4} New instance of int32x4 with the values in t and
+  * z lane replaced with {z}.
+  */
+function Int32x4WithFlagZ(t, flagZ) {
+  var z = flagZ ? 0xFFFFFFFF : 0x0;
+  return $SIMD.int32x4(t.x, t.y, z, t.w);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @param {boolean} w flag used for w lane.
+  * @return {int32x4} New instance of int32x4 with the values in t and
+  * w lane replaced with {w}.
+  */
+function Int32x4WithFlagW(t, flagW) {
+  var w = flagW ? 0xFFFFFFFF : 0x0;
+  return $SIMD.int32x4(t.x, t.y, t.z, w);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @param {int32x4} other An instance of int32x4.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t == other.
+  */
+function Int32x4Equal(t, other) {
+  var cx = t.x == other.x;
+  var cy = t.y == other.y;
+  var cz = t.z == other.z;
+  var cw = t.w == other.w;
+  return $SIMD.int32x4.bool(cx, cy, cz, cw);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @param {int32x4} other An instance of int32x4.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t > other.
+  */
+function Int32x4GreaterThan(t, other) {
+  var cx = t.x > other.x;
+  var cy = t.y > other.y;
+  var cz = t.z > other.z;
+  var cw = t.w > other.w;
+  return $SIMD.int32x4.bool(cx, cy, cz, cw);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @param {int32x4} other An instance of int32x4.
+  * @return {int32x4} 0xFFFFFFFF or 0x0 in each lane depending on
+  * the result of t < other.
+  */
+function Int32x4LessThan(t, other) {
+  var cx = t.x < other.x;
+  var cy = t.y < other.y;
+  var cz = t.z < other.z;
+  var cw = t.w < other.w;
+  return $SIMD.int32x4.bool(cx, cy, cz, cw);
+}
+
+/**
+  * @param {int32x4} a An instance of int32x4.
+  * @param {int} bits Bit count to shift by.
+  * @return {int32x4} lanes in a shifted by bits.
+  */
+function Int32x4ShiftLeft(a, bits) {
+  var x = a.x << bits;
+  var y = a.y << bits;
+  var z = a.z << bits;
+  var w = a.w << bits;
+  return $SIMD.int32x4(x, y, z, w);
+}
+
+/**
+  * @param {int32x4} a An instance of int32x4.
+  * @param {int} bits Bit count to shift by.
+  * @return {int32x4} lanes in a shifted by bits.
+  */
+function Int32x4ShiftRightLogical(a, bits) {
+  var x = a.x >>> bits;
+  var y = a.y >>> bits;
+  var z = a.z >>> bits;
+  var w = a.w >>> bits;
+  return $SIMD.int32x4(x, y, z, w);
+}
+
+/**
+  * @param {int32x4} a An instance of int32x4.
+  * @param {int} bits Bit count to shift by.
+  * @return {int32x4} lanes in a shifted by bits.
+  */
+function Int32x4ShiftRightArithmetic(a, bits) {
+  var x = a.x >> bits;
+  var y = a.y >> bits;
+  var z = a.z >> bits;
+  var w = a.w >> bits;
+  return $SIMD.int32x4(x, y, z, w);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @return {float32x4} a bit-wise copy of t as a float32x4.
+  */
+function Int32x4BitsToFloat32x4(t) {
+  var i32x4 = new $Int32Array([t.x, t.y, t.z, t.w]);
+  var f32x4 = new $Float32Array(i32x4.buffer);
+  return $SIMD.float32x4(f32x4[0], f32x4[1], f32x4[2], f32x4[3]);
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @return {float32x4} a bit-wise copy of t as a float32x4.
+  */
+function Int32x4BitsToFloat64x2(t) {
+  var i32x4 = new $Int32Array([t.x, t.y, t.z, t.w]);
+  var f64x2 = new $Float64Array(i32x4.buffer);
+  return $SIMD.float64x2(f64x2[0], f64x2[1]);;
+}
+
+/**
+  * @param {int32x4} t An instance of int32x4.
+  * @return {float32x4} with a float to integer conversion copy of t.
+  */
+function Int32x4ToFloat32x4(t) {
+  return $SIMD.float32x4(t.x, t.y, t.z, t.w);
 }
 
 function SetUpSIMD() {
@@ -792,7 +1787,7 @@ function SetUpSIMD() {
     "greaterThan", Float32x4GreaterThan,
     "and", Float32x4And,
     "or", Float32x4Or,
-    "xor", Float32x4XOr,
+    "xor", Float32x4Xor,
     "not", Float32x4Not,
     "scale", Float32x4Scale,
     "withX", Float32x4WithX,
@@ -859,22 +1854,16 @@ function SetUpSIMD() {
     "equal", Int32x4Equal,
     "lessThan", Int32x4LessThan,
     "shiftLeft", Int32x4ShiftLeft,
-    "shiftRight", Int32x4ShiftRight,
+    "shiftRight", Int32x4ShiftRightLogical,
     "shiftRightArithmetic", Int32x4ShiftRightArithmetic,
     // Ternary
     "select", Int32x4Select
   ));
-
-  %SetInlineBuiltinFlag(Float32x4And);
-  %SetInlineBuiltinFlag(Float32x4Or);
-  %SetInlineBuiltinFlag(Float32x4XOr);
-  %SetInlineBuiltinFlag(Float32x4Not);
 }
 
 SetUpSIMD();
 
 //------------------------------------------------------------------------------
-
 macro SIMD128_TYPED_ARRAYS(FUNCTION)
 // arrayIds below should be synchronized with Runtime_TypedArrayInitialize.
 FUNCTION(10, Float32x4Array, 16)
@@ -1020,16 +2009,16 @@ macro TYPED_ARRAY_CONSTRUCTOR(ARRAY_ID, NAME, ELEMENT_SIZE)
 
     var srcLength = %_TypedArrayGetLength(this);
     if (beginInt < 0) {
-      beginInt = MathMax(0, srcLength + beginInt);
+      beginInt = $MathMax(0, srcLength + beginInt);
     } else {
-      beginInt = MathMin(srcLength, beginInt);
+      beginInt = $MathMin(srcLength, beginInt);
     }
 
     var endInt = IS_UNDEFINED(end) ? srcLength : end;
     if (endInt < 0) {
-      endInt = MathMax(0, srcLength + endInt);
+      endInt = $MathMax(0, srcLength + endInt);
     } else {
-      endInt = MathMin(endInt, srcLength);
+      endInt = $MathMin(endInt, srcLength);
     }
     if (endInt < beginInt) {
       endInt = beginInt;
@@ -1079,7 +2068,6 @@ function NAMEArrayGet(i) {
 }
 
 function NAMEArraySet(i, v) {
-  v = ToNAME(v);
   CheckNAME(v);
   this[i] = v;
 }

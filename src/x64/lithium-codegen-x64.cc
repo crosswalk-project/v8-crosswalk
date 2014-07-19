@@ -2210,24 +2210,6 @@ void LCodeGen::DoBranch(LBranch* instr) {
         __ j(equal, instr->TrueLabel(chunk_));
       }
 
-      if (expected.Contains(ToBooleanStub::FLOAT32x4)) {
-        // Float32x4 value -> true.
-        __ CmpInstanceType(map, FLOAT32x4_TYPE);
-        __ j(equal, instr->TrueLabel(chunk_));
-      }
-
-      if (expected.Contains(ToBooleanStub::FLOAT64x2)) {
-        // Float64x2 value -> true.
-        __ CmpInstanceType(map, FLOAT64x2_TYPE);
-        __ j(equal, instr->TrueLabel(chunk_));
-      }
-
-      if (expected.Contains(ToBooleanStub::INT32x4)) {
-        // Int32x4 value -> true.
-        __ CmpInstanceType(map, INT32x4_TYPE);
-        __ j(equal, instr->TrueLabel(chunk_));
-      }
-
       if (expected.Contains(ToBooleanStub::HEAP_NUMBER)) {
         // heap number -> false iff +0, -0, or NaN.
         Label not_heap_number;
@@ -3156,26 +3138,18 @@ void LCodeGen::DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr) {
   DeferredSIMD128ToTagged* deferred =
       new(zone()) DeferredSIMD128ToTagged(this, instr,
           static_cast<Runtime::FunctionId>(T::kRuntimeAllocatorId()));
-  if (FLAG_inline_new) {
-    __ AllocateSIMDHeapObject(T::kSize, reg, tmp, deferred->entry(),
-        static_cast<Heap::RootListIndex>(T::kMapRootIndex()));
-  } else {
-    __ jmp(deferred->entry());
-  }
+  __ jmp(deferred->entry());
   __ bind(deferred->exit());
 
   // Copy the SIMD128 value from the external array to the heap object.
   STATIC_ASSERT(T::kValueSize % kPointerSize == 0);
-  int base_offset = instr->is_fixed_typed_array()
-      ? FixedTypedArrayBase::kDataOffset - kHeapObjectTag
-      : 0;
   for (int offset = 0; offset < T::kValueSize; offset += kPointerSize) {
     Operand operand(BuildFastArrayOperand(
         instr->elements(),
         key,
+        instr->hydrogen()->key()->representation(),
         elements_kind,
-        base_offset + offset,
-        instr->additional_index()));
+        instr->base_offset() + offset));
     __ movp(tmp, operand);
     __ movp(FieldOperand(reg, T::kValueOffset + offset), tmp);
   }
@@ -3392,6 +3366,7 @@ Operand LCodeGen::BuildFastArrayOperand(
     if (key_representation.IsSmi() && (shift_size >= 1)) {
       ASSERT(SmiValuesAre31Bits());
       shift_size -= kSmiTagSize;
+    }
     if (ExternalArrayOpRequiresPreScale(elements_kind)) {
       // Make sure the key is pre-scaled against maximal_scale_factor.
       shift_size = static_cast<int>(maximal_scale_factor);
@@ -4370,10 +4345,9 @@ template<class T>
 void LCodeGen::DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr) {
   ASSERT(instr->value()->IsRegister());
   Register input_reg = ToRegister(instr->value());
-  Condition cc = masm()->CheckSmi(input_reg);
-  DeoptimizeIf(cc, instr->environment());
-  __ CompareRoot(FieldOperand(input_reg, HeapObject::kMapOffset),
-      static_cast<Heap::RootListIndex>(T::kMapRootIndex()));
+  __ testp(input_reg, Immediate(kSmiTagMask));
+  DeoptimizeIf(zero, instr->environment());
+  __ CmpObjectType(input_reg, T::kInstanceType, kScratchRegister);
   DeoptimizeIf(not_equal, instr->environment());
 
   // Pre scale key if necessary.
@@ -4385,16 +4359,13 @@ void LCodeGen::DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr) {
 
   // Copy the SIMD128 value from the heap object to the external array.
   STATIC_ASSERT(T::kValueSize % kPointerSize == 0);
-  int base_offset = instr->is_fixed_typed_array()
-      ? FixedTypedArrayBase::kDataOffset - kHeapObjectTag
-      : 0;
   for (int offset = 0; offset < T::kValueSize; offset += kPointerSize) {
     Operand operand(BuildFastArrayOperand(
-          instr->elements(),
-          key,
-          elements_kind,
-          base_offset + offset,
-          instr->additional_index()));
+        instr->elements(),
+        key,
+        instr->hydrogen()->key()->representation(),
+        elements_kind,
+        instr->base_offset() + offset));
     __ movp(kScratchRegister,
         FieldOperand(input_reg, T::kValueOffset + offset));
     __ movp(operand, kScratchRegister);
@@ -5650,21 +5621,6 @@ Condition LCodeGen::EmitTypeofIs(LTypeofIsAndBranch* instr, Register input) {
     __ CompareRoot(FieldOperand(input, HeapObject::kMapOffset),
                    Heap::kHeapNumberMapRootIndex);
 
-    final_branch_condition = equal;
-
-  } else if (String::Equals(type_name, factory->float32x4_string())) {
-    __ JumpIfSmi(input, false_label, false_distance);
-    __ CmpObjectType(input, FLOAT32x4_TYPE, input);
-    final_branch_condition = equal;
-
-  } else if (String::Equals(type_name, factory->float64x2_string())) {
-    __ JumpIfSmi(input, false_label, false_distance);
-    __ CmpObjectType(input, FLOAT64x2_TYPE, input);
-    final_branch_condition = equal;
-
-  } else if (String::Equals(type_name, factory->int32x4_string())) {
-    __ JumpIfSmi(input, false_label, false_distance);
-    __ CmpObjectType(input, INT32x4_TYPE, input);
     final_branch_condition = equal;
 
   } else if (String::Equals(type_name, factory->string_string())) {

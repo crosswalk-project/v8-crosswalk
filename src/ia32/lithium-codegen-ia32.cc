@@ -2178,24 +2178,6 @@ void LCodeGen::DoBranch(LBranch* instr) {
         __ j(equal, instr->TrueLabel(chunk_));
       }
 
-      if (expected.Contains(ToBooleanStub::FLOAT32x4)) {
-        // Float32x4 value -> true.
-        __ CmpInstanceType(map, FLOAT32x4_TYPE);
-        __ j(equal, instr->TrueLabel(chunk_));
-      }
-
-      if (expected.Contains(ToBooleanStub::FLOAT64x2)) {
-        // Float64x2 value -> true.
-        __ CmpInstanceType(map, FLOAT64x2_TYPE);
-        __ j(equal, instr->TrueLabel(chunk_));
-      }
-
-      if (expected.Contains(ToBooleanStub::INT32x4)) {
-        // Int32x4 value -> true.
-        __ CmpInstanceType(map, INT32x4_TYPE);
-        __ j(equal, instr->TrueLabel(chunk_));
-      }
-
       if (expected.Contains(ToBooleanStub::HEAP_NUMBER)) {
         // heap number -> false iff +0, -0, or NaN.
         Label not_heap_number;
@@ -3099,33 +3081,26 @@ void LCodeGen::HandleExternalArrayOpRequiresTemp(
 template<class T>
 void LCodeGen::DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr) {
   class DeferredSIMD128ToTagged V8_FINAL : public LDeferredCode {
-    public:
-      DeferredSIMD128ToTagged(LCodeGen* codegen,
-          LInstruction* instr,
-          Runtime::FunctionId id,
-          const X87Stack& x87_stack)
-        : LDeferredCode(codegen, x87_stack), instr_(instr), id_(id) { }
-      virtual void Generate() V8_OVERRIDE {
-        codegen()->DoDeferredSIMD128ToTagged(instr_, id_);
-      }
-      virtual LInstruction* instr() V8_OVERRIDE { return instr_; }
-    private:
-      LInstruction* instr_;
-      Runtime::FunctionId id_;
+   public:
+    DeferredSIMD128ToTagged(LCodeGen* codegen,
+        LInstruction* instr,
+        Runtime::FunctionId id)
+      : LDeferredCode(codegen), instr_(instr), id_(id) { }
+    virtual void Generate() V8_OVERRIDE {
+      codegen()->DoDeferredSIMD128ToTagged(instr_, id_);
+    }
+    virtual LInstruction* instr() V8_OVERRIDE { return instr_; }
+   private:
+    LInstruction* instr_;
+    Runtime::FunctionId id_;
   };
 
   // Allocate a SIMD128 object on the heap.
   Register reg = ToRegister(instr->result());
   Register tmp = ToRegister(instr->temp());
   DeferredSIMD128ToTagged* deferred = new(zone()) DeferredSIMD128ToTagged(
-      this, instr, static_cast<Runtime::FunctionId>(T::kRuntimeAllocatorId()),
-      x87_stack_);
-  if (FLAG_inline_new) {
-    __ AllocateSIMDHeapObject(T::kSize, reg, tmp, deferred->entry(),
-        static_cast<Heap::RootListIndex>(T::kMapRootIndex()));
-  } else {
-    __ jmp(deferred->entry());
-  }
+      this, instr, static_cast<Runtime::FunctionId>(T::kRuntimeAllocatorId()));
+  __ jmp(deferred->entry());
   __ bind(deferred->exit());
 
   // Copy the SIMD128 value from the external array to the heap object.
@@ -3138,8 +3113,7 @@ void LCodeGen::DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr) {
         key,
         instr->hydrogen()->key()->representation(),
         elements_kind,
-        offset,
-        instr->additional_index()));
+        instr->base_offset() + offset));
     __ mov(tmp, operand);
     __ mov(FieldOperand(reg, T::kValueOffset + offset), tmp);
   }
@@ -3147,22 +3121,6 @@ void LCodeGen::DoLoadKeyedSIMD128ExternalArray(LLoadKeyed* instr) {
 
 
 void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
-  class DeferredSIMD128ToTagged V8_FINAL : public LDeferredCode {
-    public:
-      DeferredSIMD128ToTagged(LCodeGen* codegen,
-          LInstruction* instr,
-          Runtime::FunctionId id,
-          const X87Stack& x87_stack)
-        : LDeferredCode(codegen, x87_stack), instr_(instr), id_(id) { }
-      virtual void Generate() V8_OVERRIDE {
-        codegen()->DoDeferredSIMD128ToTagged(instr_, id_);
-      }
-      virtual LInstruction* instr() V8_OVERRIDE { return instr_; }
-    private:
-      LInstruction* instr_;
-      Runtime::FunctionId id_;
-  };
-
   ElementsKind elements_kind = instr->elements_kind();
   LOperand* key = instr->key();
   if (!key->IsConstantOperand() &&
@@ -4243,8 +4201,7 @@ void LCodeGen::DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr) {
         key,
         instr->hydrogen()->key()->representation(),
         elements_kind,
-        offset,
-        instr->additional_index()));
+        instr->base_offset() + offset));
     __ mov(temp, FieldOperand(input_reg, T::kValueOffset + offset));
     __ mov(operand, temp);
   }
@@ -5475,21 +5432,6 @@ Condition LCodeGen::EmitTypeofIs(LTypeofIsAndBranch* instr, Register input) {
     __ JumpIfSmi(input, true_label, true_distance);
     __ cmp(FieldOperand(input, HeapObject::kMapOffset),
            factory()->heap_number_map());
-    final_branch_condition = equal;
-
-  } else if (String::Equals(type_name, factory()->float32x4_string())) {
-    __ JumpIfSmi(input, false_label, false_distance);
-    __ CmpObjectType(input, FLOAT32x4_TYPE, input);
-    final_branch_condition = equal;
-
-  } else if (String::Equals(type_name, factory()->float64x2_string())) {
-    __ JumpIfSmi(input, false_label, false_distance);
-    __ CmpObjectType(input, FLOAT64x2_TYPE, input);
-    final_branch_condition = equal;
-
-  } else if (String::Equals(type_name, factory()->int32x4_string())) {
-    __ JumpIfSmi(input, false_label, false_distance);
-    __ CmpObjectType(input, INT32x4_TYPE, input);
     final_branch_condition = equal;
 
   } else if (String::Equals(type_name, factory()->string_string())) {

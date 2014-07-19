@@ -1488,37 +1488,38 @@ void Genesis::InitializeExperimentalGlobal() {
   if (FLAG_simd_object) {
     // --- S I M D ---
     Handle<String> name = factory()->InternalizeUtf8String("SIMD");
-    Handle<Code> code(isolate()->builtins()->builtin(Builtins::kEmptyFunction));
-    Handle<JSFunction> cons =
-        factory()->NewFunction(name, code);
+    Handle<JSFunction> cons = factory()->NewFunction(name);
     JSFunction::SetInstancePrototype(cons,
         Handle<Object>(native_context()->initial_object_prototype(),
                        isolate()));
     cons->SetInstanceClassName(*name);
     Handle<JSObject> simd_object = factory()->NewJSObject(cons, TENURED);
     ASSERT(simd_object->IsJSObject());
-    JSObject::SetLocalPropertyIgnoreAttributes(
+    JSObject::SetOwnPropertyIgnoreAttributes(
         global, name, simd_object, DONT_ENUM).Check();
     native_context()->set_simd_object(*simd_object);
     // --- f l o a t 3 2 x 4 ---
     Handle<JSFunction> float32x4_fun =
-        InstallFunction(simd_object, "float32x4", JS_VALUE_TYPE, JSValue::kSize,
+        InstallFunction(simd_object, "float32x4", FLOAT32x4_TYPE,
+                        Float32x4::kSize,
                         isolate()->initial_object_prototype(),
-                        Builtins::kIllegal, true, true);
+                        Builtins::kIllegal);
     native_context()->set_float32x4_function(*float32x4_fun);
 
     // --- f l o a t 6 4 x 2 ---
     Handle<JSFunction> float64x2_fun =
-        InstallFunction(simd_object, "float64x2", JS_VALUE_TYPE, JSValue::kSize,
+        InstallFunction(simd_object, "float64x2", FLOAT64x2_TYPE,
+                        Float64x2::kSize,
                         isolate()->initial_object_prototype(),
-                        Builtins::kIllegal, true, true);
+                        Builtins::kIllegal);
     native_context()->set_float64x2_function(*float64x2_fun);
 
     // --- i n t 3 2 x 4 ---
     Handle<JSFunction> int32x4_fun =
-        InstallFunction(simd_object, "int32x4", JS_VALUE_TYPE, JSValue::kSize,
+        InstallFunction(simd_object, "int32x4", INT32x4_TYPE,
+                        Int32x4::kSize,
                         isolate()->initial_object_prototype(),
-                        Builtins::kIllegal, true, true);
+                        Builtins::kIllegal);
     native_context()->set_int32x4_function(*int32x4_fun);
 
     // --- F l o a t 3 2 x 4 A r r a y---
