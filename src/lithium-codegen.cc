@@ -103,7 +103,7 @@ bool LCodeGenBase::GenerateBody() {
 
 
 void LCodeGenBase::CheckEnvironmentUsage() {
-#ifdef DEBUG
+#if DEBUG
   bool dead_block = false;
   for (int i = 0; i < instructions_->length(); i++) {
     LInstruction* instr = instructions_->at(i);
