@@ -5303,7 +5303,9 @@ MaybeHandle<Object> Runtime::SetObjectProperty(Isolate* isolate,
     JSObject::ValidateElements(js_object);
     if (js_object->HasExternalArrayElements() ||
         js_object->HasFixedTypedArrayElements()) {
-      if (!value->IsNumber() && !value->IsUndefined()) {
+      if (!value->IsNumber() &&  !value->IsFloat32x4() &&
+          !value->IsFloat64x2() && !value->IsInt32x4() &&
+          !value->IsUndefined()) {
         ASSIGN_RETURN_ON_EXCEPTION(
             isolate, value, Execution::ToNumber(isolate, value), Object);
       }
@@ -5320,7 +5322,9 @@ MaybeHandle<Object> Runtime::SetObjectProperty(Isolate* isolate,
     Handle<Name> name = Handle<Name>::cast(key);
     if (name->AsArrayIndex(&index)) {
       if (js_object->HasExternalArrayElements()) {
-        if (!value->IsNumber() && !value->IsUndefined()) {
+        if (!value->IsNumber() &&  !value->IsFloat32x4() &&
+            !value->IsFloat64x2() && !value->IsInt32x4() &&
+            !value->IsUndefined()) {
           ASSIGN_RETURN_ON_EXCEPTION(
               isolate, value, Execution::ToNumber(isolate, value), Object);
         }
@@ -7025,6 +7029,33 @@ RUNTIME_FUNCTION(RuntimeHidden_AllocateHeapNumber) {
   HandleScope scope(isolate);
   ASSERT(args.length() == 0);
   return *isolate->factory()->NewHeapNumber(0);
+}
+
+
+RUNTIME_FUNCTION(Runtime_AllocateFloat32x4) {
+  HandleScope scope(isolate);
+  ASSERT(args.length() == 0);
+
+  float32x4_value_t zero = {{0, 0, 0, 0}};
+  return *isolate->factory()->NewFloat32x4(zero);
+}
+
+
+RUNTIME_FUNCTION(Runtime_AllocateFloat64x2) {
+  HandleScope scope(isolate);
+  ASSERT(args.length() == 0);
+
+  float64x2_value_t zero = {{0, 0}};
+  return *isolate->factory()->NewFloat64x2(zero);
+}
+
+
+RUNTIME_FUNCTION(Runtime_AllocateInt32x4) {
+  HandleScope scope(isolate);
+  ASSERT(args.length() == 0);
+
+  int32x4_value_t zero = {{0, 0, 0, 0}};
+  return *isolate->factory()->NewInt32x4(zero);
 }
 
 
@@ -10232,6 +10263,54 @@ static void IterateExternalArrayElements(Isolate* isolate,
 }
 
 
+static void IterateExternalFloat32x4ArrayElements(Isolate* isolate,
+                                                  Handle<JSObject> receiver,
+                                                  ArrayConcatVisitor* visitor) {
+  Handle<ExternalFloat32x4Array> array(
+      ExternalFloat32x4Array::cast(receiver->elements()));
+  uint32_t len = static_cast<uint32_t>(array->length());
+
+  ASSERT(visitor != NULL);
+  for (uint32_t j = 0; j < len; j++) {
+    HandleScope loop_scope(isolate);
+    Handle<Object> e = isolate->factory()->NewFloat32x4(array->get_scalar(j));
+    visitor->visit(j, e);
+  }
+}
+
+
+static void IterateExternalFloat64x2ArrayElements(Isolate* isolate,
+                                                  Handle<JSObject> receiver,
+                                                  ArrayConcatVisitor* visitor) {
+  Handle<ExternalFloat64x2Array> array(
+      ExternalFloat64x2Array::cast(receiver->elements()));
+  uint32_t len = static_cast<uint32_t>(array->length());
+
+  ASSERT(visitor != NULL);
+  for (uint32_t j = 0; j < len; j++) {
+    HandleScope loop_scope(isolate);
+    Handle<Object> e = isolate->factory()->NewFloat64x2(array->get_scalar(j));
+    visitor->visit(j, e);
+  }
+}
+
+
+static void IterateExternalInt32x4ArrayElements(Isolate* isolate,
+                                                 Handle<JSObject> receiver,
+                                                 ArrayConcatVisitor* visitor) {
+  Handle<ExternalInt32x4Array> array(
+      ExternalInt32x4Array::cast(receiver->elements()));
+  uint32_t len = static_cast<uint32_t>(array->length());
+
+  ASSERT(visitor != NULL);
+  for (uint32_t j = 0; j < len; j++) {
+    HandleScope loop_scope(isolate);
+    Handle<Object> e = isolate->factory()->NewInt32x4(array->get_scalar(j));
+    visitor->visit(j, e);
+  }
+}
+
+
 // Used for sorting indices in a List<uint32_t>.
 static int compareUInt32(const uint32_t* ap, const uint32_t* bp) {
   uint32_t a = *ap;
@@ -10467,6 +10546,18 @@ static bool IterateElements(Isolate* isolate,
     case EXTERNAL_FLOAT32_ELEMENTS: {
       IterateExternalArrayElements<ExternalFloat32Array, float>(
           isolate, receiver, false, false, visitor);
+      break;
+    }
+    case EXTERNAL_FLOAT32x4_ELEMENTS: {
+      IterateExternalFloat32x4ArrayElements(isolate, receiver, visitor);
+      break;
+    }
+    case EXTERNAL_FLOAT64x2_ELEMENTS: {
+      IterateExternalFloat64x2ArrayElements(isolate, receiver, visitor);
+      break;
+    }
+    case EXTERNAL_INT32x4_ELEMENTS: {
+      IterateExternalInt32x4ArrayElements(isolate, receiver, visitor);
       break;
     }
     case EXTERNAL_FLOAT64_ELEMENTS: {
@@ -15154,6 +15245,95 @@ RUNTIME_FUNCTION(Runtime_MaxSmi) {
   ASSERT(args.length() == 0);
   return Smi::FromInt(Smi::kMaxValue);
 }
+
+
+RUNTIME_FUNCTION(Runtime_CreateFloat32x4) {
+  HandleScope scope(isolate);
+  ASSERT(args.length() == 5);
+  CONVERT_ARG_HANDLE_CHECKED(Float32x4, holder, 0);
+  RUNTIME_ASSERT(args[1]->IsNumber());
+  RUNTIME_ASSERT(args[2]->IsNumber());
+  RUNTIME_ASSERT(args[3]->IsNumber());
+  RUNTIME_ASSERT(args[4]->IsNumber());
+
+  float32x4_value_t value;
+  value.storage[0] = static_cast<float>(args.number_at(1));
+  value.storage[1] = static_cast<float>(args.number_at(2));
+  value.storage[2] = static_cast<float>(args.number_at(3));
+  value.storage[3] = static_cast<float>(args.number_at(4));
+  holder->set_value(value);
+
+  return isolate->heap()->undefined_value();
+}
+
+
+RUNTIME_FUNCTION(Runtime_CreateFloat64x2) {
+  HandleScope scope(isolate);
+  ASSERT(args.length() == 3);
+  CONVERT_ARG_HANDLE_CHECKED(Float64x2, holder, 0);
+  RUNTIME_ASSERT(args[1]->IsNumber());
+  RUNTIME_ASSERT(args[2]->IsNumber());
+
+  float64x2_value_t value;
+  value.storage[0] = args.number_at(1);
+  value.storage[1] = args.number_at(2);
+  holder->set_value(value);
+
+  return isolate->heap()->undefined_value();
+}
+
+
+RUNTIME_FUNCTION(Runtime_CreateInt32x4) {
+  HandleScope scope(isolate);
+  ASSERT(args.length() == 5);
+  CONVERT_ARG_HANDLE_CHECKED(Int32x4, holder, 0);
+  RUNTIME_ASSERT(args[1]->IsNumber());
+  RUNTIME_ASSERT(args[2]->IsNumber());
+  RUNTIME_ASSERT(args[3]->IsNumber());
+  RUNTIME_ASSERT(args[4]->IsNumber());
+
+  int32x4_value_t value;
+  value.storage[0] = NumberToInt32(args[1]);
+  value.storage[1] = NumberToInt32(args[2]);
+  value.storage[2] = NumberToInt32(args[3]);
+  value.storage[3] = NumberToInt32(args[4]);
+  holder->set_value(value);
+
+  return isolate->heap()->undefined_value();
+}
+
+
+#define LANE_VALUE(VALUE, LANE) \
+  VALUE->LANE()
+
+
+#define SIMD128_LANE_ACCESS_FUNCTIONS(V)                       \
+  V(Float32x4, GetX, NewNumber, x, LANE_VALUE)                 \
+  V(Float32x4, GetY, NewNumber, y, LANE_VALUE)                 \
+  V(Float32x4, GetZ, NewNumber, z, LANE_VALUE)                 \
+  V(Float32x4, GetW, NewNumber, w, LANE_VALUE)                 \
+  V(Float64x2, GetX, NewNumber, x, LANE_VALUE)                 \
+  V(Float64x2, GetY, NewNumber, y, LANE_VALUE)                 \
+  V(Int32x4, GetX, NewNumberFromInt, x, LANE_VALUE)            \
+  V(Int32x4, GetY, NewNumberFromInt, y, LANE_VALUE)            \
+  V(Int32x4, GetZ, NewNumberFromInt, z, LANE_VALUE)            \
+  V(Int32x4, GetW, NewNumberFromInt, w, LANE_VALUE)
+
+
+#define DECLARE_SIMD_LANE_ACCESS_FUNCTION(                    \
+    TYPE, NAME, HEAP_FUNCTION, LANE, ACCESS_FUNCTION)         \
+RUNTIME_FUNCTION(Runtime_##TYPE##NAME) {                      \
+  HandleScope scope(isolate);                                 \
+  ASSERT(args.length() == 1);                                 \
+                                                              \
+  CONVERT_ARG_CHECKED(TYPE, a, 0);                            \
+                                                              \
+  return *isolate->factory()->HEAP_FUNCTION(                  \
+      ACCESS_FUNCTION(a, LANE));                              \
+}
+
+
+SIMD128_LANE_ACCESS_FUNCTIONS(DECLARE_SIMD_LANE_ACCESS_FUNCTION)
 
 
 // ----------------------------------------------------------------------------
