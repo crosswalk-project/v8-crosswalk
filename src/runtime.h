@@ -287,7 +287,7 @@ namespace internal {
   F(DateSetValue, 3, 1) \
   F(DateCacheVersion, 0, 1) \
   \
-  /* Float32x4 and Int32x4 */ \
+  /* Float32x4, Float64x2 and Int32x4 */ \
   F(CreateFloat32x4, 4, 1) \
   F(Float32x4GetX, 1, 1) \
   F(Float32x4GetY, 1, 1) \

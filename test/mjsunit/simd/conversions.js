@@ -35,8 +35,8 @@ function testObject() {
   assertEquals(0, b.z);
   assertEquals(0, b.w);
   assertEquals(typeof(b), "object");
-  assertEquals(typeof(b.valueOf()), "float32x4");
-  assertEquals(Object.prototype.toString.call(b), "[object float32x4]");
+  assertEquals(typeof(b.valueOf()), "object");
+  assertEquals(Object.prototype.toString.call(b), "[object Object]");
 }
 
 testObject();

@@ -960,8 +960,7 @@ LInstruction* LChunkBuilder::DoBranch(HBranch* instr) {
   if (expected.IsEmpty()) expected = ToBooleanStub::Types::Generic();
 
   bool easy_case = !r.IsTagged() || type.IsBoolean() || type.IsSmi() ||
-      type.IsJSArray() || type.IsHeapNumber() ||
-      type.IsString();
+      type.IsJSArray() || type.IsHeapNumber() || type.IsString();
   LInstruction* branch = new(zone()) LBranch(UseRegister(value));
   if (!easy_case &&
       ((!expected.Contains(ToBooleanStub::SMI) && expected.NeedsMap()) ||
@@ -2142,16 +2141,16 @@ LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
   LInstruction* result = NULL;
 
   if (kPointerSize == kInt64Size) {
-    key = UseRegisterOrConstantAtStart(instr->key());
-  } else {
-    bool clobbers_key = ExternalArrayOpRequiresTemp(
-        instr->key()->representation(), elements_kind);
-    key = clobbers_key
-        ? UseTempRegister(instr->key())
-        : UseRegisterOrConstantAtStart(instr->key());
-    clobbers_key = ExternalArrayOpRequiresPreScale(elements_kind);
+    bool clobbers_key = ExternalArrayOpRequiresPreScale(elements_kind);
     key = clobbers_key
         ? UseTempRegisterOrConstant(instr->key())
+        : UseRegisterOrConstantAtStart(instr->key());
+  } else {
+    bool clobbers_key = ExternalArrayOpRequiresTemp(
+        instr->key()->representation(), elements_kind) ||
+        ExternalArrayOpRequiresPreScale(elements_kind);
+    key = clobbers_key
+        ? UseTempRegister(instr->key())
         : UseRegisterOrConstantAtStart(instr->key());
   }
 
@@ -2163,7 +2162,7 @@ LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
   bool load_128bits_without_sse2 = IsSIMD128ElementsKind(elements_kind);
   if (!instr->is_typed_elements()) {
     LOperand* obj = UseRegisterAtStart(instr->elements());
-    result = DefineAsRegister(new(zone()) LLoadKeyed(obj, key, NULL));
+    result = DefineAsRegister(new(zone()) LLoadKeyed(obj, key, NULL, NULL));
   } else {
     ASSERT(
         (instr->representation().IsInteger32() &&
@@ -2174,6 +2173,7 @@ LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
          (IsSIMD128ElementsKind(elements_kind))));
     LOperand* backing_store = UseRegister(instr->elements());
     result = DefineAsRegister(new(zone()) LLoadKeyed(backing_store, key,
+        load_128bits_without_sse2 ? TempRegister() : NULL,
         load_128bits_without_sse2 ? TempRegister() : NULL));
     if (load_128bits_without_sse2) {
       info()->MarkAsDeferredCalling();
@@ -2239,7 +2239,7 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
       }
     }
 
-    return new(zone()) LStoreKeyed(object, key, val);
+    return new(zone()) LStoreKeyed(object, key, val, NULL, NULL);
   }
 
   ASSERT(
@@ -2261,21 +2261,22 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
       : UseRegister(instr->value());
   LOperand* key = NULL;
   if (kPointerSize == kInt64Size) {
-    key = UseRegisterOrConstantAtStart(instr->key());
+    bool clobbers_key = ExternalArrayOpRequiresPreScale(elements_kind);
+    key = clobbers_key
+        ? UseTempRegisterOrConstant(instr->key())
+        : UseRegisterOrConstantAtStart(instr->key());
   } else {
     bool clobbers_key = ExternalArrayOpRequiresTemp(
         instr->key()->representation(), elements_kind);
     key = clobbers_key
         ? UseTempRegister(instr->key())
         : UseRegisterOrConstantAtStart(instr->key());
-    clobbers_key = ExternalArrayOpRequiresPreScale(elements_kind);
-    LOperand* key = clobbers_key
-        ? UseTempRegisterOrConstant(instr->key())
-        : UseRegisterOrConstantAtStart(instr->key());
   }
-  LOperand* backing_store = UseRegister(instr->elements());
-  LStoreKeyed* result = new(zone()) LStoreKeyed(backing_store, key, val);
   bool store_128bits_without_sse2 = IsSIMD128ElementsKind(elements_kind);
+  LOperand* backing_store = UseRegister(instr->elements());
+  LStoreKeyed* result = new(zone()) LStoreKeyed(backing_store, key, val,
+      store_128bits_without_sse2 ? TempRegister() : NULL,
+      store_128bits_without_sse2 ? TempRegister() : NULL);
   return store_128bits_without_sse2 ? AssignEnvironment(result) : result;
 }
 

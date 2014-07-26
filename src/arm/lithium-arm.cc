@@ -2245,7 +2245,7 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
       }
     }
 
-    return new(zone()) LStoreKeyed(object, key, val, NULL);
+    return new(zone()) LStoreKeyed(object, key, val, NULL, NULL);
   }
 
   ASSERT(
@@ -2268,6 +2268,7 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
       : UseRegisterOrConstantAtStart(instr->key());
   LStoreKeyed* result =
       new(zone()) LStoreKeyed(backing_store, key, val,
+          store_128bits_without_neon ? TempRegister() : NULL,
           store_128bits_without_neon ? TempRegister() : NULL);
   return store_128bits_without_neon ? AssignEnvironment(result) : result;
 }

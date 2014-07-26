@@ -3311,14 +3311,7 @@ void MacroAssembler::AllocateSIMDHeapObject(int size,
                                             Register map,
                                             Label* gc_required,
                                             TaggingMode tagging_mode) {
-  Allocate(size, result, scratch1, scratch2, gc_required,
-           tagging_mode == TAG_RESULT ? TAG_OBJECT : NO_ALLOCATION_FLAGS);
-
-  if (tagging_mode == TAG_RESULT) {
-    str(map, FieldMemOperand(result, HeapObject::kMapOffset));
-  } else {
-    str(map, MemOperand(result, HeapObject::kMapOffset));
-  }
+  UNREACHABLE();  // NOTIMPLEMENTED
 }
 
 

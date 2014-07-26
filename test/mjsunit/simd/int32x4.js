@@ -78,12 +78,12 @@ testSplatConstructor();
 
 function testTypeof() {
   var u4 = SIMD.int32x4(1, 2, 3, 4);
-  assertEquals(typeof(u4), "int32x4");
+  assertEquals(typeof(u4), "object");
 
   var new_u4 = new SIMD.int32x4(1, 2, 3, 4);
   assertEquals(typeof(new_u4), "object");
-  assertEquals(typeof(new_u4.valueOf()), "int32x4");
-  assertEquals(Object.prototype.toString.call(new_u4), "[object int32x4]");
+  assertEquals(typeof(new_u4.valueOf()), "object");
+  assertEquals(Object.prototype.toString.call(new_u4), "[object Object]");
 }
 
 testTypeof();

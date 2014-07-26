@@ -33,7 +33,7 @@ function testArithmeticOperators() {
   var c;
 
   c = a + b;
-  assertEquals(NaN, c);
+  assertEquals('float32x4(0,0,0,0)float32x4(0,0,0,0)', c);
   c = a++;
   assertEquals(NaN, c);
   c = a - b;
@@ -85,7 +85,7 @@ function testAssignmentOperators() {
   var b = SIMD.float32x4.zero();
   var c = a;
   c += b;
-  assertEquals(NaN, c);
+  assertEquals('float32x4(0,0,0,0)float32x4(0,0,0,0)', c);
   c -= b;
   assertEquals(NaN, c);
   c *= b;
@@ -134,10 +134,10 @@ testStringOperators();
 function testComparisionOperators() {
   var a = SIMD.float32x4.zero();
   var b = SIMD.float32x4.zero();
-  assertEquals(true, a == b);
-  assertEquals(false, a != b);
-  assertEquals(true, a === b);
-  assertEquals(false, a !== b);
+  assertEquals(false, a == b);
+  assertEquals(true, a != b);
+  assertEquals(false, a === b);
+  assertEquals(true, a !== b);
   assertEquals(false, a > b);
   assertEquals(true, a >= b);
   assertEquals(false, a < b);

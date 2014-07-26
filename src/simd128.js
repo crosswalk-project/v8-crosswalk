@@ -42,42 +42,33 @@ FUNCTION(Float64x2, float64x2)
 FUNCTION(Int32x4, int32x4)
 endmacro
 
-function StringfyFloat32x4(f4) {
-  return "float32x4(" + f4.x + "," + f4.y + "," + f4.z + "," + f4.w + ")";
-}
-
-function StringfyFloat64x2(d2) {
-  return "float64x2(" + d2.x + "," + d2.y + ")";
-}
-
-function StringfyInt32x4(i4) {
-  return "int32x4(" + i4.x + "," + i4.y + "," + i4.z + "," + i4.w + ")";
-}
-
 macro DECLARE_DATA_TYPE_COMMON_FUNCTION(NAME, TYPE)
 function ThrowNAMETypeError() {
-  throw MakeTypeError("this is not a TYPE value.");
+  throw MakeTypeError("this is not a TYPE object.");
 }
 
-function NAMEToString() {
-  if (IsNAMEWrapper(this)) {
-    return ObjectToString.apply(this);
-  } else if (IsNAME(this)) {
-    return StringfyNAME(this);
-  } else {
-    throw MakeTypeError('TYPE_to_string');
-  }
-}
-
-function NAMEValueOf() {
-  if (!IsNAME(this) && !IsNAMEWrapper(this)) {
+function CheckNAME(arg) {
+  if (!(arg instanceof $NAME))
     ThrowNAMETypeError();
-  }
-  return %_ValueOf(this);
 }
 endmacro
 
 SIMD128_DATA_TYPES(DECLARE_DATA_TYPE_COMMON_FUNCTION)
+
+function StringfyFloat32x4() {
+  CheckFloat32x4(this);
+  return "float32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
+}
+
+function StringfyFloat64x2() {
+  CheckFloat64x2(this);
+  return "float64x2(" + this.x + "," + this.y + ")";
+}
+
+function StringfyInt32x4() {
+  CheckInt32x4(this);
+  return "int32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
+}
 
 macro SIMD128_DATA_TYPE_FUNCTIONS(FUNCTION)
 FUNCTION(Float32x4, GetX)
@@ -101,9 +92,8 @@ endmacro
 
 macro DECLARE_DATA_TYPE_FUNCTION(TYPE, FUNCTION)
 function TYPEFUNCTION() {
-  var x4 = ToTYPE(this);
-  CheckTYPE(x4);
-  return %TYPEFUNCTION(x4);
+  CheckTYPE(this);
+  return %TYPEFUNCTION(this);
 }
 endmacro
 
@@ -115,24 +105,14 @@ function Float32x4Constructor(x, y, z, w) {
   z = TO_NUMBER_INLINE(z);
   w = TO_NUMBER_INLINE(w);
 
-  var value = %CreateFloat32x4(x, y, z, w);
-  if (%_IsConstructCall()) {
-    %_SetValueOf(this, value);
-  } else {
-    return value;
-  }
+  return %CreateFloat32x4(x, y, z, w);
 }
 
 function Float64x2Constructor(x, y) {
   x = TO_NUMBER_INLINE(x);
   y = TO_NUMBER_INLINE(y);
 
-  var value = %CreateFloat64x2(x, y);
-  if (%_IsConstructCall()) {
-    %_SetValueOf(this, value);
-  } else {
-    return value;
-  }
+  return %CreateFloat64x2(x, y);
 }
 
 function Int32x4Constructor(x, y, z, w) {
@@ -141,12 +121,7 @@ function Int32x4Constructor(x, y, z, w) {
   z = TO_INT32(z);
   w = TO_INT32(w);
 
-  var value = %CreateInt32x4(x, y, z, w);
-  if (%_IsConstructCall()) {
-    %_SetValueOf(this, value);
-  } else {
-    return value;
-  }
+  return %CreateInt32x4(x, y, z, w);
 }
 
 function SetUpFloat32x4() {
@@ -154,7 +129,7 @@ function SetUpFloat32x4() {
 
   %SetCode($Float32x4, Float32x4Constructor);
 
-  %FunctionSetPrototype($Float32x4, new $Float32x4(0.0, 0.0, 0.0, 0.0));
+  %FunctionSetPrototype($Float32x4, new $Object());
   %SetProperty($Float32x4.prototype, "constructor", $Float32x4, DONT_ENUM);
 
   InstallGetter($Float32x4.prototype, "x", Float32x4GetX);
@@ -163,8 +138,7 @@ function SetUpFloat32x4() {
   InstallGetter($Float32x4.prototype, "w", Float32x4GetW);
   InstallGetter($Float32x4.prototype, "signMask", Float32x4GetSignMask);
   InstallFunctions($Float32x4.prototype, DONT_ENUM, $Array(
-    "toString", Float32x4ToString,
-    "valueOf", Float32x4ValueOf
+    "toString", StringfyFloat32x4
   ));
 }
 
@@ -173,15 +147,14 @@ function SetUpFloat64x2() {
 
   %SetCode($Float64x2, Float64x2Constructor);
 
-  %FunctionSetPrototype($Float64x2, new $Float64x2(0.0, 0.0));
+  %FunctionSetPrototype($Float64x2, new $Object());
   %SetProperty($Float64x2.prototype, "constructor", $Float64x2, DONT_ENUM);
 
   InstallGetter($Float64x2.prototype, "x", Float64x2GetX);
   InstallGetter($Float64x2.prototype, "y", Float64x2GetY);
   InstallGetter($Float64x2.prototype, "signMask", Float64x2GetSignMask);
   InstallFunctions($Float64x2.prototype, DONT_ENUM, $Array(
-    "toString", Float64x2ToString,
-    "valueOf", Float64x2ValueOf
+    "toString", StringfyFloat64x2
   ));
 }
 
@@ -190,7 +163,7 @@ function SetUpInt32x4() {
 
   %SetCode($Int32x4, Int32x4Constructor);
 
-  %FunctionSetPrototype($Int32x4, new $Int32x4(0, 0, 0, 0));
+  %FunctionSetPrototype($Int32x4, new $Object());
   %SetProperty($Int32x4.prototype, "constructor", $Int32x4, DONT_ENUM);
 
   InstallGetter($Int32x4.prototype, "x", Int32x4GetX);
@@ -203,8 +176,7 @@ function SetUpInt32x4() {
   InstallGetter($Int32x4.prototype, "flagW", Int32x4GetFlagW);
   InstallGetter($Int32x4.prototype, "signMask", Int32x4GetSignMask);
   InstallFunctions($Int32x4.prototype, DONT_ENUM, $Array(
-    "toString", Int32x4ToString,
-    "valueOf", Int32x4ValueOf
+    "toString", StringfyInt32x4
   ));
 }
 
@@ -213,7 +185,6 @@ SetUpFloat64x2();
 SetUpInt32x4();
 
 //------------------------------------------------------------------------------
-
 macro SIMD128_UNARY_FUNCTIONS(FUNCTION)
 FUNCTION(Float32x4, Abs)
 FUNCTION(Float32x4, BitsToInt32x4)
@@ -296,7 +267,6 @@ endmacro
 
 macro DECLARE_SIMD_UNARY_FUNCTION(TYPE, FUNCTION)
 function TYPEFUNCTION(x4) {
-  x4 = ToTYPE(x4);
   CheckTYPE(x4);
   return %TYPEFUNCTION(x4);
 }
@@ -304,9 +274,7 @@ endmacro
 
 macro DECLARE_SIMD_BINARY_FUNCTION(TYPE, FUNCTION)
 function TYPEFUNCTION(a4, b4) {
-  a4 = ToTYPE(a4);
   CheckTYPE(a4);
-  b4 = ToTYPE(b4);
   CheckTYPE(b4);
   return %TYPEFUNCTION(a4, b4);
 }
@@ -314,7 +282,6 @@ endmacro
 
 macro DECLARE_SIMD_BINARY_SHUFFLE_FUNCTION(TYPE)
 function TYPEShuffle(x4, mask) {
-  x4 = ToTYPE(x4);
   CheckTYPE(x4);
   var value = TO_INT32(mask);
   if ((value < 0) || (value > 0xFF)) {
@@ -326,7 +293,6 @@ endmacro
 
 macro DECLARE_FLOAT32x4_BINARY_FUNCTION_WITH_FLOAT32_PARAMETER(FUNCTION)
 function Float32x4FUNCTION(x4, f) {
-  x4 = ToFloat32x4(x4);
   CheckFloat32x4(x4);
   f = TO_NUMBER_INLINE(f);
   return %Float32x4FUNCTION(x4, f);
@@ -335,7 +301,6 @@ endmacro
 
 macro DECLARE_FLOAT64x2_BINARY_FUNCTION_WITH_FLOAT64_PARAMETER(FUNCTION)
 function Float64x2FUNCTION(x2, f) {
-  x2 = ToFloat64x2(x2);
   CheckFloat64x2(x2);
   f = TO_NUMBER_INLINE(f);
   return %Float64x2FUNCTION(x2, f);
@@ -344,7 +309,6 @@ endmacro
 
 macro DECLARE_INT32x4_BINARY_FUNCTION_WITH_INT32_PARAMETER(FUNCTION)
 function Int32x4FUNCTION(x4, i) {
-  x4 = ToInt32x4(x4);
   CheckInt32x4(x4);
   i = TO_INT32(i);
   return %Int32x4FUNCTION(x4, i);
@@ -353,7 +317,6 @@ endmacro
 
 macro DECLARE_INT32x4_BINARY_FUNCTION_WITH_BOOLEAN_PARAMETER(FUNCTION)
 function Int32x4FUNCTION(x4, b) {
-  x4 = ToInt32x4(x4);
   CheckInt32x4(x4);
   b = ToBoolean(b);
   return %Int32x4FUNCTION(x4, b);
@@ -389,7 +352,7 @@ function Float32x4Or(a4, b4) {
   return Int32x4BitsToFloat32x4(Int32x4Or(a4, b4));
 }
 
-function Float32x4XOr(a4, b4) {
+function Float32x4Xor(a4, b4) {
   a4 = Float32x4BitsToInt32x4(a4);
   b4 = Float32x4BitsToInt32x4(b4);
   return Int32x4BitsToFloat32x4(Int32x4Xor(a4, b4));
@@ -401,19 +364,14 @@ function Float32x4Not(x4) {
 }
 
 function Float32x4Clamp(x4, lowerLimit, upperLimit) {
-  x4 = ToFloat32x4(x4);
   CheckFloat32x4(x4);
-  lowerLimit = ToFloat32x4(lowerLimit);
   CheckFloat32x4(lowerLimit);
-  upperLimit = ToFloat32x4(upperLimit);
   CheckFloat32x4(upperLimit);
   return %Float32x4Clamp(x4, lowerLimit, upperLimit);
 }
 
 function Float32x4ShuffleMix(a4, b4, mask) {
-  a4 = ToFloat32x4(a4);
   CheckFloat32x4(a4);
-  b4 = ToFloat32x4(b4);
   CheckFloat32x4(b4);
   var value = TO_INT32(mask);
   if ((value < 0) || (value > 0xFF)) {
@@ -432,11 +390,8 @@ function Float64x2Zero() {
 }
 
 function Float64x2Clamp(x2, lowerLimit, upperLimit) {
-  x2 = ToFloat64x2(x2);
   CheckFloat64x2(x2);
-  lowerLimit = ToFloat64x2(lowerLimit);
   CheckFloat64x2(lowerLimit);
-  upperLimit = ToFloat64x2(upperLimit);
   CheckFloat64x2(upperLimit);
   return %Float64x2Clamp(x2, lowerLimit, upperLimit);
 }
@@ -459,17 +414,13 @@ function Int32x4Splat(s) {
 }
 
 function Int32x4Select(x4, trueValue, falseValue) {
-  x4 = ToInt32x4(x4);
   CheckInt32x4(x4);
-  trueValue = ToFloat32x4(trueValue);
   CheckFloat32x4(trueValue);
-  falseValue = ToFloat32x4(falseValue);
   CheckFloat32x4(falseValue);
   return %Int32x4Select(x4, trueValue, falseValue);
 }
 
 function Int32x4ShiftLeft(t, s) {
-  t = ToInt32x4(t);
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x << s;
@@ -480,7 +431,6 @@ function Int32x4ShiftLeft(t, s) {
 }
 
 function Int32x4ShiftRight(t, s) {
-  t = ToInt32x4(t);
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x >>> s;
@@ -491,7 +441,6 @@ function Int32x4ShiftRight(t, s) {
 }
 
 function Int32x4ShiftRightArithmetic(t, s) {
-  t = ToInt32x4(t);
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x >> s;
@@ -792,7 +741,7 @@ function SetUpSIMD() {
     "greaterThan", Float32x4GreaterThan,
     "and", Float32x4And,
     "or", Float32x4Or,
-    "xor", Float32x4XOr,
+    "xor", Float32x4Xor,
     "not", Float32x4Not,
     "scale", Float32x4Scale,
     "withX", Float32x4WithX,
@@ -864,17 +813,11 @@ function SetUpSIMD() {
     // Ternary
     "select", Int32x4Select
   ));
-
-  %SetInlineBuiltinFlag(Float32x4And);
-  %SetInlineBuiltinFlag(Float32x4Or);
-  %SetInlineBuiltinFlag(Float32x4XOr);
-  %SetInlineBuiltinFlag(Float32x4Not);
 }
 
 SetUpSIMD();
 
 //------------------------------------------------------------------------------
-
 macro SIMD128_TYPED_ARRAYS(FUNCTION)
 // arrayIds below should be synchronized with Runtime_TypedArrayInitialize.
 FUNCTION(10, Float32x4Array, 16)
@@ -1020,16 +963,16 @@ macro TYPED_ARRAY_CONSTRUCTOR(ARRAY_ID, NAME, ELEMENT_SIZE)
 
     var srcLength = %_TypedArrayGetLength(this);
     if (beginInt < 0) {
-      beginInt = MathMax(0, srcLength + beginInt);
+      beginInt = $MathMax(0, srcLength + beginInt);
     } else {
-      beginInt = MathMin(srcLength, beginInt);
+      beginInt = $MathMin(srcLength, beginInt);
     }
 
     var endInt = IS_UNDEFINED(end) ? srcLength : end;
     if (endInt < 0) {
-      endInt = MathMax(0, srcLength + endInt);
+      endInt = $MathMax(0, srcLength + endInt);
     } else {
-      endInt = MathMin(endInt, srcLength);
+      endInt = $MathMin(endInt, srcLength);
     }
     if (endInt < beginInt) {
       endInt = beginInt;
@@ -1079,7 +1022,6 @@ function NAMEArrayGet(i) {
 }
 
 function NAMEArraySet(i, v) {
-  v = ToNAME(v);
   CheckNAME(v);
   this[i] = v;
 }

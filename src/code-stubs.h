@@ -2301,21 +2301,19 @@ class ToBooleanStub: public HydrogenCodeStub {
     STRING,
     SYMBOL,
     HEAP_NUMBER,
-    FLOAT32x4,
-    FLOAT64x2,
-    INT32x4,
     NUMBER_OF_TYPES
   };
 
   // At most 8 different types can be distinguished, because the Code object
   // only has room for a single byte to hold a set of these types. :-P
-  STATIC_ASSERT(NUMBER_OF_TYPES <= 11);
+  STATIC_ASSERT(NUMBER_OF_TYPES <= 8);
 
-  class Types : public EnumSet<Type, int> {
+  class Types : public EnumSet<Type, byte> {
    public:
-    Types() : EnumSet<Type, int>(0) {}
-    explicit Types(int bits) : EnumSet<Type, int>(bits) {}
+    Types() : EnumSet<Type, byte>(0) {}
+    explicit Types(byte bits) : EnumSet<Type, byte>(bits) {}
 
+    byte ToByte() const { return ToIntegral(); }
     void Print(StringStream* stream) const;
     bool UpdateStatus(Handle<Object> object);
     bool NeedsMap() const;

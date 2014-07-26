@@ -258,6 +258,9 @@ class VerifyNativeContextSeparationVisitor: public ObjectVisitor {
           case JS_ARRAY_TYPE:
           case JS_DATE_TYPE:
           case JS_OBJECT_TYPE:
+          case FLOAT32x4_TYPE:
+          case FLOAT64x2_TYPE:
+          case INT32x4_TYPE:
           case JS_REGEXP_TYPE:
             VisitPointer(HeapObject::RawField(object, JSObject::kMapOffset));
             break;
@@ -292,9 +295,6 @@ class VerifyNativeContextSeparationVisitor: public ObjectVisitor {
           case CODE_TYPE:
           case FIXED_DOUBLE_ARRAY_TYPE:
           case HEAP_NUMBER_TYPE:
-          case FLOAT32x4_TYPE:
-          case FLOAT64x2_TYPE:
-          case INT32x4_TYPE:
           case INTERCEPTOR_INFO_TYPE:
           case ODDBALL_TYPE:
           case SCRIPT_TYPE:

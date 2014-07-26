@@ -4608,11 +4608,7 @@ void MacroAssembler::AllocateSIMDHeapObject(int size,
                                             Register scratch,
                                             Label* gc_required,
                                             Heap::RootListIndex map_index) {
-  Allocate(size, result, scratch, no_reg, gc_required, TAG_OBJECT);
-
-  // Set the map.
-  LoadRoot(kScratchRegister, map_index);
-  movp(FieldOperand(result, HeapObject::kMapOffset), kScratchRegister);
+  UNREACHABLE();  // NOTIMPLEMENTED
 }
 
 

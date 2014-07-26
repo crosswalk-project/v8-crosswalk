@@ -74,12 +74,12 @@ testSplatConstructor();
 
 function testTypeof() {
   var z4 = SIMD.float32x4.zero();
-  assertEquals(typeof(z4), "float32x4");
+  assertEquals(typeof(z4), "object");
 
   var new_z4 = new SIMD.float32x4(0, 0, 0, 0);
   assertEquals(typeof(new_z4), "object");
-  assertEquals(typeof(new_z4.valueOf()), "float32x4");
-  assertEquals(Object.prototype.toString.call(new_z4), "[object float32x4]");
+  assertEquals(typeof(new_z4.valueOf()), "object");
+  assertEquals(Object.prototype.toString.call(new_z4), "[object Object]");
 }
 
 testTypeof();
@@ -519,6 +519,67 @@ testSIMDComparisons();
 %OptimizeFunctionOnNextCall(testSIMDComparisons);
 testSIMDComparisons();
 
+function testSIMDAnd() {
+  var m = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
+  var n = SIMD.float32x4(~1.0, 2.0, 3.0, 4.0);
+  o = SIMD.float32x4.and(m,n); // and
+  assertEquals(0, o.x);
+  assertEquals(2, o.y);
+  assertEquals(3, o.z);
+  assertEquals(4, o.w);
+}
+
+testSIMDAnd();
+testSIMDAnd();
+%OptimizeFunctionOnNextCall(testSIMDAnd);
+testSIMDAnd();
+
+function testSIMDOr() {
+  var m = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
+  var n = SIMD.float32x4(~1.0, 2.0, 3.0, 4.0);
+  var o = SIMD.float32x4.or(m,n); // or
+  assertEquals(-Infinity, o.x);
+  assertEquals(2.0, o.y);
+  assertEquals(3.0, o.z);
+  assertEquals(4.0, o.w);
+}
+
+testSIMDOr();
+testSIMDOr();
+%OptimizeFunctionOnNextCall(testSIMDOr);
+testSIMDOr();
+
+function testSIMDXor() {
+  var m = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
+  var n = SIMD.float32x4(~1.0, 2.0, 3.0, 4.0);
+  var o = SIMD.float32x4.xor(m,n); // xor
+  assertEquals(-Infinity, o.x);
+  assertEquals(0x0, o.y);
+  assertEquals(0x0, o.z);
+  assertEquals(0x0, o.w);
+}
+
+testSIMDXor();
+testSIMDXor();
+%OptimizeFunctionOnNextCall(testSIMDXor);
+testSIMDXor();
+
+function testSIMDNot() {
+  var m = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
+  m = SIMD.float32x4.not(m);
+  m = SIMD.float32x4.not(m);
+  assertEquals(1.0, m.x);
+  assertEquals(2.0, m.y);
+  assertEquals(3.0, m.z);
+  assertEquals(4.0, m.w);
+}
+
+testSIMDNot();
+testSIMDNot();
+%OptimizeFunctionOnNextCall(testSIMDNot);
+testSIMDNot();
+
+
 function testFloat32x4ArrayBasic() {
   var a = new Float32x4Array(1);
   assertEquals(1, a.length);
@@ -838,63 +899,3 @@ function testArrayOfFloat32x4() {
 }
 
 testArrayOfFloat32x4();
-
-function testSIMDAnd() {
-  var m = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
-  var n = SIMD.float32x4(~1.0, 2.0, 3.0, 4.0);
-  o = SIMD.float32x4.and(m,n); // and
-  assertEquals(0, o.x);
-  assertEquals(2, o.y);
-  assertEquals(3, o.z);
-  assertEquals(4, o.w);
-}
-
-testSIMDAnd();
-testSIMDAnd();
-%OptimizeFunctionOnNextCall(testSIMDAnd);
-testSIMDAnd();
-
-function testSIMDOr() {
-  var m = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
-  var n = SIMD.float32x4(~1.0, 2.0, 3.0, 4.0);
-  var o = SIMD.float32x4.or(m,n); // or
-  assertEquals(-Infinity, o.x);
-  assertEquals(2.0, o.y);
-  assertEquals(3.0, o.z);
-  assertEquals(4.0, o.w);
-}
-
-testSIMDOr();
-testSIMDOr();
-%OptimizeFunctionOnNextCall(testSIMDOr);
-testSIMDOr();
-
-function testSIMDXor() {
-  var m = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
-  var n = SIMD.float32x4(~1.0, 2.0, 3.0, 4.0);
-  var o = SIMD.float32x4.xor(m,n); // xor
-  assertEquals(-Infinity, o.x);
-  assertEquals(0x0, o.y);
-  assertEquals(0x0, o.z);
-  assertEquals(0x0, o.w);
-}
-
-testSIMDXor();
-testSIMDXor();
-%OptimizeFunctionOnNextCall(testSIMDXor);
-testSIMDXor();
-
-function testSIMDNot() {
-  var m = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
-  m = SIMD.float32x4.not(m);
-  m = SIMD.float32x4.not(m);
-  assertEquals(1.0, m.x);
-  assertEquals(2.0, m.y);
-  assertEquals(3.0, m.z);
-  assertEquals(4.0, m.w);
-}
-
-testSIMDNot();
-testSIMDNot();
-%OptimizeFunctionOnNextCall(testSIMDNot);
-testSIMDNot();
