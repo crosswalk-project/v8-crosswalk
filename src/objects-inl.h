@@ -161,9 +161,6 @@ bool Object::IsHeapObject() {
 
 
 TYPE_CHECKER(HeapNumber, HEAP_NUMBER_TYPE)
-TYPE_CHECKER(Float32x4, FLOAT32x4_TYPE)
-TYPE_CHECKER(Float64x2, FLOAT64x2_TYPE)
-TYPE_CHECKER(Int32x4, INT32x4_TYPE)
 TYPE_CHECKER(Symbol, SYMBOL_TYPE)
 
 
@@ -803,6 +800,9 @@ TYPE_CHECKER(JSArrayBuffer, JS_ARRAY_BUFFER_TYPE)
 TYPE_CHECKER(JSTypedArray, JS_TYPED_ARRAY_TYPE)
 TYPE_CHECKER(JSDataView, JS_DATA_VIEW_TYPE)
 
+TYPE_CHECKER(Float32x4, FLOAT32x4_TYPE)
+TYPE_CHECKER(Float64x2, FLOAT64x2_TYPE)
+TYPE_CHECKER(Int32x4, INT32x4_TYPE)
 
 bool Object::IsJSArrayBufferView() {
   return IsJSDataView() || IsJSTypedArray();
@@ -1483,29 +1483,34 @@ int HeapNumber::get_sign() {
 }
 
 
+ACCESSORS(Float32x4, value, Object, kValueOffset)
+ACCESSORS(Float64x2, value, Object, kValueOffset)
+ACCESSORS(Int32x4, value, Object, kValueOffset)
+
+
+const char* Float32x4::Name() {
+  return "float32x4";
+}
+
+
 int Float32x4::kRuntimeAllocatorId() {
   return Runtime::kAllocateFloat32x4;
 }
 
 
-int Float32x4::kMapRootIndex() {
-  return Heap::kFloat32x4MapRootIndex;
-}
-
-
-float32x4_value_t Float32x4::value() {
-  return READ_FLOAT32x4_FIELD(this, kValueOffset);
-}
-
-
-void Float32x4::set_value(float32x4_value_t value) {
-  WRITE_FLOAT32x4_FIELD(this, kValueOffset, value);
-}
-
-
 float Float32x4::getAt(int index) {
   ASSERT(index >= 0 && index < kLanes);
-  return READ_FLOAT_FIELD(this, kValueOffset + index * kFloatSize);
+  return get().storage[index];
+}
+
+
+float32x4_value_t Float32x4::get() {
+  return FixedFloat32x4Array::cast(value())->get_scalar(0);
+}
+
+
+void Float32x4::set(float32x4_value_t f32x4) {
+  FixedFloat32x4Array::cast(value())->set(0, f32x4);
 }
 
 
@@ -1519,24 +1524,18 @@ int Float64x2::kRuntimeAllocatorId() {
 }
 
 
-int Float64x2::kMapRootIndex() {
-  return Heap::kFloat64x2MapRootIndex;
-}
-
-
-float64x2_value_t Float64x2::value() {
-  return READ_FLOAT64x2_FIELD(this, kValueOffset);
-}
-
-
-void Float64x2::set_value(float64x2_value_t value) {
-  WRITE_FLOAT64x2_FIELD(this, kValueOffset, value);
-}
-
-
 double Float64x2::getAt(int index) {
   ASSERT(index >= 0 && index < kLanes);
-  return READ_DOUBLE_FIELD(this, kValueOffset + index * kDoubleSize);
+  return get().storage[index];
+}
+
+float64x2_value_t Float64x2::get() {
+  return FixedFloat64x2Array::cast(value())->get_scalar(0);
+}
+
+
+void Float64x2::set(float64x2_value_t f64x2) {
+  FixedFloat64x2Array::cast(value())->set(0, f64x2);
 }
 
 
@@ -1550,24 +1549,19 @@ int Int32x4::kRuntimeAllocatorId() {
 }
 
 
-int Int32x4::kMapRootIndex() {
-  return Heap::kInt32x4MapRootIndex;
-}
-
-
-int32x4_value_t Int32x4::value() {
-  return READ_INT32x4_FIELD(this, kValueOffset);
-}
-
-
-void Int32x4::set_value(int32x4_value_t value) {
-  WRITE_INT32x4_FIELD(this, kValueOffset, value);
-}
-
-
 int32_t Int32x4::getAt(int index) {
   ASSERT(index >= 0 && index < kLanes);
-  return READ_INT32_FIELD(this, kValueOffset + index * kInt32Size);
+  return get().storage[index];;
+}
+
+
+int32x4_value_t Int32x4::get() {
+  return FixedInt32x4Array::cast(value())->get_scalar(0);
+}
+
+
+void Int32x4::set(int32x4_value_t i32x4) {
+  FixedInt32x4Array::cast(value())->set(0, i32x4);
 }
 
 
@@ -1985,6 +1979,12 @@ int JSObject::GetHeaderSize() {
       return JSTypedArray::kSize;
     case JS_DATA_VIEW_TYPE:
       return JSDataView::kSize;
+    case FLOAT32x4_TYPE:
+      return Float32x4::kSize;
+    case FLOAT64x2_TYPE:
+      return Float64x2::kSize;
+    case INT32x4_TYPE:
+      return Int32x4::kSize;
     case JS_SET_TYPE:
       return JSSet::kSize;
     case JS_MAP_TYPE:
@@ -4210,7 +4210,7 @@ Handle<Object> FixedTypedArray<Float32x4ArrayTraits>::SetValue(
   cast_value.storage[3] = static_cast<float>(OS::nan_value());
   if (index < static_cast<uint32_t>(array->length())) {
     if (value->IsFloat32x4()) {
-      cast_value = Handle<Float32x4>::cast(value)->value();
+      cast_value = Handle<Float32x4>::cast(value)->get();
     } else {
       // Clamp undefined to NaN (default). All other types have been
       // converted to a number type further up in the call chain.
@@ -4231,7 +4231,7 @@ Handle<Object> FixedTypedArray<Float64x2ArrayTraits>::SetValue(
   cast_value.storage[1] = OS::nan_value();
   if (index < static_cast<uint32_t>(array->length())) {
     if (value->IsFloat64x2()) {
-      cast_value = Handle<Float64x2>::cast(value)->value();
+      cast_value = Handle<Float64x2>::cast(value)->get();
     } else {
       // Clamp undefined to NaN (default). All other types have been
       // converted to a number type further up in the call chain.
@@ -4254,7 +4254,7 @@ Handle<Object> FixedTypedArray<Int32x4ArrayTraits>::SetValue(
   cast_value.storage[3] = 0;
   if (index < static_cast<uint32_t>(array->length())) {
     if (value->IsInt32x4()) {
-      cast_value = Handle<Int32x4>::cast(value)->value();
+      cast_value = Handle<Int32x4>::cast(value)->get();
     } else {
       // Clamp undefined to zero (default). All other types have been
       // converted to a number type further up in the call chain.

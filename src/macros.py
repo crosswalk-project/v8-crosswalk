@@ -103,9 +103,6 @@ macro IS_NULL(arg)              = (arg === null);
 macro IS_NULL_OR_UNDEFINED(arg) = (arg == null);
 macro IS_UNDEFINED(arg)         = (arg === (void 0));
 macro IS_NUMBER(arg)            = (typeof(arg) === 'number');
-macro IsFloat32x4(arg)          = (typeof(arg) === 'float32x4');
-macro IsFloat64x2(arg)          = (typeof(arg) === 'float64x2');
-macro IsInt32x4(arg)            = (typeof(arg) === 'int32x4');
 macro IS_STRING(arg)            = (typeof(arg) === 'string');
 macro IS_BOOLEAN(arg)           = (typeof(arg) === 'boolean');
 macro IS_SYMBOL(arg)            = (typeof(arg) === 'symbol');
@@ -118,10 +115,10 @@ macro IS_MAP(arg)               = (%_ClassOf(arg) === 'Map');
 macro IS_WEAKMAP(arg)           = (%_ClassOf(arg) === 'WeakMap');
 macro IS_WEAKSET(arg)           = (%_ClassOf(arg) === 'WeakSet');
 macro IS_DATE(arg)              = (%_ClassOf(arg) === 'Date');
+macro IsFloat32x4(arg)          = (%_ClassOf(arg) === 'float32x4');
+macro IsFloat64x2(arg)          = (%_ClassOf(arg) === 'float64x2');
+macro IsInt32x4(arg)            = (%_ClassOf(arg) === 'int32x4');
 macro IS_NUMBER_WRAPPER(arg)    = (%_ClassOf(arg) === 'Number');
-macro IsFloat32x4Wrapper(arg)   = (%_ClassOf(arg) === 'float32x4');
-macro IsFloat64x2Wrapper(arg)   = (%_ClassOf(arg) === 'float64x2');
-macro IsInt32x4Wrapper(arg)     = (%_ClassOf(arg) === 'int32x4');
 macro IS_STRING_WRAPPER(arg)    = (%_ClassOf(arg) === 'String');
 macro IS_SYMBOL_WRAPPER(arg)    = (%_ClassOf(arg) === 'Symbol');
 macro IS_BOOLEAN_WRAPPER(arg)   = (%_ClassOf(arg) === 'Boolean');
@@ -172,9 +169,6 @@ macro TO_STRING_INLINE(arg) = (IS_STRING(%IS_VAR(arg)) ? arg : NonStringToString
 macro TO_NUMBER_INLINE(arg) = (IS_NUMBER(%IS_VAR(arg)) ? arg : NonNumberToNumber(arg));
 macro TO_OBJECT_INLINE(arg) = (IS_SPEC_OBJECT(%IS_VAR(arg)) ? arg : ToObject(arg));
 macro JSON_NUMBER_TO_STRING(arg) = ((%_IsSmi(%IS_VAR(arg)) || arg - arg == 0) ? %_NumberToString(arg) : "null");
-macro ToFloat32x4(arg) = (IsFloat32x4Wrapper(%IS_VAR(arg))) ? %_ValueOf(arg) : arg;
-macro ToFloat64x2(arg) = (IsFloat64x2Wrapper(%IS_VAR(arg))) ? %_ValueOf(arg) : arg;
-macro ToInt32x4(arg) = (IsInt32x4Wrapper(%IS_VAR(arg))) ? %_ValueOf(arg) : arg;
 
 # Private names.
 # GET_PRIVATE should only be used if the property is known to exists on obj
@@ -294,8 +288,3 @@ const PROPERTY_ATTRIBUTES_PRIVATE_SYMBOL = 32;
 const ITERATOR_KIND_KEYS = 1;
 const ITERATOR_KIND_VALUES = 2;
 const ITERATOR_KIND_ENTRIES = 3;
-
-# For simd128.js
-macro CheckFloat32x4(arg) = if (typeof(arg) !== 'float32x4') ThrowFloat32x4TypeError();
-macro CheckFloat64x2(arg) = if (typeof(arg) !== 'float64x2') ThrowFloat64x2TypeError();
-macro CheckInt32x4(arg) = if (typeof(arg) !== 'int32x4') ThrowInt32x4TypeError();
