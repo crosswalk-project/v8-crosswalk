@@ -1619,16 +1619,19 @@ class LLoadRoot V8_FINAL : public LTemplateInstruction<1, 0, 0> {
 };
 
 
-class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 1> {
+class LLoadKeyed V8_FINAL : public LTemplateInstruction<1, 2, 2> {
  public:
-  LLoadKeyed(LOperand* elements, LOperand* key, LOperand* temp) {
+  LLoadKeyed(LOperand* elements, LOperand* key,
+             LOperand* temp0, LOperand* temp1) {
     inputs_[0] = elements;
     inputs_[1] = key;
-    temps_[0] = temp;
+    temps_[0] = temp0;
+    temps_[1] = temp1;
   }
   LOperand* elements() { return inputs_[0]; }
   LOperand* key() { return inputs_[1]; }
-  LOperand* temp() { return temps_[0]; }
+  LOperand* temp0() { return temps_[0]; }
+  LOperand* temp1() { return temps_[1]; }
   ElementsKind elements_kind() const {
     return hydrogen()->elements_kind();
   }
@@ -2207,13 +2210,15 @@ class LStoreNamedGeneric V8_FINAL : public LTemplateInstruction<0, 3, 0> {
 };
 
 
-class LStoreKeyed V8_FINAL : public LTemplateInstruction<0, 3, 1> {
+class LStoreKeyed V8_FINAL : public LTemplateInstruction<0, 3, 2> {
  public:
-  LStoreKeyed(LOperand* obj, LOperand* key, LOperand* val, LOperand* temp) {
+  LStoreKeyed(LOperand* obj, LOperand* key, LOperand* val,
+              LOperand* temp0, LOperand* temp1) {
     inputs_[0] = obj;
     inputs_[1] = key;
     inputs_[2] = val;
-    temps_[0] = temp;
+    temps_[0] = temp0;
+    temps_[1] = temp1;
   }
 
   bool is_external() const { return hydrogen()->is_external(); }
@@ -2226,7 +2231,8 @@ class LStoreKeyed V8_FINAL : public LTemplateInstruction<0, 3, 1> {
   LOperand* elements() { return inputs_[0]; }
   LOperand* key() { return inputs_[1]; }
   LOperand* value() { return inputs_[2]; }
-  LOperand* temp() { return temps_[0]; }
+  LOperand* temp0() { return temps_[0]; }
+  LOperand* temp1() { return temps_[1]; }
   ElementsKind elements_kind() const {
     return hydrogen()->elements_kind();
   }

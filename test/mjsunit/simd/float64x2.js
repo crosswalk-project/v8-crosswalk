@@ -66,12 +66,12 @@ testSplatConstructor();
 
 function testTypeof() {
   var z4 = SIMD.float64x2.zero();
-  assertEquals(typeof(z4), "float64x2");
+  assertEquals(typeof(z4), "object");
 
   var new_z4 = new SIMD.float64x2(0, 0);
   assertEquals(typeof(new_z4), "object");
-  assertEquals(typeof(new_z4.valueOf()), "float64x2");
-  assertEquals(Object.prototype.toString.call(new_z4), "[object float64x2]");
+  assertEquals(typeof(new_z4.valueOf()), "object");
+  assertEquals(Object.prototype.toString.call(new_z4), "[object Object]");
 }
 
 testTypeof();
