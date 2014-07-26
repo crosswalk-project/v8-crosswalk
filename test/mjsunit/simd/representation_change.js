@@ -43,7 +43,7 @@ function tryTestSIMDAbs(i) {
     r = testSIMDAbs(i);
   } catch (o) {
     assertEquals(o instanceof TypeError, true);
-    assertEquals(o.message, "<unknown message this is not a float32x4 value.>");
+    assertEquals(o.message, "<unknown message this is not a float32x4 object.>");
   }
 }
 
