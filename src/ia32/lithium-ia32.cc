@@ -982,8 +982,7 @@ LInstruction* LChunkBuilder::DoBranch(HBranch* instr) {
   if (expected.IsEmpty()) expected = ToBooleanStub::Types::Generic();
 
   bool easy_case = !r.IsTagged() || type.IsBoolean() || type.IsSmi() ||
-      type.IsJSArray() || type.IsHeapNumber() ||
-      type.IsString();
+      type.IsJSArray() || type.IsHeapNumber() || type.IsString();
   LOperand* temp = !easy_case && expected.NeedsMap() ? TempRegister() : NULL;
   LInstruction* branch = new(zone()) LBranch(UseRegister(value), temp);
   if (!easy_case &&
@@ -2178,7 +2177,7 @@ LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
   bool load_128bits_without_sse2 = IsSIMD128ElementsKind(elements_kind);
   if (!instr->is_typed_elements()) {
     LOperand* obj = UseRegisterAtStart(instr->elements());
-    result = DefineAsRegister(new(zone()) LLoadKeyed(obj, key, NULL));
+    result = DefineAsRegister(new(zone()) LLoadKeyed(obj, key, NULL, NULL));
   } else {
     ASSERT(
         (instr->representation().IsInteger32() &&
@@ -2189,6 +2188,7 @@ LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
          (IsSIMD128ElementsKind(instr->elements_kind()))));
     LOperand* backing_store = UseRegister(instr->elements());
     result = DefineAsRegister(new(zone()) LLoadKeyed(backing_store, key,
+        load_128bits_without_sse2 ? TempRegister() : NULL,
         load_128bits_without_sse2 ? TempRegister() : NULL));
     if (load_128bits_without_sse2) {
       info()->MarkAsDeferredCalling();
@@ -2251,7 +2251,7 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
       LOperand* val = NULL;
       val = UseRegisterAtStart(instr->value());
       LOperand* key = UseRegisterOrConstantAtStart(instr->key());
-      return new(zone()) LStoreKeyed(object, key, val, NULL);
+      return new(zone()) LStoreKeyed(object, key, val, NULL, NULL);
     } else {
       ASSERT(instr->value()->representation().IsSmiOrTagged());
       bool needs_write_barrier = instr->NeedsWriteBarrier();
@@ -2266,7 +2266,7 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
         val = UseRegisterOrConstantAtStart(instr->value());
         key = UseRegisterOrConstantAtStart(instr->key());
       }
-      return new(zone()) LStoreKeyed(obj, key, val, NULL);
+      return new(zone()) LStoreKeyed(obj, key, val, NULL, NULL);
     }
   }
 
@@ -2293,6 +2293,7 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
   bool store_128bits_without_sse2 = IsSIMD128ElementsKind(elements_kind);
   LStoreKeyed* result =
       new(zone()) LStoreKeyed(backing_store, key, val,
+          store_128bits_without_sse2 ? TempRegister() : NULL,
           store_128bits_without_sse2 ? TempRegister() : NULL);
   return store_128bits_without_sse2 ? AssignEnvironment(result) : result;
 }

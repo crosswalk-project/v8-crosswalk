@@ -5303,8 +5303,6 @@ MaybeHandle<Object> Runtime::SetObjectProperty(Isolate* isolate,
     JSObject::ValidateElements(js_object);
     if (js_object->HasExternalArrayElements() ||
         js_object->HasFixedTypedArrayElements()) {
-      // TODO(ningxin): Throw an error if setting a Float32x4Array element
-      // while the value is not Float32x4Object.
       if (!value->IsNumber() &&  !value->IsFloat32x4() &&
           !value->IsFloat64x2() && !value->IsInt32x4() &&
           !value->IsUndefined()) {
@@ -5324,8 +5322,6 @@ MaybeHandle<Object> Runtime::SetObjectProperty(Isolate* isolate,
     Handle<Name> name = Handle<Name>::cast(key);
     if (name->AsArrayIndex(&index)) {
       if (js_object->HasExternalArrayElements()) {
-        // TODO(ningxin): Throw an error if setting a Float32x4Array element
-        // while the value is not Float32x4Object.
         if (!value->IsNumber() &&  !value->IsFloat32x4() &&
             !value->IsFloat64x2() && !value->IsInt32x4() &&
             !value->IsUndefined()) {
@@ -6176,9 +6172,6 @@ RUNTIME_FUNCTION(Runtime_Typeof) {
   ASSERT(args.length() == 1);
   CONVERT_ARG_CHECKED(Object, obj, 0);
   if (obj->IsNumber()) return isolate->heap()->number_string();
-  if (obj->IsFloat32x4()) return isolate->heap()->float32x4_string();
-  if (obj->IsFloat64x2()) return isolate->heap()->float64x2_string();
-  if (obj->IsInt32x4()) return isolate->heap()->int32x4_string();
   HeapObject* heap_obj = HeapObject::cast(obj);
 
   // typeof an undetectable object is 'undefined'
@@ -15367,7 +15360,7 @@ RUNTIME_FUNCTION(Runtime_Float64x2GetSignMask) {
   float64_uint64 y(self->y());
   uint64_t mx = x.u >> 63;
   uint64_t my = y.u >> 63;
-  uint32_t value = static_cast<uint32_t>(mx | (my << 1));
+  uint32_t value = uint32_t (mx | (my << 1));
   return *isolate->factory()->NewNumberFromUint(value);
 }
 
