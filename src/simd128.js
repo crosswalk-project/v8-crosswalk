@@ -55,17 +55,17 @@ endmacro
 
 SIMD128_DATA_TYPES(DECLARE_DATA_TYPE_COMMON_FUNCTION)
 
-function StringfyFloat32x4() {
+function StringfyFloat32x4_() {
   CheckFloat32x4(this);
   return "float32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
 }
 
-function StringfyFloat64x2() {
+function StringfyFloat64x2_() {
   CheckFloat64x2(this);
   return "float64x2(" + this.x + "," + this.y + ")";
 }
 
-function StringfyInt32x4() {
+function StringfyInt32x4_() {
   CheckInt32x4(this);
   return "int32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
 }
@@ -91,7 +91,7 @@ FUNCTION(Int32x4, GetSignMask)
 endmacro
 
 macro DECLARE_DATA_TYPE_FUNCTION(TYPE, FUNCTION)
-function TYPEFUNCTION() {
+function TYPEFUNCTION_() {
   CheckTYPE(this);
   return %TYPEFUNCTION(this);
 }
@@ -132,13 +132,13 @@ function SetUpFloat32x4() {
   %FunctionSetPrototype($Float32x4, new $Object());
   %SetProperty($Float32x4.prototype, "constructor", $Float32x4, DONT_ENUM);
 
-  InstallGetter($Float32x4.prototype, "x", Float32x4GetX);
-  InstallGetter($Float32x4.prototype, "y", Float32x4GetY);
-  InstallGetter($Float32x4.prototype, "z", Float32x4GetZ);
-  InstallGetter($Float32x4.prototype, "w", Float32x4GetW);
-  InstallGetter($Float32x4.prototype, "signMask", Float32x4GetSignMask);
+  InstallGetter($Float32x4.prototype, "x", Float32x4GetX_);
+  InstallGetter($Float32x4.prototype, "y", Float32x4GetY_);
+  InstallGetter($Float32x4.prototype, "z", Float32x4GetZ_);
+  InstallGetter($Float32x4.prototype, "w", Float32x4GetW_);
+  InstallGetter($Float32x4.prototype, "signMask", Float32x4GetSignMask_);
   InstallFunctions($Float32x4.prototype, DONT_ENUM, $Array(
-    "toString", StringfyFloat32x4
+    "toString", StringfyFloat32x4_
   ));
 }
 
@@ -150,11 +150,11 @@ function SetUpFloat64x2() {
   %FunctionSetPrototype($Float64x2, new $Object());
   %SetProperty($Float64x2.prototype, "constructor", $Float64x2, DONT_ENUM);
 
-  InstallGetter($Float64x2.prototype, "x", Float64x2GetX);
-  InstallGetter($Float64x2.prototype, "y", Float64x2GetY);
-  InstallGetter($Float64x2.prototype, "signMask", Float64x2GetSignMask);
+  InstallGetter($Float64x2.prototype, "x", Float64x2GetX_);
+  InstallGetter($Float64x2.prototype, "y", Float64x2GetY_);
+  InstallGetter($Float64x2.prototype, "signMask", Float64x2GetSignMask_);
   InstallFunctions($Float64x2.prototype, DONT_ENUM, $Array(
-    "toString", StringfyFloat64x2
+    "toString", StringfyFloat64x2_
   ));
 }
 
@@ -166,17 +166,17 @@ function SetUpInt32x4() {
   %FunctionSetPrototype($Int32x4, new $Object());
   %SetProperty($Int32x4.prototype, "constructor", $Int32x4, DONT_ENUM);
 
-  InstallGetter($Int32x4.prototype, "x", Int32x4GetX);
-  InstallGetter($Int32x4.prototype, "y", Int32x4GetY);
-  InstallGetter($Int32x4.prototype, "z", Int32x4GetZ);
-  InstallGetter($Int32x4.prototype, "w", Int32x4GetW);
-  InstallGetter($Int32x4.prototype, "flagX", Int32x4GetFlagX);
-  InstallGetter($Int32x4.prototype, "flagY", Int32x4GetFlagY);
-  InstallGetter($Int32x4.prototype, "flagZ", Int32x4GetFlagZ);
-  InstallGetter($Int32x4.prototype, "flagW", Int32x4GetFlagW);
-  InstallGetter($Int32x4.prototype, "signMask", Int32x4GetSignMask);
+  InstallGetter($Int32x4.prototype, "x", Int32x4GetX_);
+  InstallGetter($Int32x4.prototype, "y", Int32x4GetY_);
+  InstallGetter($Int32x4.prototype, "z", Int32x4GetZ_);
+  InstallGetter($Int32x4.prototype, "w", Int32x4GetW_);
+  InstallGetter($Int32x4.prototype, "flagX", Int32x4GetFlagX_);
+  InstallGetter($Int32x4.prototype, "flagY", Int32x4GetFlagY_);
+  InstallGetter($Int32x4.prototype, "flagZ", Int32x4GetFlagZ_);
+  InstallGetter($Int32x4.prototype, "flagW", Int32x4GetFlagW_);
+  InstallGetter($Int32x4.prototype, "signMask", Int32x4GetSignMask_);
   InstallFunctions($Int32x4.prototype, DONT_ENUM, $Array(
-    "toString", StringfyInt32x4
+    "toString", StringfyInt32x4_
   ));
 }
 
@@ -266,14 +266,14 @@ FUNCTION(WithFlagW)
 endmacro
 
 macro DECLARE_SIMD_UNARY_FUNCTION(TYPE, FUNCTION)
-function TYPEFUNCTION(x4) {
+function TYPEFUNCTION_(x4) {
   CheckTYPE(x4);
   return %TYPEFUNCTION(x4);
 }
 endmacro
 
 macro DECLARE_SIMD_BINARY_FUNCTION(TYPE, FUNCTION)
-function TYPEFUNCTION(a4, b4) {
+function TYPEFUNCTION_(a4, b4) {
   CheckTYPE(a4);
   CheckTYPE(b4);
   return %TYPEFUNCTION(a4, b4);
@@ -281,7 +281,7 @@ function TYPEFUNCTION(a4, b4) {
 endmacro
 
 macro DECLARE_SIMD_BINARY_SHUFFLE_FUNCTION(TYPE)
-function TYPEShuffle(x4, mask) {
+function TYPEShuffle_(x4, mask) {
   CheckTYPE(x4);
   var value = TO_INT32(mask);
   if ((value < 0) || (value > 0xFF)) {
@@ -292,7 +292,7 @@ function TYPEShuffle(x4, mask) {
 endmacro
 
 macro DECLARE_FLOAT32x4_BINARY_FUNCTION_WITH_FLOAT32_PARAMETER(FUNCTION)
-function Float32x4FUNCTION(x4, f) {
+function Float32x4FUNCTION_(x4, f) {
   CheckFloat32x4(x4);
   f = TO_NUMBER_INLINE(f);
   return %Float32x4FUNCTION(x4, f);
@@ -300,7 +300,7 @@ function Float32x4FUNCTION(x4, f) {
 endmacro
 
 macro DECLARE_FLOAT64x2_BINARY_FUNCTION_WITH_FLOAT64_PARAMETER(FUNCTION)
-function Float64x2FUNCTION(x2, f) {
+function Float64x2FUNCTION_(x2, f) {
   CheckFloat64x2(x2);
   f = TO_NUMBER_INLINE(f);
   return %Float64x2FUNCTION(x2, f);
@@ -308,7 +308,7 @@ function Float64x2FUNCTION(x2, f) {
 endmacro
 
 macro DECLARE_INT32x4_BINARY_FUNCTION_WITH_INT32_PARAMETER(FUNCTION)
-function Int32x4FUNCTION(x4, i) {
+function Int32x4FUNCTION_(x4, i) {
   CheckInt32x4(x4);
   i = TO_INT32(i);
   return %Int32x4FUNCTION(x4, i);
@@ -316,7 +316,7 @@ function Int32x4FUNCTION(x4, i) {
 endmacro
 
 macro DECLARE_INT32x4_BINARY_FUNCTION_WITH_BOOLEAN_PARAMETER(FUNCTION)
-function Int32x4FUNCTION(x4, b) {
+function Int32x4FUNCTION_(x4, b) {
   CheckInt32x4(x4);
   b = ToBoolean(b);
   return %Int32x4FUNCTION(x4, b);
@@ -331,46 +331,46 @@ FLOAT64x2_BINARY_FUNCTIONS_WITH_FLOAT64_PARAMETER(DECLARE_FLOAT64x2_BINARY_FUNCT
 INT32x4_BINARY_FUNCTIONS_WITH_INT32_PARAMETER(DECLARE_INT32x4_BINARY_FUNCTION_WITH_INT32_PARAMETER)
 INT32x4_BINARY_FUNCTIONS_WITH_BOOLEAN_PARAMETER(DECLARE_INT32x4_BINARY_FUNCTION_WITH_BOOLEAN_PARAMETER)
 
-function Float32x4Splat(f) {
+function Float32x4Splat_(f) {
   f = TO_NUMBER_INLINE(f);
   return %CreateFloat32x4(f, f, f, f);
 }
 
-function Float32x4Zero() {
+function Float32x4Zero_() {
   return %CreateFloat32x4(0.0, 0.0, 0.0, 0.0);
 }
 
-function Float32x4And(a4, b4) {
-  a4 = Float32x4BitsToInt32x4(a4);
-  b4 = Float32x4BitsToInt32x4(b4);
-  return Int32x4BitsToFloat32x4(Int32x4And(a4, b4));
+function Float32x4And_(a4, b4) {
+  a4 = Float32x4BitsToInt32x4_(a4);
+  b4 = Float32x4BitsToInt32x4_(b4);
+  return Int32x4BitsToFloat32x4_(Int32x4And_(a4, b4));
 }
 
-function Float32x4Or(a4, b4) {
-  a4 = Float32x4BitsToInt32x4(a4);
-  b4 = Float32x4BitsToInt32x4(b4);
-  return Int32x4BitsToFloat32x4(Int32x4Or(a4, b4));
+function Float32x4Or_(a4, b4) {
+  a4 = Float32x4BitsToInt32x4_(a4);
+  b4 = Float32x4BitsToInt32x4_(b4);
+  return Int32x4BitsToFloat32x4_(Int32x4Or_(a4, b4));
 }
 
-function Float32x4Xor(a4, b4) {
-  a4 = Float32x4BitsToInt32x4(a4);
-  b4 = Float32x4BitsToInt32x4(b4);
-  return Int32x4BitsToFloat32x4(Int32x4Xor(a4, b4));
+function Float32x4Xor_(a4, b4) {
+  a4 = Float32x4BitsToInt32x4_(a4);
+  b4 = Float32x4BitsToInt32x4_(b4);
+  return Int32x4BitsToFloat32x4_(Int32x4Xor_(a4, b4));
 }
 
-function Float32x4Not(x4) {
-  x4 = Float32x4BitsToInt32x4(x4);
-  return Int32x4BitsToFloat32x4(Int32x4Not(x4));
+function Float32x4Not_(x4) {
+  x4 = Float32x4BitsToInt32x4_(x4);
+  return Int32x4BitsToFloat32x4_(Int32x4Not_(x4));
 }
 
-function Float32x4Clamp(x4, lowerLimit, upperLimit) {
+function Float32x4Clamp_(x4, lowerLimit, upperLimit) {
   CheckFloat32x4(x4);
   CheckFloat32x4(lowerLimit);
   CheckFloat32x4(upperLimit);
   return %Float32x4Clamp(x4, lowerLimit, upperLimit);
 }
 
-function Float32x4ShuffleMix(a4, b4, mask) {
+function Float32x4ShuffleMix_(a4, b4, mask) {
   CheckFloat32x4(a4);
   CheckFloat32x4(b4);
   var value = TO_INT32(mask);
@@ -380,27 +380,27 @@ function Float32x4ShuffleMix(a4, b4, mask) {
   return %Float32x4ShuffleMix(a4, b4, mask);
 }
 
-function Float64x2Splat(f) {
+function Float64x2Splat_(f) {
   f = TO_NUMBER_INLINE(f);
   return %CreateFloat64x2(f, f);
 }
 
-function Float64x2Zero() {
+function Float64x2Zero_() {
   return %CreateFloat64x2(0.0, 0.0);
 }
 
-function Float64x2Clamp(x2, lowerLimit, upperLimit) {
+function Float64x2Clamp_(x2, lowerLimit, upperLimit) {
   CheckFloat64x2(x2);
   CheckFloat64x2(lowerLimit);
   CheckFloat64x2(upperLimit);
   return %Float64x2Clamp(x2, lowerLimit, upperLimit);
 }
 
-function Int32x4Zero() {
+function Int32x4Zero_() {
   return %CreateInt32x4(0, 0, 0, 0);
 }
 
-function Int32x4Bool(x, y, z, w) {
+function Int32x4Bool_(x, y, z, w) {
   x = x ? -1 : 0;
   y = y ? -1 : 0;
   z = z ? -1 : 0;
@@ -408,19 +408,19 @@ function Int32x4Bool(x, y, z, w) {
   return %CreateInt32x4(x, y, z, w);
 }
 
-function Int32x4Splat(s) {
+function Int32x4Splat_(s) {
   s = TO_INT32(s);
   return %CreateInt32x4(s, s, s, s);
 }
 
-function Int32x4Select(x4, trueValue, falseValue) {
+function Int32x4Select_(x4, trueValue, falseValue) {
   CheckInt32x4(x4);
   CheckFloat32x4(trueValue);
   CheckFloat32x4(falseValue);
   return %Int32x4Select(x4, trueValue, falseValue);
 }
 
-function Int32x4ShiftLeft(t, s) {
+function Int32x4ShiftLeft_(t, s) {
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x << s;
@@ -430,7 +430,7 @@ function Int32x4ShiftLeft(t, s) {
   return %CreateInt32x4(x, y, z, w);
 }
 
-function Int32x4ShiftRight(t, s) {
+function Int32x4ShiftRight_(t, s) {
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x >>> s;
@@ -440,7 +440,7 @@ function Int32x4ShiftRight(t, s) {
   return %CreateInt32x4(x, y, z, w);
 }
 
-function Int32x4ShiftRightArithmetic(t, s) {
+function Int32x4ShiftRightArithmetic_(t, s) {
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x >> s;
@@ -716,102 +716,102 @@ function SetUpSIMD() {
   // Set up non-enumerable properties of the SIMD float32x4 object.
   InstallFunctions($SIMD.float32x4, DONT_ENUM, $Array(
     // Float32x4 operations
-    "splat", Float32x4Splat,
-    "zero", Float32x4Zero,
+    "splat", Float32x4Splat_,
+    "zero", Float32x4Zero_,
     // Unary
-    "abs", Float32x4Abs,
-    "bitsToInt32x4", Float32x4BitsToInt32x4,
-    "neg", Float32x4Neg,
-    "reciprocal", Float32x4Reciprocal,
-    "reciprocalSqrt", Float32x4ReciprocalSqrt,
-    "sqrt", Float32x4Sqrt,
-    "toInt32x4", Float32x4ToInt32x4,
+    "abs", Float32x4Abs_,
+    "bitsToInt32x4", Float32x4BitsToInt32x4_,
+    "neg", Float32x4Neg_,
+    "reciprocal", Float32x4Reciprocal_,
+    "reciprocalSqrt", Float32x4ReciprocalSqrt_,
+    "sqrt", Float32x4Sqrt_,
+    "toInt32x4", Float32x4ToInt32x4_,
     // Binary
-    "add", Float32x4Add,
-    "div", Float32x4Div,
-    "max", Float32x4Max,
-    "min", Float32x4Min,
-    "mul", Float32x4Mul,
-    "sub", Float32x4Sub,
-    "lessThan", Float32x4LessThan,
-    "lessThanOrEqual", Float32x4LessThanOrEqual,
-    "equal", Float32x4Equal,
-    "notEqual", Float32x4NotEqual,
-    "greaterThanOrEqual", Float32x4GreaterThanOrEqual,
-    "greaterThan", Float32x4GreaterThan,
-    "and", Float32x4And,
-    "or", Float32x4Or,
-    "xor", Float32x4Xor,
-    "not", Float32x4Not,
-    "scale", Float32x4Scale,
-    "withX", Float32x4WithX,
-    "withY", Float32x4WithY,
-    "withZ", Float32x4WithZ,
-    "withW", Float32x4WithW,
-    "shuffle", Float32x4Shuffle,
+    "add", Float32x4Add_,
+    "div", Float32x4Div_,
+    "max", Float32x4Max_,
+    "min", Float32x4Min_,
+    "mul", Float32x4Mul_,
+    "sub", Float32x4Sub_,
+    "lessThan", Float32x4LessThan_,
+    "lessThanOrEqual", Float32x4LessThanOrEqual_,
+    "equal", Float32x4Equal_,
+    "notEqual", Float32x4NotEqual_,
+    "greaterThanOrEqual", Float32x4GreaterThanOrEqual_,
+    "greaterThan", Float32x4GreaterThan_,
+    "and", Float32x4And_,
+    "or", Float32x4Or_,
+    "xor", Float32x4Xor_,
+    "not", Float32x4Not_,
+    "scale", Float32x4Scale_,
+    "withX", Float32x4WithX_,
+    "withY", Float32x4WithY_,
+    "withZ", Float32x4WithZ_,
+    "withW", Float32x4WithW_,
+    "shuffle", Float32x4Shuffle_,
     // Ternary
-    "clamp", Float32x4Clamp,
-    "shuffleMix", Float32x4ShuffleMix
+    "clamp", Float32x4Clamp_,
+    "shuffleMix", Float32x4ShuffleMix_
   ));
 
   // Set up non-enumerable properties of the SIMD float64x2 object.
   InstallFunctions($SIMD.float64x2, DONT_ENUM, $Array(
     // Float64x2 operations
-    "splat", Float64x2Splat,
-    "zero", Float64x2Zero,
+    "splat", Float64x2Splat_,
+    "zero", Float64x2Zero_,
     // Unary
-    "abs", Float64x2Abs,
-    "neg", Float64x2Neg,
-    "sqrt", Float64x2Sqrt,
+    "abs", Float64x2Abs_,
+    "neg", Float64x2Neg_,
+    "sqrt", Float64x2Sqrt_,
     // Binary
-    "add", Float64x2Add,
-    "div", Float64x2Div,
-    "max", Float64x2Max,
-    "min", Float64x2Min,
-    "mul", Float64x2Mul,
-    "sub", Float64x2Sub,
-    "scale", Float64x2Scale,
-    "withX", Float64x2WithX,
-    "withY", Float64x2WithY,
+    "add", Float64x2Add_,
+    "div", Float64x2Div_,
+    "max", Float64x2Max_,
+    "min", Float64x2Min_,
+    "mul", Float64x2Mul_,
+    "sub", Float64x2Sub_,
+    "scale", Float64x2Scale_,
+    "withX", Float64x2WithX_,
+    "withY", Float64x2WithY_,
     // Ternary
-    "clamp", Float64x2Clamp
+    "clamp", Float64x2Clamp_
   ));
 
   // Set up non-enumerable properties of the SIMD int32x4 object.
   InstallFunctions($SIMD.int32x4, DONT_ENUM, $Array(
     // Int32x4 operations
-    "zero", Int32x4Zero,
-    "splat", Int32x4Splat,
-    "bool", Int32x4Bool,
+    "zero", Int32x4Zero_,
+    "splat", Int32x4Splat_,
+    "bool", Int32x4Bool_,
     // Unary
-    "bitsToFloat32x4", Int32x4BitsToFloat32x4,
-    "neg", Int32x4Neg,
-    "not", Int32x4Not,
-    "toFloat32x4", Int32x4ToFloat32x4,
+    "bitsToFloat32x4", Int32x4BitsToFloat32x4_,
+    "neg", Int32x4Neg_,
+    "not", Int32x4Not_,
+    "toFloat32x4", Int32x4ToFloat32x4_,
     // Binary
-    "add", Int32x4Add,
-    "and", Int32x4And,
-    "mul", Int32x4Mul,
-    "or", Int32x4Or,
-    "sub", Int32x4Sub,
-    "xor", Int32x4Xor,
-    "shuffle", Int32x4Shuffle,
-    "withX", Int32x4WithX,
-    "withY", Int32x4WithY,
-    "withZ", Int32x4WithZ,
-    "withW", Int32x4WithW,
-    "withFlagX", Int32x4WithFlagX,
-    "withFlagY", Int32x4WithFlagY,
-    "withFlagZ", Int32x4WithFlagZ,
-    "withFlagW", Int32x4WithFlagW,
-    "greaterThan", Int32x4GreaterThan,
-    "equal", Int32x4Equal,
-    "lessThan", Int32x4LessThan,
-    "shiftLeft", Int32x4ShiftLeft,
-    "shiftRight", Int32x4ShiftRight,
-    "shiftRightArithmetic", Int32x4ShiftRightArithmetic,
+    "add", Int32x4Add_,
+    "and", Int32x4And_,
+    "mul", Int32x4Mul_,
+    "or", Int32x4Or_,
+    "sub", Int32x4Sub_,
+    "xor", Int32x4Xor_,
+    "shuffle", Int32x4Shuffle_,
+    "withX", Int32x4WithX_,
+    "withY", Int32x4WithY_,
+    "withZ", Int32x4WithZ_,
+    "withW", Int32x4WithW_,
+    "withFlagX", Int32x4WithFlagX_,
+    "withFlagY", Int32x4WithFlagY_,
+    "withFlagZ", Int32x4WithFlagZ_,
+    "withFlagW", Int32x4WithFlagW_,
+    "greaterThan", Int32x4GreaterThan_,
+    "equal", Int32x4Equal_,
+    "lessThan", Int32x4LessThan_,
+    "shiftLeft", Int32x4ShiftLeft_,
+    "shiftRight", Int32x4ShiftRight_,
+    "shiftRightArithmetic", Int32x4ShiftRightArithmetic_,
     // Ternary
-    "select", Int32x4Select
+    "select", Int32x4Select_
   ));
 }
 
