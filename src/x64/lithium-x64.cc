@@ -2242,10 +2242,13 @@ LInstruction* LChunkBuilder::DoChange(HChange* instr) {
     info()->MarkAsDeferredCalling();
     LOperand* value = UseRegister(instr->value());
     LOperand* temp = TempRegister();
+    LOperand* temp2 = TempRegister();
+    LOperand* temp3 = TempRegister();
 
     // Make sure that temp and result_temp are different registers.
     LUnallocated* result_temp = TempRegister();
-    LSIMD128ToTagged* result = new(zone()) LSIMD128ToTagged(value, temp);
+    LSIMD128ToTagged* result =
+        new(zone()) LSIMD128ToTagged(value, temp, temp2, temp3);
     return AssignPointerMap(Define(result, result_temp));
   }
   UNREACHABLE();
