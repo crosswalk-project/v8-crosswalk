@@ -1488,6 +1488,21 @@ class Heap {
   MUST_USE_RESULT AllocationResult AllocateHeapNumber(
       double value, PretenureFlag pretenure = NOT_TENURED);
 
+  // Allocated a Float32x4 from value.
+  MUST_USE_RESULT AllocationResult AllocateFloat32x4(
+      float32x4_value_t value,
+      PretenureFlag pretenure = NOT_TENURED);
+
+  // Allocated a Float64x2 from value.
+  MUST_USE_RESULT AllocationResult AllocateFloat64x2(
+      float64x2_value_t value,
+      PretenureFlag pretenure = NOT_TENURED);
+
+  // Allocated a Int32x4 from value.
+  MUST_USE_RESULT AllocationResult AllocateInt32x4(
+      int32x4_value_t value,
+      PretenureFlag pretenure = NOT_TENURED);
+
   // Allocate a byte array of the specified length
   MUST_USE_RESULT AllocationResult AllocateByteArray(
       int length,
