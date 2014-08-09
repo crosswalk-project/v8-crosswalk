@@ -655,19 +655,19 @@ class MacroAssembler: public Assembler {
   // Returns tagged pointer in result register, or jumps to gc_required if new
   // space is full.
   void AllocateFloat32x4(Register result,
-                          Register scratch1,
-                          Register scratch2,
-                          Label* gc_required);
-
-  void AllocateInt32x4(Register result,
-                       Register scratch1,
-                       Register scratch2,
-                       Label* gc_required);
+                         Register scratch1,
+                         Register scratch2,
+                         Label* gc_required);
 
   void AllocateFloat64x2(Register result,
                          Register scratch1,
                          Register scratch2,
                          Label* gc_required);
+
+  void AllocateInt32x4(Register result,
+                       Register scratch1,
+                       Register scratch2,
+                       Label* gc_required);
 
   // Allocate a sequential string. All the header fields of the string object
   // are initialized.

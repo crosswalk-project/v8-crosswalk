@@ -4687,23 +4687,32 @@ void MacroAssembler::AllocateHeapNumber(Register result,
 
 
 #define SIMD128_HEAP_ALLOCATE_FUNCTIONS(V) \
-  V(Float32x4, float32x4)                  \
-  V(Float64x2, float64x2)                  \
-  V(Int32x4, int32x4)
+  V(Float32x4, float32x4, FLOAT32x4)       \
+  V(Float64x2, float64x2, FLOAT64x2)       \
+  V(Int32x4, int32x4, INT32x4)
 
-#define DECLARE_SIMD_HEAP_ALLOCATE_FUNCTION(TYPE, type)                    \
-void MacroAssembler::Allocate##TYPE(Register result,                       \
+#define DECLARE_SIMD_HEAP_ALLOCATE_FUNCTION(Type, type, TYPE)              \
+void MacroAssembler::Allocate##Type(Register result,                       \
                                     Register scratch1,                     \
                                     Register scratch2,                     \
                                     Register scratch3,                     \
                                     Label* gc_required) {                  \
   /* Allocate SIMD128 object. */                                           \
-  Allocate(TYPE::kSize, result, scratch1, no_reg, gc_required, TAG_OBJECT);\
-  Handle<Map> simd128_map(                                                 \
-      isolate()->native_context()->type##_function()->initial_map());      \
-  MoveHeapObject(kScratchRegister, simd128_map);                           \
+  Allocate(Type::kSize, result, scratch1, no_reg, gc_required, TAG_OBJECT);\
+  /* Load the initial map and assign to new allocated object. */           \
+  movp(scratch1, Operand(rbp, StandardFrameConstants::kContextOffset));    \
+  movp(scratch1,                                                           \
+       Operand(scratch1,                                                   \
+               Context::SlotOffset(Context::GLOBAL_OBJECT_INDEX)));        \
+  movp(scratch1,                                                           \
+       FieldOperand(scratch1, GlobalObject::kNativeContextOffset));        \
+  movp(scratch1,                                                           \
+       Operand(scratch1,                                                   \
+               Context::SlotOffset(Context::TYPE##_FUNCTION_INDEX)));      \
+  LoadGlobalFunctionInitialMap(scratch1, scratch1);                        \
   movp(FieldOperand(result, JSObject::kMapOffset),                         \
-       kScratchRegister);                                                  \
+       scratch1);                                                          \
+  /* Initialize the properties and elements. */                            \
   MoveHeapObject(kScratchRegister,                                         \
                  isolate()->factory()->empty_fixed_array());               \
   movp(FieldOperand(result, JSObject::kPropertiesOffset),                  \
@@ -4711,7 +4720,7 @@ void MacroAssembler::Allocate##TYPE(Register result,                       \
   movp(FieldOperand(result, JSObject::kElementsOffset),                    \
        kScratchRegister);                                                  \
   /* Allocate FixedTypedArray object. */                                   \
-  Allocate(FixedTypedArrayBase::kDataOffset + k##TYPE##Size,               \
+  Allocate(FixedTypedArrayBase::kDataOffset + k##Type##Size,               \
            scratch1, scratch2, no_reg, gc_required, TAG_OBJECT);           \
   MoveHeapObject(kScratchRegister,                                         \
                  isolate()->factory()->fixed_##type##_array_map());        \
@@ -4722,7 +4731,7 @@ void MacroAssembler::Allocate##TYPE(Register result,                       \
   movp(FieldOperand(scratch1, FixedTypedArrayBase::kLengthOffset),         \
        scratch2);                                                          \
   /* Assign FixedTypedArray object to SIMD128 object. */                   \
-  movp(FieldOperand(result, TYPE::kValueOffset), scratch1);                \
+  movp(FieldOperand(result, Type::kValueOffset), scratch1);                \
 }
 
 SIMD128_HEAP_ALLOCATE_FUNCTIONS(DECLARE_SIMD_HEAP_ALLOCATE_FUNCTION)
