@@ -68,6 +68,8 @@
   # This tests only the type system, so there is no point in running several
   # variants.
   'test-hydrogen-types/*': [PASS, NO_VARIANTS],
+  # TODO(ningxin): Temporarily disabled in M37, look at this in M38.
+  'test-types/Distributivity1': [SKIP],
   'test-types/*': [PASS, NO_VARIANTS],
 
   # The cpu profiler tests are notoriously flaky.
