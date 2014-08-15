@@ -1772,6 +1772,9 @@ void Deoptimizer::DoComputeCompiledStubFrame(TranslationIterator* iterator,
   }
 
   // Copy the double registers from the input into the output frame.
+  CopyDoubleRegisters(output_frame);
+
+  // Copy the simd128 registers from the input into the output frame.
   CopySIMD128Registers(output_frame);
 
   // Fill registers containing handler and number of parameters.

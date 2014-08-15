@@ -113,6 +113,10 @@ void Deoptimizer::SetPlatformCompiledStubRegisters(
 }
 
 
+void Deoptimizer::CopyDoubleRegisters(FrameDescription* output_frame) {
+}
+
+
 void Deoptimizer::CopySIMD128Registers(FrameDescription* output_frame) {
   for (int i = 0; i < XMMRegister::NumAllocatableRegisters(); ++i) {
     simd128_value_t xmm_value = input_->GetSIMD128Register(i);
@@ -348,13 +352,13 @@ void FrameDescription::SetCallerConstantPool(unsigned offset, intptr_t value) {
 
 
 double FrameDescription::GetDoubleRegister(unsigned n) const {
-  DCHECK(n < arraysize(simd128_registers_));
+  DCHECK(n < simd128_registers_.size());
   return simd128_registers_[n].d[0];
 }
 
 
 void FrameDescription::SetDoubleRegister(unsigned n, double value) {
-  DCHECK(n < arraysize(simd128_registers_));
+  DCHECK(n < simd128_registers_.size());
   simd128_registers_[n].d[0] = value;
 }
 
