@@ -2390,7 +2390,8 @@ HInstruction* HGraphBuilder::BuildUncheckedMonomorphicElementAccess(
     ElementsKind elements_kind,
     PropertyAccessType access_type,
     LoadKeyedHoleMode load_mode,
-    KeyedAccessStoreMode store_mode) {
+    KeyedAccessStoreMode store_mode,
+    BuiltinFunctionId op) {
   DCHECK(top_info()->IsStub() || checked_object->IsCompareMap() ||
          checked_object->IsCheckMaps());
   DCHECK((!IsExternalArrayElementsKind(elements_kind) &&
@@ -2452,10 +2453,10 @@ HInstruction* HGraphBuilder::BuildUncheckedMonomorphicElementAccess(
       return result;
     } else {
       DCHECK(store_mode == STANDARD_STORE);
-      checked_key = Add<HBoundsCheck>(key, length);
+      checked_key = Add<HBoundsCheck>(key, length, op, elements_kind);
       return AddElementAccess(
           backing_store, checked_key, val,
-          checked_object, elements_kind, access_type);
+          checked_object, elements_kind, access_type, NEVER_RETURN_HOLE, op);
     }
   }
   DCHECK(fast_smi_only_elements ||
@@ -2495,7 +2496,7 @@ HInstruction* HGraphBuilder::BuildUncheckedMonomorphicElementAccess(
     }
   }
   return AddElementAccess(elements, checked_key, val, checked_object,
-                          elements_kind, access_type, load_mode);
+                          elements_kind, access_type, load_mode, op);
 }
 
 
@@ -2663,7 +2664,8 @@ HInstruction* HGraphBuilder::AddElementAccess(
     HValue* dependency,
     ElementsKind elements_kind,
     PropertyAccessType access_type,
-    LoadKeyedHoleMode load_mode) {
+    LoadKeyedHoleMode load_mode,
+    BuiltinFunctionId op) {
   if (access_type == STORE) {
     DCHECK(val != NULL);
     if (elements_kind == EXTERNAL_UINT8_CLAMPED_ELEMENTS ||
@@ -2671,13 +2673,15 @@ HInstruction* HGraphBuilder::AddElementAccess(
       val = Add<HClampToUint8>(val);
     }
     return Add<HStoreKeyed>(elements, checked_key, val, elements_kind,
-                            STORE_TO_INITIALIZED_ENTRY);
+                            STORE_TO_INITIALIZED_ENTRY,
+                            kDefaultKeyedHeaderOffsetSentinel, op);
   }
 
   DCHECK(access_type == LOAD);
   DCHECK(val == NULL);
   HLoadKeyed* load = Add<HLoadKeyed>(
-      elements, checked_key, dependency, elements_kind, load_mode);
+      elements, checked_key, dependency, elements_kind, load_mode,
+      kDefaultKeyedHeaderOffsetSentinel, op);
   if (elements_kind == EXTERNAL_UINT32_ELEMENTS ||
       elements_kind == UINT32_ELEMENTS) {
     graph()->RecordUint32Instruction(load);
@@ -8354,121 +8358,11 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinFunctionCall(Call* expr) {
         return true;
       }
       break;
-#define SIMD_NULLARY_OPERATION_CASE_ITEM(p1, p2, name, p4)                     \
-    case k##name:
-SIMD_NULLARY_OPERATIONS(SIMD_NULLARY_OPERATION_CASE_ITEM)
-#undef SIMD_NULLARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-          expr->arguments()->length() == 0) {
-        Drop(2);  // Receiver and function.
-        HInstruction* op = NewUncasted<HNullarySIMDOperation>(id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
-#define SIMD_UNARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5)                   \
-    case k##name:
-SIMD_UNARY_OPERATIONS(SIMD_UNARY_OPERATION_CASE_ITEM)
-#undef SIMD_UNARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-          expr->arguments()->length() == 1) {
-        HValue* argument = Pop();
-        Drop(2);  // Receiver and function.
-        HInstruction* op = NewUncasted<HUnarySIMDOperation>(argument, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
-#define SIMD_BINARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6)              \
-    case k##name:
-SIMD_BINARY_OPERATIONS(SIMD_BINARY_OPERATION_CASE_ITEM)
-#undef SIMD_BINARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-          expr->arguments()->length() == 2) {
-        HValue* right = Pop();
-        HValue* left = Pop();
-        Drop(2);  // Receiver and function.
-        HInstruction* op = NewUncasted<HBinarySIMDOperation>(left, right, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
-#define SIMD_TERNARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6, p7)         \
-    case k##name:
-SIMD_TERNARY_OPERATIONS(SIMD_TERNARY_OPERATION_CASE_ITEM)
-#undef SIMD_TERNARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-          expr->arguments()->length() == 3) {
-        HValue* right = Pop();
-        HValue* left = Pop();
-        HValue* value = Pop();
-        Drop(2);  // Receiver and function.
-        HInstruction* op =
-            NewUncasted<HTernarySIMDOperation>(value, left, right, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
-#define SIMD_QUARTERNARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6, p7, p8) \
-    case k##name:
-SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
-#undef SIMD_QUARTERNARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-          expr->arguments()->length() == 4) {
-        HValue* w = Pop();
-        HValue* z = Pop();
-        HValue* y = Pop();
-        HValue* x = Pop();
-        Drop(2);  // Receiver and function.
-        HInstruction* op =
-            NewUncasted<HQuarternarySIMDOperation>(x, y, z, w, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
-#define SIMD_QUINARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6, p7, p8, p9) \
-    case k##name:
-SIMD_QUINARY_OPERATIONS(SIMD_QUINARY_OPERATION_CASE_ITEM)
-#undef SIMD_QUINARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-          expr->arguments()->length() == 5) {
-        HValue* a4 = Pop();
-        HValue* a3 = Pop();
-        HValue* a2 = Pop();
-        HValue* a1 = Pop();
-        HValue* a0 = Pop();
-        Drop(2);  // Receiver and function.
-        HInstruction* op =
-            NewUncasted<HQuinarySIMDOperation>(a0, a1, a2, a3, a4, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
-#define SIMD_SENARY_OPERATION_CASE_ITEM(                                       \
-      p1, p2, name, p4, p5, p6, p7, p8, p9, p10)                               \
-    case k##name:
-SIMD_SENARY_OPERATIONS(SIMD_SENARY_OPERATION_CASE_ITEM)
-#undef SIMD_SENARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-          expr->arguments()->length() == 6) {
-        HValue* a5 = Pop();
-        HValue* a4 = Pop();
-        HValue* a3 = Pop();
-        HValue* a2 = Pop();
-        HValue* a1 = Pop();
-        HValue* a0 = Pop();
-        Drop(2);  // Receiver and function.
-        HInstruction* op =
-            NewUncasted<HSenarySIMDOperation>(a0, a1, a2, a3, a4, a5, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
     default:
       // Not supported for inlining yet.
       break;
   }
-  return false;
+  return TryInlineSIMDBuiltinCall(expr, id, expr->arguments()->length() + 1);
 }
 
 
@@ -8866,139 +8760,6 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinMethodCall(
       ast_context()->ReturnValue(index);
       return true;
     }
-#define SIMD_NULLARY_OPERATION_CASE_ITEM(p1, p2, name, p4)                     \
-    case k##name:
-SIMD_NULLARY_OPERATIONS(SIMD_NULLARY_OPERATION_CASE_ITEM)
-#undef SIMD_NULLARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 1) {
-        Drop(2);  // Receiver and function.
-        HInstruction* op = NewUncasted<HNullarySIMDOperation>(id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
-#define SIMD_UNARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5)                   \
-    case k##name:
-SIMD_UNARY_OPERATIONS(SIMD_UNARY_OPERATION_CASE_ITEM)
-#undef SIMD_UNARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 2) {
-        HValue* argument = Pop();
-        Drop(2);  // Receiver and function.
-        HInstruction* op = NewUncasted<HUnarySIMDOperation>(argument, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
-#define SIMD_BINARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6)              \
-    case k##name:
-SIMD_BINARY_OPERATIONS(SIMD_BINARY_OPERATION_CASE_ITEM)
-#undef SIMD_BINARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 3) {
-        HValue* right = Pop();
-        HValue* left = Pop();
-        Drop(2);  // Receiver and function.
-        HInstruction* op = NewUncasted<HBinarySIMDOperation>(left, right, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
-#define SIMD_TERNARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6, p7)         \
-    case k##name:
-SIMD_TERNARY_OPERATIONS(SIMD_TERNARY_OPERATION_CASE_ITEM)
-#undef SIMD_TERNARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 4) {
-        HValue* right = Pop();
-        HValue* left = Pop();
-        HValue* value = Pop();
-        Drop(2);  // Receiver and function.
-        HInstruction* op =
-            NewUncasted<HTernarySIMDOperation>(value, left, right, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
-#define SIMD_QUARTERNARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6, p7, p8) \
-    case k##name:
-SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
-#undef SIMD_QUARTERNARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 5) {
-        HValue* w = Pop();
-        HValue* z = Pop();
-        HValue* y = Pop();
-        HValue* x = Pop();
-        Drop(2);  // Receiver and function.
-        HValue* context = environment()->context();
-        HInstruction* op =
-            HQuarternarySIMDOperation::New(
-                isolate(), zone(), context, x, y, z, w, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      } else if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-                 argument_count == 2) {
-        if (id == kFloat32x4Constructor) {
-          HValue* argument = Pop();
-          Drop(2);  // Receiver and function.
-          HInstruction* op =
-              NewUncasted<HUnarySIMDOperation>(argument, kFloat32x4Coercion);
-          ast_context()->ReturnInstruction(op, expr->id());
-          return true;
-        } else if (id == kInt32x4Constructor) {
-          HValue* argument = Pop();
-          Drop(2);  // Receiver and function.
-          HInstruction* op =
-              NewUncasted<HUnarySIMDOperation>(argument, kInt32x4Coercion);
-          ast_context()->ReturnInstruction(op, expr->id());
-          return true;
-        } else if (id == kFloat64x2Constructor) {
-          HValue* argument = Pop();
-          Drop(2);  // Receiver and function.
-          HInstruction* op =
-              NewUncasted<HUnarySIMDOperation>(argument, kFloat64x2Coercion);
-          ast_context()->ReturnInstruction(op, expr->id());
-          return true;
-        } else {
-          return false;
-        }
-      }
-      break;
-#define SIMD_QUINARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6, p7, p8, p9) \
-    case k##name:
-SIMD_QUINARY_OPERATIONS(SIMD_QUINARY_OPERATION_CASE_ITEM)
-#undef SIMD_QUINARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-          expr->arguments()->length() == 5) {
-        HValue* a4 = Pop();
-        HValue* a3 = Pop();
-        HValue* a2 = Pop();
-        HValue* a1 = Pop();
-        HValue* a0 = Pop();
-        Drop(2);  // Receiver and function.
-        HInstruction* op =
-            NewUncasted<HQuinarySIMDOperation>(a0, a1, a2, a3, a4, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
-#define SIMD_SENARY_OPERATION_CASE_ITEM(                                       \
-      p1, p2, name, p4, p5, p6, p7, p8, p9, p10)                               \
-    case k##name:
-SIMD_SENARY_OPERATIONS(SIMD_SENARY_OPERATION_CASE_ITEM)
-#undef SIMD_SENARY_OPERATION_CASE_ITEM
-      if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-          expr->arguments()->length() == 6) {
-        HValue* a5 = Pop();
-        HValue* a4 = Pop();
-        HValue* a3 = Pop();
-        HValue* a2 = Pop();
-        HValue* a1 = Pop();
-        HValue* a0 = Pop();
-        Drop(2);  // Receiver and function.
-        HInstruction* op =
-            NewUncasted<HSenarySIMDOperation>(a0, a1, a2, a3, a4, a5, id);
-        ast_context()->ReturnInstruction(op, expr->id());
-        return true;
-      }
-      break;
 #define TYPED_ARRAY_SIMD_LOAD_OPERATION_CASE_ITEM(p1, p2, name) \
     case k##name:
 TYPED_ARRAYS_SIMD_LOAD_OPERATIONS(TYPED_ARRAY_SIMD_LOAD_OPERATION_CASE_ITEM)
@@ -9099,7 +8860,7 @@ TYPED_ARRAYS_SIMD_STORE_OPERATIONS(TYPED_ARRAY_SIMD_STORE_OPERATION_CASE_ITEM)
       // Not yet supported for inlining.
       break;
   }
-  return false;
+  return TryInlineSIMDBuiltinCall(expr, id, argument_count);
 }
 
 
@@ -10166,6 +9927,230 @@ static Handle<Map> TypedArrayMap(Isolate* isolate,
   }
   Handle<Map> map(fun->initial_map());
   return Map::AsElementsKind(map, target_kind);
+}
+
+
+bool HOptimizedGraphBuilder::TryInlineSIMDBuiltinCall(
+    Call* expr, BuiltinFunctionId id, int argument_count) {
+  switch (id) {
+#define SIMD_LOAD_OPERATION_CASE_ITEM(p1, p2, name) \
+    case k##name:
+SIMD_LOAD_OPERATIONS(SIMD_LOAD_OPERATION_CASE_ITEM)
+#undef SIMD_LOAD_OPERATION_CASE_ITEM
+      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 3) {
+#if V8_TARGET_ARCH_X64
+        // TODO(nhu): support x64.
+        return false;
+#else
+        BuiltinFunctionId op = kNumberOfBuiltinFunction;
+        switch (id) {
+#define SIMD_LOAD_OPERATION_CASE_ITEM(p1, p2, name) \
+          case k##name:                             \
+            op = kUint8Array##name;                 \
+            break;
+SIMD_LOAD_OPERATIONS(SIMD_LOAD_OPERATION_CASE_ITEM)
+#undef SIMD_LOAD_OPERATION_CASE_ITEM
+          default:
+            UNREACHABLE();
+        }
+        HValue* key = Pop();
+        HValue* tarray = Pop();
+        Drop(2);  // Drop receiver and function.
+        Handle<Map> uint8_external_array_map = TypedArrayMap(
+            isolate(), kExternalUint8Array, EXTERNAL_UINT8_ELEMENTS);
+        Add<HCheckMaps>(tarray, uint8_external_array_map);
+        HInstruction* instr = BuildUncheckedMonomorphicElementAccess(
+            tarray, key, NULL,
+            false,
+            EXTERNAL_UINT8_ELEMENTS,
+            LOAD,  // is_store.
+            NEVER_RETURN_HOLE,  // load_mode.
+            STANDARD_STORE,
+            op);
+        ast_context()->ReturnValue(instr);
+        return true;
+#endif
+      }
+      break;
+#define SIMD_STORE_OPERATION_CASE_ITEM(p1, p2, name) \
+    case k##name:
+SIMD_STORE_OPERATIONS(SIMD_STORE_OPERATION_CASE_ITEM)
+#undef SIMD_STORE_OPERATION_CASE_ITEM
+      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 4) {
+#if V8_TARGET_ARCH_X64
+        // TODO(nhu): support x64.
+        return false;
+#else
+        BuiltinFunctionId op = kNumberOfBuiltinFunction;
+        switch (id) {
+#define SIMD_STORE_OPERATION_CASE_ITEM(p1, p2, name) \
+          case k##name:                             \
+            op = kUint8Array##name;                 \
+            break;
+SIMD_STORE_OPERATIONS(SIMD_STORE_OPERATION_CASE_ITEM)
+#undef SIMD_STORE_OPERATION_CASE_ITEM
+          default:
+            UNREACHABLE();
+        }
+        HValue* value = Pop();
+        HValue* key = Pop();
+        HValue* tarray = Pop();
+        Drop(2);  // Drop receiver and function.
+        Handle<Map> uint8_external_array_map = TypedArrayMap(
+            isolate(), kExternalUint8Array, EXTERNAL_UINT8_ELEMENTS);
+        Add<HCheckMaps>(tarray, uint8_external_array_map);
+        BuildUncheckedMonomorphicElementAccess(
+            tarray, key, value,
+            false,
+            EXTERNAL_UINT8_ELEMENTS,
+            STORE,  // is_store.
+            NEVER_RETURN_HOLE,  // load_mode.
+            STANDARD_STORE,
+            op);
+        Push(value);
+        Add<HSimulate>(expr->id(), REMOVABLE_SIMULATE);
+        ast_context()->ReturnValue(Pop());
+        return true;
+#endif
+      }
+      break;
+#define SIMD_NULLARY_OPERATION_CASE_ITEM(p1, p2, name, p4)                     \
+    case k##name:
+SIMD_NULLARY_OPERATIONS(SIMD_NULLARY_OPERATION_CASE_ITEM)
+#undef SIMD_NULLARY_OPERATION_CASE_ITEM
+      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 1) {
+        Drop(2);  // Receiver and function.
+        HInstruction* op = NewUncasted<HNullarySIMDOperation>(id);
+        ast_context()->ReturnInstruction(op, expr->id());
+        return true;
+      }
+      break;
+#define SIMD_UNARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5)                   \
+    case k##name:
+SIMD_UNARY_OPERATIONS(SIMD_UNARY_OPERATION_CASE_ITEM)
+#undef SIMD_UNARY_OPERATION_CASE_ITEM
+      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 2) {
+        HValue* argument = Pop();
+        Drop(2);  // Receiver and function.
+        HInstruction* op = NewUncasted<HUnarySIMDOperation>(argument, id);
+        ast_context()->ReturnInstruction(op, expr->id());
+        return true;
+      }
+      break;
+#define SIMD_BINARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6)              \
+    case k##name:
+SIMD_BINARY_OPERATIONS(SIMD_BINARY_OPERATION_CASE_ITEM)
+#undef SIMD_BINARY_OPERATION_CASE_ITEM
+      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 3) {
+        HValue* right = Pop();
+        HValue* left = Pop();
+        Drop(2);  // Receiver and function.
+        HInstruction* op = NewUncasted<HBinarySIMDOperation>(left, right, id);
+        ast_context()->ReturnInstruction(op, expr->id());
+        return true;
+      }
+      break;
+#define SIMD_TERNARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6, p7)         \
+    case k##name:
+SIMD_TERNARY_OPERATIONS(SIMD_TERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_TERNARY_OPERATION_CASE_ITEM
+      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 4) {
+        HValue* right = Pop();
+        HValue* left = Pop();
+        HValue* value = Pop();
+        Drop(2);  // Receiver and function.
+        HInstruction* op =
+            NewUncasted<HTernarySIMDOperation>(value, left, right, id);
+        ast_context()->ReturnInstruction(op, expr->id());
+        return true;
+      }
+      break;
+#define SIMD_QUARTERNARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6, p7, p8) \
+    case k##name:
+SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUARTERNARY_OPERATION_CASE_ITEM
+      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 5) {
+        HValue* w = Pop();
+        HValue* z = Pop();
+        HValue* y = Pop();
+        HValue* x = Pop();
+        Drop(2);  // Receiver and function.
+        HValue* context = environment()->context();
+        HInstruction* op =
+            HQuarternarySIMDOperation::New(
+                isolate(), zone(), context, x, y, z, w, id);
+        ast_context()->ReturnInstruction(op, expr->id());
+        return true;
+      } else if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
+                 argument_count == 2) {
+        if (id == kFloat32x4Constructor) {
+          HValue* argument = Pop();
+          Drop(2);  // Receiver and function.
+          HInstruction* op =
+              NewUncasted<HUnarySIMDOperation>(argument, kFloat32x4Coercion);
+          ast_context()->ReturnInstruction(op, expr->id());
+          return true;
+        } else if (id == kInt32x4Constructor) {
+          HValue* argument = Pop();
+          Drop(2);  // Receiver and function.
+          HInstruction* op =
+              NewUncasted<HUnarySIMDOperation>(argument, kInt32x4Coercion);
+          ast_context()->ReturnInstruction(op, expr->id());
+          return true;
+        } else if (id == kFloat64x2Constructor) {
+          HValue* argument = Pop();
+          Drop(2);  // Receiver and function.
+          HInstruction* op =
+              NewUncasted<HUnarySIMDOperation>(argument, kFloat64x2Coercion);
+          ast_context()->ReturnInstruction(op, expr->id());
+          return true;
+        } else {
+          return false;
+        }
+      }
+      break;
+#define SIMD_QUINARY_OPERATION_CASE_ITEM(p1, p2, name, p4, p5, p6, p7, p8, p9) \
+    case k##name:
+SIMD_QUINARY_OPERATIONS(SIMD_QUINARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUINARY_OPERATION_CASE_ITEM
+      if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
+          expr->arguments()->length() == 5) {
+        HValue* a4 = Pop();
+        HValue* a3 = Pop();
+        HValue* a2 = Pop();
+        HValue* a1 = Pop();
+        HValue* a0 = Pop();
+        Drop(2);  // Receiver and function.
+        HInstruction* op =
+            NewUncasted<HQuinarySIMDOperation>(a0, a1, a2, a3, a4, id);
+        ast_context()->ReturnInstruction(op, expr->id());
+        return true;
+      }
+      break;
+#define SIMD_SENARY_OPERATION_CASE_ITEM(                                       \
+      p1, p2, name, p4, p5, p6, p7, p8, p9, p10)                               \
+    case k##name:
+SIMD_SENARY_OPERATIONS(SIMD_SENARY_OPERATION_CASE_ITEM)
+#undef SIMD_SENARY_OPERATION_CASE_ITEM
+      if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
+          expr->arguments()->length() == 6) {
+        HValue* a5 = Pop();
+        HValue* a4 = Pop();
+        HValue* a3 = Pop();
+        HValue* a2 = Pop();
+        HValue* a1 = Pop();
+        HValue* a0 = Pop();
+        Drop(2);  // Receiver and function.
+        HInstruction* op =
+            NewUncasted<HSenarySIMDOperation>(a0, a1, a2, a3, a4, a5, id);
+        ast_context()->ReturnInstruction(op, expr->id());
+        return true;
+      }
+      break;
+    default:
+      break;
+  }
+  return false;
 }
 
 
