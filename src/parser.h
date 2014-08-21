@@ -461,6 +461,14 @@ class ParserTraits {
       Expression** x, Expression* y, Token::Value op, int pos,
       AstNodeFactory<AstConstructionVisitor>* factory);
 
+  // If we find a SIMD load or store call with array types
+  // and offset as arguments, we will return an expression
+  // calling array types load or store with offset as argument.
+  // Otherwise, returns NULL.
+  bool BuildSIMD128LoadStoreExpression(
+      Expression** expression, ZoneList<Expression*>* arguments, int pos,
+      AstNodeFactory<AstConstructionVisitor>* factory);
+
   // Rewrites the following types of unary expressions:
   // not <literal> -> true / false
   // + <numeric literal> -> <numeric literal>
