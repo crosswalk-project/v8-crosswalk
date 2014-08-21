@@ -946,6 +946,8 @@ class Assembler : public AssemblerBase {
   void ucomiss(XMMRegister dst, XMMRegister src) { ucomiss(dst, Operand(src)); }
   void ucomiss(XMMRegister dst, const Operand& src);
   void movaps(XMMRegister dst, XMMRegister src);
+  void movlhps(XMMRegister dst, XMMRegister src);
+  void movhlps(XMMRegister dst, XMMRegister src);
   void movups(XMMRegister dst, const Operand& src);
   void movups(const Operand& dst, XMMRegister src);
   void shufps(XMMRegister dst, XMMRegister src, byte imm8);
@@ -1105,6 +1107,8 @@ class Assembler : public AssemblerBase {
   void movss(XMMRegister dst, const Operand& src);
   void movss(const Operand& dst, XMMRegister src);
   void movss(XMMRegister dst, XMMRegister src) { movss(dst, Operand(src)); }
+  void movq(XMMRegister dst, const Operand& src);
+  void movq(const Operand& dst, XMMRegister src);
   void extractps(Register dst, XMMRegister src, byte imm8);
 
   void pand(XMMRegister dst, XMMRegister src);
