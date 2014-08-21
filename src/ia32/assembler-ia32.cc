@@ -2272,6 +2272,22 @@ void Assembler::movaps(XMMRegister dst, XMMRegister src) {
 }
 
 
+void Assembler::movlhps(XMMRegister dst, XMMRegister src) {
+  EnsureSpace ensure_space(this);
+  EMIT(0x0F);
+  EMIT(0x16);
+  emit_sse_operand(dst, src);
+}
+
+
+void Assembler::movhlps(XMMRegister dst, XMMRegister src) {
+  EnsureSpace ensure_space(this);
+  EMIT(0x0F);
+  EMIT(0x12);
+  emit_sse_operand(dst, src);
+}
+
+
 void Assembler::movups(XMMRegister dst, const Operand& src) {
   EnsureSpace ensure_space(this);
   EMIT(0x0F);
@@ -2408,6 +2424,24 @@ void Assembler::movss(XMMRegister dst, const Operand& src) {
   EMIT(0xF3);  // float
   EMIT(0x0F);
   EMIT(0x10);  // load
+  emit_sse_operand(dst, src);
+}
+
+
+void Assembler::movq(const Operand& dst, XMMRegister src ) {
+  EnsureSpace ensure_space(this);
+  EMIT(0x66);
+  EMIT(0x0F);
+  EMIT(0xD6);  // store
+  emit_sse_operand(src, dst);
+}
+
+
+void Assembler::movq(XMMRegister dst, const Operand& src) {
+  EnsureSpace ensure_space(this);
+  EMIT(0xF3);
+  EMIT(0x0F);
+  EMIT(0x7E);  // load
   emit_sse_operand(dst, src);
 }
 

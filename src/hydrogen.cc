@@ -2401,7 +2401,8 @@ HInstruction* HGraphBuilder::BuildUncheckedMonomorphicElementAccess(
     ElementsKind elements_kind,
     PropertyAccessType access_type,
     LoadKeyedHoleMode load_mode,
-    KeyedAccessStoreMode store_mode) {
+    KeyedAccessStoreMode store_mode,
+    BuiltinFunctionId op) {
   DCHECK((!IsExternalArrayElementsKind(elements_kind) &&
               !IsFixedTypedArrayElementsKind(elements_kind)) ||
          !is_js_array);
@@ -2462,10 +2463,10 @@ HInstruction* HGraphBuilder::BuildUncheckedMonomorphicElementAccess(
       return result;
     } else {
       DCHECK(store_mode == STANDARD_STORE);
-      checked_key = Add<HBoundsCheck>(key, length);
+      checked_key = Add<HBoundsCheck>(key, length, op, elements_kind);
       return AddElementAccess(
           backing_store, checked_key, val,
-          checked_object, elements_kind, access_type);
+          checked_object, elements_kind, access_type, NEVER_RETURN_HOLE, op);
     }
   }
   DCHECK(fast_smi_only_elements ||
@@ -2505,7 +2506,7 @@ HInstruction* HGraphBuilder::BuildUncheckedMonomorphicElementAccess(
     }
   }
   return AddElementAccess(elements, checked_key, val, checked_object,
-                          elements_kind, access_type, load_mode);
+                          elements_kind, access_type, load_mode, op);
 }
 
 
@@ -2672,7 +2673,8 @@ HInstruction* HGraphBuilder::AddElementAccess(
     HValue* dependency,
     ElementsKind elements_kind,
     PropertyAccessType access_type,
-    LoadKeyedHoleMode load_mode) {
+    LoadKeyedHoleMode load_mode,
+    BuiltinFunctionId op) {
   if (access_type == STORE) {
     DCHECK(val != NULL);
     if (elements_kind == EXTERNAL_UINT8_CLAMPED_ELEMENTS ||
@@ -2680,13 +2682,15 @@ HInstruction* HGraphBuilder::AddElementAccess(
       val = Add<HClampToUint8>(val);
     }
     return Add<HStoreKeyed>(elements, checked_key, val, elements_kind,
-                            STORE_TO_INITIALIZED_ENTRY);
+                            STORE_TO_INITIALIZED_ENTRY,
+                            kDefaultKeyedHeaderOffsetSentinel, op);
   }
 
   DCHECK(access_type == LOAD);
   DCHECK(val == NULL);
   HLoadKeyed* load = Add<HLoadKeyed>(
-      elements, checked_key, dependency, elements_kind, load_mode);
+      elements, checked_key, dependency, elements_kind, load_mode,
+      kDefaultKeyedHeaderOffsetSentinel, op);
   if (elements_kind == EXTERNAL_UINT32_ELEMENTS ||
       elements_kind == UINT32_ELEMENTS) {
     graph()->RecordUint32Instruction(load);
@@ -8829,6 +8833,32 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinMethodCall(
       ast_context()->ReturnValue(index);
       return true;
     }
+    default:
+      // Not yet supported for inlining.
+      break;
+  }
+  return TryInlineSIMDBuiltinMethodCall(
+      expr, function, receiver_map, args_count_no_receiver);
+}
+
+
+bool HOptimizedGraphBuilder::TryInlineSIMDBuiltinMethodCall(
+    Call* expr, Handle<JSFunction> function, Handle<Map> receiver_map,
+    int args_count_no_receiver) {
+  if (!function->shared()->HasBuiltinFunctionId()) return false;
+  BuiltinFunctionId id = function->shared()->builtin_function_id();
+  int argument_count = args_count_no_receiver + 1;  // Plus receiver.
+
+  if (receiver_map.is_null()) {
+    HValue* receiver = environment()->ExpressionStackAt(args_count_no_receiver);
+    if (receiver->IsConstant() &&
+        HConstant::cast(receiver)->handle(isolate())->IsHeapObject()) {
+      receiver_map =
+          handle(Handle<HeapObject>::cast(
+                     HConstant::cast(receiver)->handle(isolate()))->map());
+    }
+  }
+  switch (id) {
 #define SIMD_NULLARY_OPERATION_CASE_ITEM(p1, p2, name, p4)                     \
     case k##name:
 SIMD_NULLARY_OPERATIONS(SIMD_NULLARY_OPERATION_CASE_ITEM)
@@ -8923,13 +8953,67 @@ SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
         }
       }
       break;
+#define TYPED_ARRAY_SIMD_LOAD_OPERATION_CASE_ITEM(p1, p2, name) \
+    case k##name:
+TYPED_ARRAYS_SIMD_LOAD_OPERATIONS(TYPED_ARRAY_SIMD_LOAD_OPERATION_CASE_ITEM)
+#undef TYPED_ARRAY_SIMD_LOAD_OPERATION_CASE_ITEM
+      if (receiver_map.is_null()) return false;
+      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 2) {
+#if V8_TARGET_ARCH_X64
+        // TODO(nhu): support x64.
+        return false;
+#else
+        HValue* key = Pop();
+        HValue* tarray = Pop();
+        Drop(1);  // Drop function.
+        HInstruction* instr = BuildUncheckedMonomorphicElementAccess(
+            tarray, key, NULL,
+            receiver_map->instance_type() == JS_ARRAY_TYPE,
+            receiver_map->elements_kind(),
+            LOAD,  // is_store.
+            NEVER_RETURN_HOLE,  // load_mode.
+            STANDARD_STORE,
+            id);
+        ast_context()->ReturnValue(instr);
+        return true;
+#endif
+      }
+      break;
+#define TYPED_ARRAY_SIMD_STORE_OPERATION_CASE_ITEM(p1, p2, name) \
+    case k##name:
+TYPED_ARRAYS_SIMD_STORE_OPERATIONS(TYPED_ARRAY_SIMD_STORE_OPERATION_CASE_ITEM)
+#undef TYPED_ARRAY_SIMD_STORE_OPERATION_CASE_ITEM
+      if (receiver_map.is_null()) return false;
+      if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 3) {
+#if V8_TARGET_ARCH_X64
+        // TODO(nhu): support x64.
+        return false;
+#else
+        HValue* value = Pop();
+        HValue* key = Pop();
+        HValue* tarray = Pop();
+        Drop(1);  // Drop function.
+        BuildUncheckedMonomorphicElementAccess(
+            tarray, key, value,
+            receiver_map->instance_type() == JS_ARRAY_TYPE,
+            receiver_map->elements_kind(),
+            STORE,  // is_store.
+            NEVER_RETURN_HOLE,  // load_mode.
+            STANDARD_STORE,
+            id);
+        Push(value);
+        Add<HSimulate>(expr->id(), REMOVABLE_SIMULATE);
+        ast_context()->ReturnValue(Pop());
+        return true;
+#endif
+      }
+      break;
     case kFloat32x4ArrayGetAt:
     case kFloat64x2ArrayGetAt:
     case kInt32x4ArrayGetAt:
       if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 2) {
         HValue* key = Pop();
         HValue* typed32x4_array = Pop();
-        DCHECK(typed32x4_array == receiver);
         Drop(1);  // Drop function.
         HInstruction* instr = BuildUncheckedMonomorphicElementAccess(
             typed32x4_array, key, NULL,
@@ -8949,7 +9033,6 @@ SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
         HValue* value = Pop();
         HValue* key = Pop();
         HValue* typed32x4_array = Pop();
-        DCHECK(typed32x4_array == receiver);
         Drop(1);  // Drop function.
         // TODO(haitao): add STORE_NO_TRANSITION_IGNORE_OUT_OF_BOUNDS.
         KeyedAccessStoreMode store_mode = STANDARD_STORE;
@@ -8967,7 +9050,6 @@ SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
       }
       break;
     default:
-      // Not yet supported for inlining.
       break;
   }
   return false;
