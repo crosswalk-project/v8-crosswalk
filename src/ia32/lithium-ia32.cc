@@ -1883,7 +1883,9 @@ LInstruction* LChunkBuilder::DoBoundsCheck(HBoundsCheck* instr) {
   LOperand* length = !index->IsConstantOperand()
       ? UseOrConstantAtStart(instr->length())
       : UseAtStart(instr->length());
-  LInstruction* result = new(zone()) LBoundsCheck(index, length);
+  LOperand* temp0 = TempRegister();
+  LOperand* temp1 = TempRegister();
+  LInstruction* result = new(zone()) LBoundsCheck(index, length, temp0, temp1);
   if (!FLAG_debug_code || !instr->skip_check()) {
     result = AssignEnvironment(result);
   }
@@ -2307,15 +2309,26 @@ LInstruction* LChunkBuilder::DoLoadKeyedGeneric(HLoadKeyedGeneric* instr) {
 
 LOperand* LChunkBuilder::GetStoreKeyedValueOperand(HStoreKeyed* instr) {
   ElementsKind elements_kind = instr->elements_kind();
+  BuiltinFunctionId op = instr->op();
 
   // Determine if we need a byte register in this case for the value.
   bool val_is_fixed_register =
-      elements_kind == EXTERNAL_INT8_ELEMENTS ||
+      (elements_kind == EXTERNAL_INT8_ELEMENTS ||
       elements_kind == EXTERNAL_UINT8_ELEMENTS ||
       elements_kind == EXTERNAL_UINT8_CLAMPED_ELEMENTS ||
       elements_kind == UINT8_ELEMENTS ||
       elements_kind == INT8_ELEMENTS ||
-      elements_kind == UINT8_CLAMPED_ELEMENTS;
+      elements_kind == UINT8_CLAMPED_ELEMENTS) &&
+      (op != kInt8ArraySetFloat32x4XYZW &&
+      op != kInt8ArraySetFloat32x4X &&
+      op != kInt8ArraySetFloat32x4XY &&
+      op != kInt8ArraySetFloat32x4XYZ &&
+      op != kInt8ArraySetInt32x4XYZW &&
+      op != kInt8ArraySetInt32x4X &&
+      op != kInt8ArraySetInt32x4XY &&
+      op != kInt8ArraySetInt32x4XYZ &&
+      op != kInt8ArraySetFloat64x2XY &&
+      op != kInt8ArraySetFloat64x2X);
   if (val_is_fixed_register) {
     return UseFixed(instr->value(), eax);
   }

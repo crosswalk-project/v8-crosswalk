@@ -6967,6 +6967,50 @@ class Script: public Struct {
   V(Int32x4Array.prototype, getAt, Int32x4ArrayGetAt)                          \
   V(Int32x4Array.prototype, setAt, Int32x4ArraySetAt)
 
+#define TYPED_ARRAYS_SIMD_LOAD_OPERATIONS(V)                                   \
+  V(Float32Array.prototype, _getFloat32x4XYZW, Float32ArrayGetFloat32x4XYZW)   \
+  V(Float32Array.prototype, _getFloat32x4XYZ, Float32ArrayGetFloat32x4XYZ)     \
+  V(Float32Array.prototype, _getFloat32x4XY, Float32ArrayGetFloat32x4XY)       \
+  V(Float32Array.prototype, _getFloat32x4X, Float32ArrayGetFloat32x4X)         \
+  V(Float64Array.prototype, _getFloat64x2XY, Float64ArrayGetFloat64x2XY)       \
+  V(Float64Array.prototype, _getFloat64x2X, Float64ArrayGetFloat64x2X)         \
+  V(Int32Array.prototype, _getInt32x4XYZW, Int32ArrayGetInt32x4XYZW)           \
+  V(Int32Array.prototype, _getInt32x4XYZ, Int32ArrayGetInt32x4XYZ)             \
+  V(Int32Array.prototype, _getInt32x4XY, Int32ArrayGetInt32x4XY)               \
+  V(Int32Array.prototype, _getInt32x4X, Int32ArrayGetInt32x4X)                 \
+  V(Int8Array.prototype, _getFloat32x4XYZW, Int8ArrayGetFloat32x4XYZW)         \
+  V(Int8Array.prototype, _getFloat32x4XYZ, Int8ArrayGetFloat32x4XYZ)           \
+  V(Int8Array.prototype, _getFloat32x4XY, Int8ArrayGetFloat32x4XY)             \
+  V(Int8Array.prototype, _getFloat32x4X, Int8ArrayGetFloat32x4X)               \
+  V(Int8Array.prototype, _getFloat64x2XY, Int8ArrayGetFloat64x2XY)             \
+  V(Int8Array.prototype, _getFloat64x2X, Int8ArrayGetFloat64x2X)               \
+  V(Int8Array.prototype, _getInt32x4XYZW, Int8ArrayGetInt32x4XYZW)             \
+  V(Int8Array.prototype, _getInt32x4XYZ, Int8ArrayGetInt32x4XYZ)               \
+  V(Int8Array.prototype, _getInt32x4XY, Int8ArrayGetInt32x4XY)                 \
+  V(Int8Array.prototype, _getInt32x4X, Int8ArrayGetInt32x4X)
+
+#define TYPED_ARRAYS_SIMD_STORE_OPERATIONS(V)                                  \
+  V(Float32Array.prototype, _setFloat32x4XYZW, Float32ArraySetFloat32x4XYZW)   \
+  V(Float32Array.prototype, _setFloat32x4XYZ, Float32ArraySetFloat32x4XYZ)     \
+  V(Float32Array.prototype, _setFloat32x4XY, Float32ArraySetFloat32x4XY)       \
+  V(Float32Array.prototype, _setFloat32x4X, Float32ArraySetFloat32x4X)         \
+  V(Float64Array.prototype, _setFloat64x2XY, Float64ArraySetFloat64x2XY)       \
+  V(Float64Array.prototype, _setFloat64x2X, Float64ArraySetFloat64x2X)         \
+  V(Int32Array.prototype, _setInt32x4XYZW, Int32ArraySetInt32x4XYZW)           \
+  V(Int32Array.prototype, _setInt32x4XYZ, Int32ArraySetInt32x4XYZ)             \
+  V(Int32Array.prototype, _setInt32x4XY, Int32ArraySetInt32x4XY)               \
+  V(Int32Array.prototype, _setInt32x4X, Int32ArraySetInt32x4X)                 \
+  V(Int8Array.prototype, _setFloat32x4XYZW, Int8ArraySetFloat32x4XYZW)         \
+  V(Int8Array.prototype, _setFloat32x4XYZ, Int8ArraySetFloat32x4XYZ)           \
+  V(Int8Array.prototype, _setFloat32x4XY, Int8ArraySetFloat32x4XY)             \
+  V(Int8Array.prototype, _setFloat32x4X, Int8ArraySetFloat32x4X)               \
+  V(Int8Array.prototype, _setFloat64x2XY, Int8ArraySetFloat64x2XY)             \
+  V(Int8Array.prototype, _setFloat64x2X, Int8ArraySetFloat64x2X)               \
+  V(Int8Array.prototype, _setInt32x4XYZW, Int8ArraySetInt32x4XYZW)             \
+  V(Int8Array.prototype, _setInt32x4XYZ, Int8ArraySetInt32x4XYZ)               \
+  V(Int8Array.prototype, _setInt32x4XY, Int8ArraySetInt32x4XY)                 \
+  V(Int8Array.prototype, _setInt32x4X, Int8ArraySetInt32x4X)
+
 // Do not need to install them in InstallExperimentalSIMDBuiltinFunctionIds.
 #define SIMD_FAKE_ID_LISTS(V)                                                  \
   V(SIMD, unreachable, SIMD128Unreachable)                                     \
@@ -6982,6 +7026,8 @@ enum BuiltinFunctionId {
   kMathPowHalf,
   SIMD_FAKE_ID_LISTS(DECLARE_FUNCTION_ID)
   SIMD_ARRAY_OPERATIONS(DECLARE_FUNCTION_ID)
+  TYPED_ARRAYS_SIMD_LOAD_OPERATIONS(DECLARE_FUNCTION_ID)
+  TYPED_ARRAYS_SIMD_STORE_OPERATIONS(DECLARE_FUNCTION_ID)
 #undef DECLARE_FUNCTION_ID
 #define DECLARE_SIMD_NULLARY_FUNCTION_ID(i1, i2, name, i3)                     \
   k##name,
