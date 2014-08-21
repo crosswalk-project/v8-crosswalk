@@ -1480,15 +1480,20 @@ class LInstanceOfKnownGlobal FINAL : public LTemplateInstruction<1, 2, 1> {
 };
 
 
-class LBoundsCheck FINAL : public LTemplateInstruction<0, 2, 0> {
+class LBoundsCheck FINAL : public LTemplateInstruction<0, 2, 2> {
  public:
-  LBoundsCheck(LOperand* index, LOperand* length) {
+  LBoundsCheck(LOperand* index, LOperand* length,
+               LOperand* temp0, LOperand* temp1) {
     inputs_[0] = index;
     inputs_[1] = length;
+    temps_[0] = temp0;
+    temps_[1] = temp1;
   }
 
   LOperand* index() { return inputs_[0]; }
   LOperand* length() { return inputs_[1]; }
+  LOperand* temp0() { return temps_[0]; }
+  LOperand* temp1() { return temps_[1]; }
 
   DECLARE_CONCRETE_INSTRUCTION(BoundsCheck, "bounds-check")
   DECLARE_HYDROGEN_ACCESSOR(BoundsCheck)
