@@ -254,20 +254,38 @@ void CpuProfiler::CodeCreateEvent(Logger::LogEventsAndTags tag, Code* code,
   CodeEventsContainer evt_rec(CodeEventRecord::CODE_CREATION);
   CodeCreateEventRecord* rec = &evt_rec.CodeCreateEventRecord_;
   rec->start = code->address();
+  Script* script = NULL;
+  JITLineInfoTable* line_table = NULL;
+  if (shared->script()->IsScript()) {
+    DCHECK(Script::cast(shared->script()));
+    script = Script::cast(shared->script());
+    line_table = new JITLineInfoTable();
+    for (RelocIterator it(code); !it.done(); it.next()) {
+      RelocInfo::Mode mode = it.rinfo()->rmode();
+      if (RelocInfo::IsPosition(mode)) {
+        int position = static_cast<int>(it.rinfo()->data());
+        if (position >= 0) {
+          int pc_offset = static_cast<int>(it.rinfo()->pc() - code->address());
+          int line_number = script->GetLineNumber(position) + 1;
+          line_table->SetPosition(pc_offset, line_number);
+        }
+      }
+    }
+  }
   rec->entry = profiles_->NewCodeEntry(
       tag, profiles_->GetFunctionName(shared->DebugName()),
       CodeEntry::kEmptyNamePrefix, profiles_->GetName(script_name), line,
-      column);
+      column, line_table);
   if (info) {
     rec->entry->set_no_frame_ranges(info->ReleaseNoFrameRanges());
   }
-  DCHECK(Script::cast(shared->script()));
-  Script* script = Script::cast(shared->script());
-  rec->entry->set_script_id(script->id()->value());
-  rec->size = code->ExecutableSize();
-  rec->shared = shared->address();
+  if (script) {
+    rec->entry->set_script_id(script->id()->value());
+  }
   rec->entry->set_bailout_reason(
       GetBailoutReason(shared->DisableOptimizationReason()));
+  rec->size = code->ExecutableSize();
+  rec->shared = shared->address();
   processor_->Enqueue(evt_rec);
 }
 
