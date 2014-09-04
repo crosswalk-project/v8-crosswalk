@@ -185,6 +185,7 @@ namespace internal {
   F(Float32x4WithW, 2, 1)                                   \
   F(Float32x4Clamp, 3, 1)                                   \
   F(Float32x4ShuffleMix, 3, 1)                              \
+  F(Float32x4Select, 3, 1)                                  \
   F(Float64x2Abs, 1, 1)                                     \
   F(Float64x2Neg, 1, 1)                                     \
   F(Float64x2Sqrt, 1, 1)                                    \
