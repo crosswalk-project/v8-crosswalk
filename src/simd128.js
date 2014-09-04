@@ -720,12 +720,12 @@ function SetUpSIMD() {
     "zero", Float32x4ZeroJS,
     // Unary
     "abs", Float32x4AbsJS,
-    "bitsToInt32x4", Float32x4BitsToInt32x4JS,
+    "fromInt32x4", Int32x4ToFloat32x4JS,
+    "fromInt32x4Bits", Int32x4BitsToFloat32x4JS,
     "neg", Float32x4NegJS,
     "reciprocal", Float32x4ReciprocalJS,
     "reciprocalSqrt", Float32x4ReciprocalSqrtJS,
     "sqrt", Float32x4SqrtJS,
-    "toInt32x4", Float32x4ToInt32x4JS,
     // Binary
     "add", Float32x4AddJS,
     "div", Float32x4DivJS,
@@ -784,10 +784,10 @@ function SetUpSIMD() {
     "splat", Int32x4SplatJS,
     "bool", Int32x4BoolJS,
     // Unary
-    "bitsToFloat32x4", Int32x4BitsToFloat32x4JS,
+    "fromFloat32x4", Float32x4ToInt32x4JS,
+    "fromFloat32x4Bits", Float32x4BitsToInt32x4JS,
     "neg", Int32x4NegJS,
     "not", Int32x4NotJS,
-    "toFloat32x4", Int32x4ToFloat32x4JS,
     // Binary
     "add", Int32x4AddJS,
     "and", Int32x4AndJS,
