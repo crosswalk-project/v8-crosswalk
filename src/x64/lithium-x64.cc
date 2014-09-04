@@ -1479,6 +1479,7 @@ LInstruction* LChunkBuilder::DoTernarySIMDOperation(
     case kFloat32x4ShuffleMix: {
       return AssignEnvironment(DefineSameAsFirst(result));
     }
+    case kFloat32x4Select:
     case kInt32x4Select: {
       return DefineAsRegister(result);
     }
