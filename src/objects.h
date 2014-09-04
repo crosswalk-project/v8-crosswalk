@@ -7181,22 +7181,24 @@ class Script: public Struct {
 
 #define SIMD_UNARY_OPERATIONS(V)                                               \
   V(SIMD.float32x4, abs, Float32x4Abs, Float32x4, Float32x4)                   \
-  V(SIMD.float32x4, bitsToInt32x4, Float32x4BitsToInt32x4, Int32x4, Float32x4) \
+  V(SIMD.float32x4, fromInt32x4, Int32x4ToFloat32x4, Float32x4, Int32x4)       \
+  V(SIMD.float32x4, fromInt32x4Bits, Int32x4BitsToFloat32x4, Float32x4,        \
+    Int32x4)                                                                   \
   V(SIMD.float32x4, neg, Float32x4Neg, Float32x4, Float32x4)                   \
   V(SIMD.float32x4, reciprocal, Float32x4Reciprocal, Float32x4, Float32x4)     \
   V(SIMD.float32x4, reciprocalSqrt, Float32x4ReciprocalSqrt,                   \
     Float32x4, Float32x4)                                                      \
   V(SIMD.float32x4, splat, Float32x4Splat, Float32x4, Double)                  \
   V(SIMD.float32x4, sqrt, Float32x4Sqrt, Float32x4, Float32x4)                 \
-  V(SIMD.float32x4, toInt32x4, Float32x4ToInt32x4, Int32x4, Float32x4)         \
   V(SIMD.float64x2, abs, Float64x2Abs, Float64x2, Float64x2)                   \
   V(SIMD.float64x2, neg, Float64x2Neg, Float64x2, Float64x2)                   \
   V(SIMD.float64x2, sqrt, Float64x2Sqrt, Float64x2, Float64x2)                 \
-  V(SIMD.int32x4, bitsToFloat32x4, Int32x4BitsToFloat32x4, Float32x4, Int32x4) \
+  V(SIMD.int32x4, fromFloat32x4, Float32x4ToInt32x4, Int32x4, Float32x4)       \
+  V(SIMD.int32x4, fromFloat32x4Bits, Float32x4BitsToInt32x4, Int32x4,          \
+    Float32x4)                                                                 \
   V(SIMD.int32x4, neg, Int32x4Neg, Int32x4, Int32x4)                           \
   V(SIMD.int32x4, not, Int32x4Not, Int32x4, Int32x4)                           \
-  V(SIMD.int32x4, splat, Int32x4Splat, Int32x4, Integer32)                     \
-  V(SIMD.int32x4, toFloat32x4, Int32x4ToFloat32x4, Float32x4, Int32x4)
+  V(SIMD.int32x4, splat, Int32x4Splat, Int32x4, Integer32)
 
 // Do not need to install them in InstallExperimentalSIMDBuiltinFunctionIds.
 #define SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(V)                           \
