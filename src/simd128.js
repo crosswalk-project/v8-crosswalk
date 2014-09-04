@@ -100,28 +100,40 @@ endmacro
 SIMD128_DATA_TYPE_FUNCTIONS(DECLARE_DATA_TYPE_FUNCTION)
 
 function Float32x4Constructor(x, y, z, w) {
-  x = TO_NUMBER_INLINE(x);
-  y = TO_NUMBER_INLINE(y);
-  z = TO_NUMBER_INLINE(z);
-  w = TO_NUMBER_INLINE(w);
-
-  return %CreateFloat32x4(x, y, z, w);
+  if (arguments.length == 1) {
+    CheckFloat32x4(x);
+    return %CreateFloat32x4(x.x, x.y, x.z, x.w);
+  } else {
+    x = TO_NUMBER_INLINE(x);
+    y = TO_NUMBER_INLINE(y);
+    z = TO_NUMBER_INLINE(z);
+    w = TO_NUMBER_INLINE(w);
+    return %CreateFloat32x4(x, y, z, w);
+  }
 }
 
 function Float64x2Constructor(x, y) {
-  x = TO_NUMBER_INLINE(x);
-  y = TO_NUMBER_INLINE(y);
-
-  return %CreateFloat64x2(x, y);
+  if (arguments.length == 1) {
+    CheckFloat64x2(x);
+    return %CreateFloat64x2(x.x, x.y);
+  } else {
+    x = TO_NUMBER_INLINE(x);
+    y = TO_NUMBER_INLINE(y);
+    return %CreateFloat64x2(x, y);
+  }
 }
 
 function Int32x4Constructor(x, y, z, w) {
-  x = TO_INT32(x);
-  y = TO_INT32(y);
-  z = TO_INT32(z);
-  w = TO_INT32(w);
-
-  return %CreateInt32x4(x, y, z, w);
+  if (arguments.length == 1) {
+    CheckInt32x4(x);
+    return %CreateInt32x4(x.x, x.y, x.z, x.w);
+  } else {
+    x = TO_INT32(x);
+    y = TO_INT32(y);
+    z = TO_INT32(z);
+    w = TO_INT32(w);
+    return %CreateInt32x4(x, y, z, w);
+  }
 }
 
 function SetUpFloat32x4() {

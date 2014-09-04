@@ -7180,6 +7180,9 @@ class Script: public Struct {
   V(SIMD.int32x4, zero, Int32x4Zero, Int32x4)
 
 #define SIMD_UNARY_OPERATIONS(V)                                               \
+  V(SIMD, float32x4, Float32x4Coercion, Float32x4, Float32x4)                  \
+  V(SIMD, float64x2, Float64x2Coercion, Float64x2, Float64x2)                  \
+  V(SIMD, int32x4, Int32x4Coercion, Int32x4, Int32x4)                          \
   V(SIMD.float32x4, abs, Float32x4Abs, Float32x4, Float32x4)                   \
   V(SIMD.float32x4, fromInt32x4, Int32x4ToFloat32x4, Float32x4, Int32x4)       \
   V(SIMD.float32x4, fromInt32x4Bits, Int32x4BitsToFloat32x4, Float32x4,        \
