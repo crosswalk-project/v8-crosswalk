@@ -2986,7 +2986,8 @@ LInstruction* LChunkBuilder::DoTernarySIMDOperation(
   LTernarySIMDOperation* result =
       new(zone()) LTernarySIMDOperation(first, second, third, instr->op());
   switch (instr->op()) {
-    case kInt32x4Select: {
+    case kInt32x4Select:
+    case kFloat32x4Select: {
       return DefineAsRegister(result);
     }
     case kFloat32x4ShuffleMix: {

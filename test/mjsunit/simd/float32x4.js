@@ -579,6 +579,22 @@ testSIMDNot();
 %OptimizeFunctionOnNextCall(testSIMDNot);
 testSIMDNot();
 
+function testSIMDSelect() {
+  var m = SIMD.int32x4.bool(true, true, false, false);
+  var t = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
+  var f = SIMD.float32x4(5.0, 6.0, 7.0, 8.0);
+  var s = SIMD.float32x4.select(m, t, f);
+  assertEquals(1.0, s.x);
+  assertEquals(2.0, s.y);
+  assertEquals(7.0, s.z);
+  assertEquals(8.0, s.w);
+}
+
+testSIMDSelect();
+testSIMDSelect();
+%OptimizeFunctionOnNextCall(testSIMDSelect);
+testSIMDSelect();
+
 
 function testFloat32x4ArrayBasic() {
   var a = new Float32x4Array(1);

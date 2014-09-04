@@ -15887,7 +15887,7 @@ RUNTIME_FUNCTION(Runtime_Float32x4ShuffleMix) {
 }
 
 
-RUNTIME_FUNCTION(Runtime_Int32x4Select) {
+RUNTIME_FUNCTION(Runtime_Float32x4Select) {
   HandleScope scope(isolate);
   DCHECK(args.length() == 3);
 
@@ -15921,6 +15921,29 @@ RUNTIME_FUNCTION(Runtime_Int32x4Select) {
   result.storage[3] = tempW.f;
 
   RETURN_Float32x4_RESULT(result);
+}
+
+
+RUNTIME_FUNCTION(Runtime_Int32x4Select) {
+  HandleScope scope(isolate);
+  DCHECK(args.length() == 3);
+
+  CONVERT_ARG_CHECKED(Int32x4, self, 0);
+  CONVERT_ARG_CHECKED(Int32x4, tv, 1);
+  CONVERT_ARG_CHECKED(Int32x4, fv, 2);
+
+  uint32_t _maskX = self->x();
+  uint32_t _maskY = self->y();
+  uint32_t _maskZ = self->z();
+  uint32_t _maskW = self->w();
+
+  int32x4_value_t result;
+  result.storage[0] = (_maskX & tv->x()) | (~_maskX & fv->x());
+  result.storage[1] = (_maskY & tv->y()) | (~_maskY & fv->y());
+  result.storage[2] = (_maskZ & tv->z()) | (~_maskZ & fv->z());
+  result.storage[3] = (_maskW & tv->w()) | (~_maskW & fv->w());
+
+  RETURN_Int32x4_RESULT(result);
 }
 
 
