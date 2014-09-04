@@ -46,6 +46,27 @@ testConstructor();
 %OptimizeFunctionOnNextCall(testConstructor);
 testConstructor();
 
+function test1ArgumentConstructor() {
+  var f4 = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
+  var f4_new = SIMD.float32x4(f4);
+  assertEquals(f4_new.x, f4.x);
+  assertEquals(f4_new.y, f4.y);
+  assertEquals(f4_new.z, f4.z);
+  assertEquals(f4_new.w, f4.w);
+
+  f4 = SIMD.float32x4(1.1, 2.2, 3.3, 4.4);
+  f4_new = SIMD.float32x4(f4);
+  assertEquals(f4_new.x, f4.x);
+  assertEquals(f4_new.y, f4.y);
+  assertEquals(f4_new.z, f4.z);
+  assertEquals(f4_new.w, f4.w);
+}
+
+test1ArgumentConstructor();
+test1ArgumentConstructor();
+%OptimizeFunctionOnNextCall(test1ArgumentConstructor);
+test1ArgumentConstructor();
+
 function testZeroConstructor() {
   var z4 = SIMD.float32x4.zero();
   assertEquals(0.0, z4.x);
