@@ -380,6 +380,13 @@ function Float32x4ShuffleMixJS(a4, b4, mask) {
   return %Float32x4ShuffleMix(a4, b4, mask);
 }
 
+function Float32x4SelectJS(x4, trueValue, falseValue) {
+  CheckInt32x4(x4);
+  CheckFloat32x4(trueValue);
+  CheckFloat32x4(falseValue);
+  return %Float32x4Select(x4, trueValue, falseValue);
+}
+
 function Float64x2SplatJS(f) {
   f = TO_NUMBER_INLINE(f);
   return %CreateFloat64x2(f, f);
@@ -415,8 +422,8 @@ function Int32x4SplatJS(s) {
 
 function Int32x4SelectJS(x4, trueValue, falseValue) {
   CheckInt32x4(x4);
-  CheckFloat32x4(trueValue);
-  CheckFloat32x4(falseValue);
+  CheckInt32x4(trueValue);
+  CheckInt32x4(falseValue);
   return %Int32x4Select(x4, trueValue, falseValue);
 }
 
@@ -751,7 +758,8 @@ function SetUpSIMD() {
     "shuffle", Float32x4ShuffleJS,
     // Ternary
     "clamp", Float32x4ClampJS,
-    "shuffleMix", Float32x4ShuffleMixJS
+    "shuffleMix", Float32x4ShuffleMixJS,
+    "select", Float32x4SelectJS
   ));
 
   // Set up non-enumerable properties of the SIMD float64x2 object.
