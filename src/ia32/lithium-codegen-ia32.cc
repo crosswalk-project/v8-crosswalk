@@ -3072,7 +3072,7 @@ void LCodeGen::HandleExternalArrayOpRequiresTemp(
     if (key_representation.IsSmi()) {
       pre_shift_size -= kSmiTagSize;
     }
-    ASSERT(pre_shift_size > 0);
+    DCHECK(pre_shift_size > 0);
     __ shl(ToRegister(key), pre_shift_size);
   } else {
     __ SmiUntag(ToRegister(key));
@@ -4207,7 +4207,7 @@ void LCodeGen::DoBoundsCheck(LBoundsCheck* instr) {
 
 template<class T>
 void LCodeGen::DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr) {
-  ASSERT(instr->value()->IsRegister());
+  DCHECK(instr->value()->IsRegister());
   Register temp0 = ToRegister(instr->temp0());
   Register temp1 = ToRegister(instr->temp1());
   Register input_reg = ToRegister(instr->value());

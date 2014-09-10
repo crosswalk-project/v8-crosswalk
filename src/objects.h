@@ -5201,7 +5201,7 @@ class ExternalFloat32x4Array: public ExternalArray {
                                  Handle<Object> value);
 
   // Casting.
-  static inline ExternalFloat32x4Array* cast(Object* obj);
+  DECLARE_CAST(ExternalFloat32x4Array)
 
   // Dispatched behavior.
   DECLARE_PRINTER(ExternalFloat32x4Array)
@@ -5227,7 +5227,7 @@ class ExternalFloat64x2Array: public ExternalArray {
                                  Handle<Object> value);
 
   // Casting.
-  static inline ExternalFloat64x2Array* cast(Object* obj);
+  DECLARE_CAST(ExternalFloat64x2Array)
 
   // Dispatched behavior.
   DECLARE_PRINTER(ExternalFloat64x2Array)
@@ -5253,7 +5253,7 @@ class ExternalInt32x4Array: public ExternalArray {
                                  Handle<Object> value);
 
   // Casting.
-  static inline ExternalInt32x4Array* cast(Object* obj);
+  DECLARE_CAST(ExternalInt32x4Array)
 
   // Dispatched behavior.
   DECLARE_PRINTER(ExternalInt32x4Array)
@@ -10577,11 +10577,10 @@ class Float32x4: public JSObject {
   DECL_ACCESSORS(value, Object)
 
   // Casting.
-  static inline Float32x4* cast(Object* obj);
+  DECLARE_CAST(Float32x4)
 
   // Dispatched behavior.
-  void Float32x4Print(FILE* out);
-  void Float32x4Print(StringStream* accumulator);
+  void Float32x4Print(OStream& os);
   DECLARE_VERIFIER(Float32x4)
 
   // Helpers.
@@ -10615,11 +10614,10 @@ class Float64x2: public JSObject {
   DECL_ACCESSORS(value, Object)
 
   // Casting.
-  static inline Float64x2* cast(Object* obj);
+  DECLARE_CAST(Float64x2)
 
   // Dispatched behavior.
-  void Float64x2Print(FILE* out);
-  void Float64x2Print(StringStream* accumulator);
+  void Float64x2Print(OStream& os);
   DECLARE_VERIFIER(Float64x2)
 
   // Helpers.
@@ -10651,11 +10649,10 @@ class Int32x4: public JSObject {
   DECL_ACCESSORS(value, Object)
 
   // Casting.
-  static inline Int32x4* cast(Object* obj);
+  DECLARE_CAST(Int32x4)
 
   // Dispatched behavior.
-  void Int32x4Print(FILE* out);
-  void Int32x4Print(StringStream* accumulator);
+  void Int32x4Print(OStream& os);
   DECLARE_VERIFIER(Int32x4)
 
   // Helpers.

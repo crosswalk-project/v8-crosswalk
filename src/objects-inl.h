@@ -1593,7 +1593,7 @@ int Float32x4::kRuntimeAllocatorId() {
 
 
 float Float32x4::getAt(int index) {
-  ASSERT(index >= 0 && index < kLanes);
+  DCHECK(index >= 0 && index < kLanes);
   return get().storage[index];
 }
 
@@ -1619,7 +1619,7 @@ int Float64x2::kRuntimeAllocatorId() {
 
 
 double Float64x2::getAt(int index) {
-  ASSERT(index >= 0 && index < kLanes);
+  DCHECK(index >= 0 && index < kLanes);
   return get().storage[index];
 }
 
@@ -1644,7 +1644,7 @@ int Int32x4::kRuntimeAllocatorId() {
 
 
 int32_t Int32x4::getAt(int index) {
-  ASSERT(index >= 0 && index < kLanes);
+  DCHECK(index >= 0 && index < kLanes);
   return get().storage[index];;
 }
 
@@ -4143,7 +4143,7 @@ void ExternalFloat32Array::set(int index, float value) {
 
 
 float32x4_value_t ExternalFloat32x4Array::get_scalar(int index) {
-  ASSERT((index >= 0) && (index < this->length()));
+  DCHECK((index >= 0) && (index < this->length()));
   float* ptr = static_cast<float*>(external_pointer());
   float32x4_value_t value;
   value.storage[0] = ptr[index * 4 + 0];
@@ -4162,7 +4162,7 @@ Handle<Object> ExternalFloat32x4Array::get(Handle<ExternalFloat32x4Array> array,
 
 
 void ExternalFloat32x4Array::set(int index, const float32x4_value_t& value) {
-  ASSERT((index >= 0) && (index < this->length()));
+  DCHECK((index >= 0) && (index < this->length()));
   float* ptr = static_cast<float*>(external_pointer());
   ptr[index * 4 + 0] = value.storage[0];
   ptr[index * 4 + 1] = value.storage[1];
@@ -4172,7 +4172,7 @@ void ExternalFloat32x4Array::set(int index, const float32x4_value_t& value) {
 
 
 float64x2_value_t ExternalFloat64x2Array::get_scalar(int index) {
-  ASSERT((index >= 0) && (index < this->length()));
+  DCHECK((index >= 0) && (index < this->length()));
   double* ptr = static_cast<double*>(external_pointer());
   float64x2_value_t value;
   value.storage[0] = ptr[index * 2 + 0];
@@ -4189,7 +4189,7 @@ Handle<Object> ExternalFloat64x2Array::get(Handle<ExternalFloat64x2Array> array,
 
 
 void ExternalFloat64x2Array::set(int index, const float64x2_value_t& value) {
-  ASSERT((index >= 0) && (index < this->length()));
+  DCHECK((index >= 0) && (index < this->length()));
   double* ptr = static_cast<double*>(external_pointer());
   ptr[index * 2 + 0] = value.storage[0];
   ptr[index * 2 + 1] = value.storage[1];
@@ -4197,7 +4197,7 @@ void ExternalFloat64x2Array::set(int index, const float64x2_value_t& value) {
 
 
 int32x4_value_t ExternalInt32x4Array::get_scalar(int index) {
-  ASSERT((index >= 0) && (index < this->length()));
+  DCHECK((index >= 0) && (index < this->length()));
   int32_t* ptr = static_cast<int32_t*>(external_pointer());
   int32x4_value_t value;
   value.storage[0] = ptr[index * 4 + 0];
@@ -4216,7 +4216,7 @@ Handle<Object> ExternalInt32x4Array::get(Handle<ExternalInt32x4Array> array,
 
 
 void ExternalInt32x4Array::set(int index, const int32x4_value_t& value) {
-  ASSERT((index >= 0) && (index < this->length()));
+  DCHECK((index >= 0) && (index < this->length()));
   int32_t* ptr = static_cast<int32_t*>(external_pointer());
   ptr[index * 4 + 0] = value.storage[0];
   ptr[index * 4 + 1] = value.storage[1];
@@ -4423,17 +4423,17 @@ Handle<Object> FixedTypedArray<Float32x4ArrayTraits>::SetValue(
     Handle<FixedTypedArray<Float32x4ArrayTraits> > array,
     uint32_t index, Handle<Object> value) {
   float32x4_value_t cast_value;
-  cast_value.storage[0] = static_cast<float>(OS::nan_value());
-  cast_value.storage[1] = static_cast<float>(OS::nan_value());
-  cast_value.storage[2] = static_cast<float>(OS::nan_value());
-  cast_value.storage[3] = static_cast<float>(OS::nan_value());
+  cast_value.storage[0] = static_cast<float>(base::OS::nan_value());
+  cast_value.storage[1] = static_cast<float>(base::OS::nan_value());
+  cast_value.storage[2] = static_cast<float>(base::OS::nan_value());
+  cast_value.storage[3] = static_cast<float>(base::OS::nan_value());
   if (index < static_cast<uint32_t>(array->length())) {
     if (value->IsFloat32x4()) {
       cast_value = Handle<Float32x4>::cast(value)->get();
     } else {
       // Clamp undefined to NaN (default). All other types have been
       // converted to a number type further up in the call chain.
-      ASSERT(value->IsUndefined());
+      DCHECK(value->IsUndefined());
     }
     array->set(index, cast_value);
   }
@@ -4446,15 +4446,15 @@ Handle<Object> FixedTypedArray<Float64x2ArrayTraits>::SetValue(
     Handle<FixedTypedArray<Float64x2ArrayTraits> > array,
     uint32_t index, Handle<Object> value) {
   float64x2_value_t cast_value;
-  cast_value.storage[0] = OS::nan_value();
-  cast_value.storage[1] = OS::nan_value();
+  cast_value.storage[0] = base::OS::nan_value();
+  cast_value.storage[1] = base::OS::nan_value();
   if (index < static_cast<uint32_t>(array->length())) {
     if (value->IsFloat64x2()) {
       cast_value = Handle<Float64x2>::cast(value)->get();
     } else {
       // Clamp undefined to NaN (default). All other types have been
       // converted to a number type further up in the call chain.
-      ASSERT(value->IsUndefined());
+      DCHECK(value->IsUndefined());
     }
     array->set(index, cast_value);
   }
@@ -4477,7 +4477,7 @@ Handle<Object> FixedTypedArray<Int32x4ArrayTraits>::SetValue(
     } else {
       // Clamp undefined to zero (default). All other types have been
       // converted to a number type further up in the call chain.
-      ASSERT(value->IsUndefined());
+      DCHECK(value->IsUndefined());
     }
     array->set(index, cast_value);
   }

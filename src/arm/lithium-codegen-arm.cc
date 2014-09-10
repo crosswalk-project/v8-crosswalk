@@ -3215,7 +3215,7 @@ void LCodeGen::DoDeferredSIMD128ToTagged(LInstruction* instr,
   Register reg = ToRegister(instr->result());
   __ mov(reg, Operand::Zero());
 
-  PushSafepointRegistersScope scope(this, Safepoint::kWithRegisters);
+  PushSafepointRegistersScope scope(this);
   __ ldr(cp, MemOperand(fp, StandardFrameConstants::kContextOffset));
   __ CallRuntimeSaveDoubles(id);
   RecordSafepointWithRegisters(
@@ -4335,7 +4335,7 @@ void LCodeGen::DoBoundsCheck(LBoundsCheck* instr) {
 
 template<class T>
 void LCodeGen::DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr) {
-  ASSERT(instr->value()->IsRegister());
+  DCHECK(instr->value()->IsRegister());
   Register temp = ToRegister(instr->temp());
   Register temp2 = ToRegister(instr->temp2());
   Register input_reg = ToRegister(instr->value());

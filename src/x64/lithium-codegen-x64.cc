@@ -3102,7 +3102,7 @@ void LCodeGen::HandleExternalArrayOpRequiresPreScale(
   if (ExternalArrayOpRequiresPreScale(elements_kind)) {
     int pre_shift_size = ElementsKindToShiftSize(elements_kind) -
         static_cast<int>(maximal_scale_factor);
-    ASSERT(pre_shift_size > 0);
+    DCHECK(pre_shift_size > 0);
     __ shll(ToRegister(key), Immediate(pre_shift_size));
   }
 }
@@ -4371,7 +4371,7 @@ void LCodeGen::DoStoreKeyedSIMD128ExternalArray(LStoreKeyed* instr) {
     HandleExternalArrayOpRequiresPreScale(key, elements_kind);
   }
 
-  ASSERT(instr->value()->IsRegister());
+  DCHECK(instr->value()->IsRegister());
   Register temp0 = ToRegister(instr->temp0());
   Register temp1 = ToRegister(instr->temp1());
   Register input_reg = ToRegister(instr->value());

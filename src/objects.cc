@@ -1559,19 +1559,19 @@ void HeapObject::HeapObjectShortPrint(OStream& os) {  // NOLINT
       break;
     }
     case FLOAT32x4_TYPE:
-      accumulator->Add("<Float32x4: ");
-      Float32x4::cast(this)->Float32x4Print(accumulator);
-      accumulator->Put('>');
+      os << "<Float32x4: ";
+      Float32x4::cast(this)->Float32x4Print(os);
+      os << '>';
       break;
     case FLOAT64x2_TYPE:
-      accumulator->Add("<Float64x2: ");
-      Float64x2::cast(this)->Float64x2Print(accumulator);
-      accumulator->Put('>');
+      os << "<Float64x2: ";
+      Float64x2::cast(this)->Float64x2Print(os);
+      os << '>';
       break;
     case INT32x4_TYPE:
-      accumulator->Add("<Int32x4: ");
-      Int32x4::cast(this)->Int32x4Print(accumulator);
-      accumulator->Put('>');
+      os << "<Int32x4: ";
+      Int32x4::cast(this)->Int32x4Print(os);
+      os << '>';
       break;
     case JS_PROXY_TYPE:
       os << "<JSProxy>";
@@ -1756,12 +1756,7 @@ void HeapNumber::HeapNumberPrint(OStream& os) {  // NOLINT
 }
 
 
-void Float32x4::Float32x4Print(FILE* out) {
-  PrintF(out, "%.16g %.16g %.16g %.16g", x(), y(), z(), w());
-}
-
-
-void Float32x4::Float32x4Print(StringStream* accumulator) {
+void Float32x4::Float32x4Print(OStream& os) {
   // The Windows version of vsnprintf can allocate when printing a %g string
   // into a buffer that may not be big enough.  We don't want random memory
   // allocation when producing post-crash stack traces, so we print into a
@@ -1770,16 +1765,11 @@ void Float32x4::Float32x4Print(StringStream* accumulator) {
   // there is no more space in the buffer).
   EmbeddedVector<char, 100> buffer;
   SNPrintF(buffer, "%.16g %.16g %.16g %.16g", x(), y(), z(), w());
-  accumulator->Add("%s", buffer.start());
+  os << buffer.start();
 }
 
 
-void Int32x4::Int32x4Print(FILE* out) {
-  PrintF(out, "%u %u %u %u", x(), y(), z(), w());
-}
-
-
-void Int32x4::Int32x4Print(StringStream* accumulator) {
+void Int32x4::Int32x4Print(OStream& os) {
   // The Windows version of vsnprintf can allocate when printing a %g string
   // into a buffer that may not be big enough.  We don't want random memory
   // allocation when producing post-crash stack traces, so we print into a
@@ -1788,16 +1778,11 @@ void Int32x4::Int32x4Print(StringStream* accumulator) {
   // there is no more space in the buffer).
   EmbeddedVector<char, 100> buffer;
   SNPrintF(buffer, "%u %u %u %u", x(), y(), z(), w());
-  accumulator->Add("%s", buffer.start());
+  os << buffer.start();
 }
 
 
-void Float64x2::Float64x2Print(FILE* out) {
-  PrintF(out, "%.16g %.16g", x(), y());
-}
-
-
-void Float64x2::Float64x2Print(StringStream* accumulator) {
+void Float64x2::Float64x2Print(OStream& os) {
   // The Windows version of vsnprintf can allocate when printing a %g string
   // into a buffer that may not be big enough.  We don't want random memory
   // allocation when producing post-crash stack traces, so we print into a
@@ -1806,7 +1791,7 @@ void Float64x2::Float64x2Print(StringStream* accumulator) {
   // there is no more space in the buffer).
   EmbeddedVector<char, 100> buffer;
   SNPrintF(buffer, "%.16g %.16g", x(), y());
-  accumulator->Add("%s", buffer.start());
+  os << buffer.start();
 }
 
 
@@ -15193,17 +15178,17 @@ Handle<Object> ExternalFloat32x4Array::SetValue(
     uint32_t index,
     Handle<Object> value) {
   float32x4_value_t cast_value;
-  cast_value.storage[0] = static_cast<float>(OS::nan_value());
-  cast_value.storage[1] = static_cast<float>(OS::nan_value());
-  cast_value.storage[2] = static_cast<float>(OS::nan_value());
-  cast_value.storage[3] = static_cast<float>(OS::nan_value());
+  cast_value.storage[0] = static_cast<float>(base::OS::nan_value());
+  cast_value.storage[1] = static_cast<float>(base::OS::nan_value());
+  cast_value.storage[2] = static_cast<float>(base::OS::nan_value());
+  cast_value.storage[3] = static_cast<float>(base::OS::nan_value());
   if (index < static_cast<uint32_t>(array->length())) {
     if (value->IsFloat32x4()) {
       cast_value = Handle<Float32x4>::cast(value)->get();
     } else {
       // Clamp undefined to NaN (default). All other types have been
       // converted to a number type further up in the call chain.
-      ASSERT(value->IsUndefined());
+      DCHECK(value->IsUndefined());
     }
     array->set(index, cast_value);
   }
@@ -15224,7 +15209,7 @@ Handle<Object> ExternalInt32x4Array::SetValue(
     } else {
       // Clamp undefined to zero (default). All other types have been
       // converted to a number type further up in the call chain.
-      ASSERT(value->IsUndefined());
+      DCHECK(value->IsUndefined());
     }
     array->set(index, cast_value);
   }
@@ -15237,15 +15222,15 @@ Handle<Object> ExternalFloat64x2Array::SetValue(
     uint32_t index,
     Handle<Object> value) {
   float64x2_value_t cast_value;
-  cast_value.storage[0] = OS::nan_value();
-  cast_value.storage[1] = OS::nan_value();
+  cast_value.storage[0] = base::OS::nan_value();
+  cast_value.storage[1] = base::OS::nan_value();
   if (index < static_cast<uint32_t>(array->length())) {
     if (value->IsFloat64x2()) {
       cast_value = Handle<Float64x2>::cast(value)->get();
     } else {
       // Clamp undefined to NaN (default). All other types have been
       // converted to a number type further up in the call chain.
-      ASSERT(value->IsUndefined());
+      DCHECK(value->IsUndefined());
     }
     array->set(index, cast_value);
   }

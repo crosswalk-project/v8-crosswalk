@@ -6935,7 +6935,7 @@ RUNTIME_FUNCTION(Runtime_AllocateHeapNumber) {
 
 RUNTIME_FUNCTION(Runtime_AllocateFloat32x4) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 0);
+  DCHECK(args.length() == 0);
 
   float32x4_value_t zero = {{0, 0, 0, 0}};
   return *isolate->factory()->NewFloat32x4(zero);
@@ -6944,7 +6944,7 @@ RUNTIME_FUNCTION(Runtime_AllocateFloat32x4) {
 
 RUNTIME_FUNCTION(Runtime_AllocateFloat64x2) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 0);
+  DCHECK(args.length() == 0);
 
   float64x2_value_t zero = {{0, 0}};
   return *isolate->factory()->NewFloat64x2(zero);
@@ -6953,7 +6953,7 @@ RUNTIME_FUNCTION(Runtime_AllocateFloat64x2) {
 
 RUNTIME_FUNCTION(Runtime_AllocateInt32x4) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 0);
+  DCHECK(args.length() == 0);
 
   int32x4_value_t zero = {{0, 0, 0, 0}};
   return *isolate->factory()->NewInt32x4(zero);
@@ -10232,7 +10232,7 @@ static void IterateExternalFloat32x4ArrayElements(Isolate* isolate,
       ExternalFloat32x4Array::cast(receiver->elements()));
   uint32_t len = static_cast<uint32_t>(array->length());
 
-  ASSERT(visitor != NULL);
+  DCHECK(visitor != NULL);
   for (uint32_t j = 0; j < len; j++) {
     HandleScope loop_scope(isolate);
     Handle<Object> e = isolate->factory()->NewFloat32x4(array->get_scalar(j));
@@ -10248,7 +10248,7 @@ static void IterateExternalFloat64x2ArrayElements(Isolate* isolate,
       ExternalFloat64x2Array::cast(receiver->elements()));
   uint32_t len = static_cast<uint32_t>(array->length());
 
-  ASSERT(visitor != NULL);
+  DCHECK(visitor != NULL);
   for (uint32_t j = 0; j < len; j++) {
     HandleScope loop_scope(isolate);
     Handle<Object> e = isolate->factory()->NewFloat64x2(array->get_scalar(j));
@@ -10264,7 +10264,7 @@ static void IterateExternalInt32x4ArrayElements(Isolate* isolate,
       ExternalInt32x4Array::cast(receiver->elements()));
   uint32_t len = static_cast<uint32_t>(array->length());
 
-  ASSERT(visitor != NULL);
+  DCHECK(visitor != NULL);
   for (uint32_t j = 0; j < len; j++) {
     HandleScope loop_scope(isolate);
     Handle<Object> e = isolate->factory()->NewInt32x4(array->get_scalar(j));
@@ -15332,7 +15332,7 @@ RUNTIME_FUNCTION_RETURN_PAIR(Runtime_ForInNext) {
 
 RUNTIME_FUNCTION(Runtime_CreateFloat32x4) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 4);
+  DCHECK(args.length() == 4);
   RUNTIME_ASSERT(args[0]->IsNumber());
   RUNTIME_ASSERT(args[1]->IsNumber());
   RUNTIME_ASSERT(args[2]->IsNumber());
@@ -15350,7 +15350,7 @@ RUNTIME_FUNCTION(Runtime_CreateFloat32x4) {
 
 RUNTIME_FUNCTION(Runtime_CreateFloat64x2) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 2);
+  DCHECK(args.length() == 2);
   RUNTIME_ASSERT(args[0]->IsNumber());
   RUNTIME_ASSERT(args[1]->IsNumber());
 
@@ -15364,7 +15364,7 @@ RUNTIME_FUNCTION(Runtime_CreateFloat64x2) {
 
 RUNTIME_FUNCTION(Runtime_CreateInt32x4) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 4);
+  DCHECK(args.length() == 4);
   RUNTIME_ASSERT(args[0]->IsNumber());
   RUNTIME_ASSERT(args[1]->IsNumber());
   RUNTIME_ASSERT(args[2]->IsNumber());
@@ -15408,7 +15408,7 @@ union float64_uint64 {
 
 RUNTIME_FUNCTION(Runtime_Float32x4GetSignMask) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 1);
+  DCHECK(args.length() == 1);
   CONVERT_ARG_CHECKED(Float32x4, self, 0);
   float32_uint32 x(self->x());
   float32_uint32 y(self->y());
@@ -15425,7 +15425,7 @@ RUNTIME_FUNCTION(Runtime_Float32x4GetSignMask) {
 
 RUNTIME_FUNCTION(Runtime_Float64x2GetSignMask) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 1);
+  DCHECK(args.length() == 1);
   CONVERT_ARG_CHECKED(Float64x2, self, 0);
   float64_uint64 x(self->x());
   float64_uint64 y(self->y());
@@ -15438,7 +15438,7 @@ RUNTIME_FUNCTION(Runtime_Float64x2GetSignMask) {
 
 RUNTIME_FUNCTION(Runtime_Int32x4GetSignMask) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 1);
+  DCHECK(args.length() == 1);
   CONVERT_ARG_CHECKED(Int32x4, self, 0);
   uint32_t mx = (self->x() & 0x80000000) >> 31;
   uint32_t my = (self->y() & 0x80000000) >> 31;
@@ -15478,7 +15478,7 @@ RUNTIME_FUNCTION(Runtime_Int32x4GetSignMask) {
     TYPE, NAME, HEAP_FUNCTION, LANE, ACCESS_FUNCTION)         \
 RUNTIME_FUNCTION(Runtime_##TYPE##NAME) {        \
   HandleScope scope(isolate);                                 \
-  ASSERT(args.length() == 1);                                 \
+  DCHECK(args.length() == 1);                                 \
                                                               \
   CONVERT_ARG_CHECKED(TYPE, a, 0);                            \
                                                               \
@@ -15560,7 +15560,7 @@ inline double Sqrt<double>(double a) {
 #define DECLARE_SIMD_UNARY_FUNCTION(TYPE, FUNCTION)           \
 RUNTIME_FUNCTION(Runtime_##TYPE##FUNCTION) {    \
   HandleScope scope(isolate);                                 \
-  ASSERT(args.length() == 1);                                 \
+  DCHECK(args.length() == 1);                                 \
                                                               \
   CONVERT_ARG_CHECKED(TYPE, a, 0);                            \
                                                               \
@@ -15611,7 +15611,7 @@ inline void To<float, int32_t>(float s, int32_t* t) {
 RUNTIME_FUNCTION(                               \
     Runtime_##SOURCE_TYPE##FUNCTION##TARGET_TYPE) {           \
   HandleScope scope(isolate);                                 \
-  ASSERT(args.length() == 1);                                 \
+  DCHECK(args.length() == 1);                                 \
                                                               \
   CONVERT_ARG_CHECKED(SOURCE_TYPE, a, 0);                     \
                                                               \
@@ -15739,7 +15739,7 @@ static inline T Xor(T a, T b) {
     TYPE, FUNCTION, RETURN_TYPE)                              \
 RUNTIME_FUNCTION(Runtime_##TYPE##FUNCTION) {    \
   HandleScope scope(isolate);                                 \
-  ASSERT(args.length() == 2);                                 \
+  DCHECK(args.length() == 2);                                 \
                                                               \
   CONVERT_ARG_CHECKED(TYPE, a, 0);                            \
   CONVERT_ARG_CHECKED(TYPE, b, 1);                            \
@@ -15764,7 +15764,7 @@ SIMD128_BINARY_FUNCTIONS(DECLARE_SIMD_BINARY_FUNCTION)
 #define DECLARE_SIMD_SHUFFLE_FUNCTION(TYPE)                   \
 RUNTIME_FUNCTION(Runtime_##TYPE##Shuffle) {     \
   HandleScope scope(isolate);                                 \
-  ASSERT(args.length() == 2);                                 \
+  DCHECK(args.length() == 2);                                 \
                                                               \
   CONVERT_ARG_CHECKED(TYPE, a, 0);                            \
   RUNTIME_ASSERT(args[1]->IsNumber());                        \
@@ -15784,7 +15784,7 @@ SIMD128_SHUFFLE_FUNCTIONS(DECLARE_SIMD_SHUFFLE_FUNCTION)
 
 RUNTIME_FUNCTION(Runtime_Float32x4Scale) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 2);
+  DCHECK(args.length() == 2);
 
   CONVERT_ARG_CHECKED(Float32x4, self, 0);
   RUNTIME_ASSERT(args[1]->IsNumber());
@@ -15802,7 +15802,7 @@ RUNTIME_FUNCTION(Runtime_Float32x4Scale) {
 
 RUNTIME_FUNCTION(Runtime_Float64x2Scale) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 2);
+  DCHECK(args.length() == 2);
 
   CONVERT_ARG_CHECKED(Float64x2, self, 0);
   RUNTIME_ASSERT(args[1]->IsNumber());
@@ -15855,7 +15855,7 @@ RUNTIME_FUNCTION(Runtime_Float64x2Scale) {
     TYPE, NAME, ARG_FUNCTION, LANE)                           \
 RUNTIME_FUNCTION(Runtime_##TYPE##NAME) {        \
   HandleScope scope(isolate);                                 \
-  ASSERT(args.length() == 2);                                 \
+  DCHECK(args.length() == 2);                                 \
                                                               \
   CONVERT_ARG_CHECKED(TYPE, a, 0);                            \
   ARG_FUNCTION(value);                                        \
@@ -15877,7 +15877,7 @@ SIMD128_SET_LANE_FUNCTIONS(DECLARE_SIMD_SET_LANE_FUNCTION)
 
 RUNTIME_FUNCTION(Runtime_Float32x4Clamp) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 3);
+  DCHECK(args.length() == 3);
 
   CONVERT_ARG_CHECKED(Float32x4, self, 0);
   CONVERT_ARG_CHECKED(Float32x4, lo, 1);
@@ -15899,7 +15899,7 @@ RUNTIME_FUNCTION(Runtime_Float32x4Clamp) {
 
 RUNTIME_FUNCTION(Runtime_Float64x2Clamp) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 3);
+  DCHECK(args.length() == 3);
 
   CONVERT_ARG_CHECKED(Float64x2, self, 0);
   CONVERT_ARG_CHECKED(Float64x2, lo, 1);
@@ -15917,7 +15917,7 @@ RUNTIME_FUNCTION(Runtime_Float64x2Clamp) {
 
 RUNTIME_FUNCTION(Runtime_Float32x4ShuffleMix) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 3);
+  DCHECK(args.length() == 3);
 
   CONVERT_ARG_CHECKED(Float32x4, first, 0);
   CONVERT_ARG_CHECKED(Float32x4, second, 1);
@@ -15938,7 +15938,7 @@ RUNTIME_FUNCTION(Runtime_Float32x4ShuffleMix) {
 
 RUNTIME_FUNCTION(Runtime_Int32x4Select) {
   HandleScope scope(isolate);
-  ASSERT(args.length() == 3);
+  DCHECK(args.length() == 3);
 
   CONVERT_ARG_CHECKED(Int32x4, self, 0);
   CONVERT_ARG_CHECKED(Float32x4, tv, 1);

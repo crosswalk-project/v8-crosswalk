@@ -1426,7 +1426,7 @@ void Genesis::InitializeExperimentalGlobal() {
                        isolate()));
     cons->SetInstanceClassName(*name);
     Handle<JSObject> simd_object = factory()->NewJSObject(cons, TENURED);
-    ASSERT(simd_object->IsJSObject());
+    DCHECK(simd_object->IsJSObject());
     JSObject::SetOwnPropertyIgnoreAttributes(
         global, name, simd_object, DONT_ENUM).Check();
     native_context()->set_simd_object(*simd_object);
