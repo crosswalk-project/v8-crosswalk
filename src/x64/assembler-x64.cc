@@ -2544,8 +2544,8 @@ void Assembler::extractps(Register dst, XMMRegister src, byte imm8) {
 
 
 void Assembler::insertps(XMMRegister dst, XMMRegister src, byte imm8) {
-  ASSERT(CpuFeatures::IsSupported(SSE4_1));
-  ASSERT(is_uint8(imm8));
+  DCHECK(CpuFeatures::IsSupported(SSE4_1));
+  DCHECK(is_uint8(imm8));
   EnsureSpace ensure_space(this);
   emit(0x66);
   emit_optional_rex_32(dst, src);
@@ -2558,8 +2558,8 @@ void Assembler::insertps(XMMRegister dst, XMMRegister src, byte imm8) {
 
 
 void Assembler::pinsrd(XMMRegister dst, Register src, byte imm8) {
-  ASSERT(CpuFeatures::IsSupported(SSE4_1));
-  ASSERT(is_uint8(imm8));
+  DCHECK(CpuFeatures::IsSupported(SSE4_1));
+  DCHECK(is_uint8(imm8));
   EnsureSpace ensure_space(this);
   emit(0x66);
   emit_optional_rex_32(dst, src);
@@ -2648,7 +2648,7 @@ void Assembler::shufps(XMMRegister dst, XMMRegister src, byte imm8) {
 
 
 void Assembler::shufpd(XMMRegister dst, XMMRegister src, byte imm8) {
-  ASSERT(is_uint8(imm8));
+  DCHECK(is_uint8(imm8));
   EnsureSpace ensure_space(this);
   emit(0x66);
   emit_optional_rex_32(dst, src);
@@ -3375,7 +3375,7 @@ void Assembler::psubd(XMMRegister dst, const Operand& src) {
 
 
 void Assembler::pmulld(XMMRegister dst, XMMRegister src) {
-  ASSERT(IsEnabled(SSE4_1));
+  DCHECK(IsEnabled(SSE4_1));
   EnsureSpace ensure_space(this);
   emit(0x66);
   emit_optional_rex_32(dst, src);

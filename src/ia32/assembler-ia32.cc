@@ -209,10 +209,10 @@ Operand::Operand(Register index,
 
 
 Operand::Operand(const Operand& operand, int32_t offset) {
-  ASSERT(operand.len_ >= 1);
+  DCHECK(operand.len_ >= 1);
   // Operand encodes REX ModR/M [SIB] [Disp].
   byte modrm = operand.buf_[0];
-  ASSERT(modrm < 0xC0);  // Disallow mode 3 (register target).
+  DCHECK(modrm < 0xC0);  // Disallow mode 3 (register target).
   bool has_sib = ((modrm & 0x07) == 0x04);
   byte mode = modrm & 0xC0;
   int disp_offset = has_sib ? 2 : 1;
@@ -230,7 +230,7 @@ Operand::Operand(const Operand& operand, int32_t offset) {
   }
 
   // Write new operand with same registers, but with modified displacement.
-  ASSERT(offset >= 0 ? disp_value + offset >= disp_value
+  DCHECK(offset >= 0 ? disp_value + offset >= disp_value
                      : disp_value + offset < disp_value);  // No overflow.
   disp_value += offset;
   if (!is_int8(disp_value) || is_baseless) {
@@ -2325,7 +2325,7 @@ void Assembler::shufps(XMMRegister dst, XMMRegister src, byte imm8) {
 
 
 void Assembler::shufpd(XMMRegister dst, XMMRegister src, byte imm8) {
-    ASSERT(is_uint8(imm8));
+    DCHECK(is_uint8(imm8));
   EnsureSpace ensure_space(this);
   EMIT(0x66);
   EMIT(0x0F);
@@ -2740,7 +2740,7 @@ void Assembler::psubd(XMMRegister dst, const Operand& src) {
 
 
 void Assembler::pmulld(XMMRegister dst, const Operand& src) {
-  ASSERT(IsEnabled(SSE4_1));
+  DCHECK(IsEnabled(SSE4_1));
   EnsureSpace ensure_space(this);
   EMIT(0x66);
   EMIT(0x0F);
@@ -2817,8 +2817,8 @@ void Assembler::cmpnleps(XMMRegister dst, XMMRegister src) {
 
 
 void Assembler::insertps(XMMRegister dst, XMMRegister src, byte imm8) {
-  ASSERT(CpuFeatures::IsSupported(SSE4_1));
-  ASSERT(is_uint8(imm8));
+  DCHECK(CpuFeatures::IsSupported(SSE4_1));
+  DCHECK(is_uint8(imm8));
   EnsureSpace ensure_space(this);
   EMIT(0x66);
   EMIT(0x0F);

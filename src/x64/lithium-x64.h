@@ -17,7 +17,6 @@ namespace internal {
 // Forward declarations.
 class LCodeGen;
 
-<<<<<<< HEAD
 #define LITHIUM_CONCRETE_INSTRUCTION_LIST(V) \
   V(AccessArgumentsAt)                       \
   V(AddI)                                    \
@@ -120,12 +119,19 @@ class LCodeGen;
   V(MathSqrt)                                \
   V(ModByConstI)                             \
   V(ModByPowerOf2I)                          \
+  V(NullarySIMDOperation)                    \
+  V(UnarySIMDOperation)                      \
+  V(BinarySIMDOperation)                     \
+  V(TernarySIMDOperation)                    \
+  V(QuarternarySIMDOperation)                \
   V(ModI)                                    \
   V(MulI)                                    \
   V(NumberTagD)                              \
+  V(SIMD128ToTagged)                         \
   V(NumberTagI)                              \
   V(NumberTagU)                              \
   V(NumberUntagD)                            \
+  V(TaggedToSIMD128)                         \
   V(OsrEntry)                                \
   V(Parameter)                               \
   V(Power)                                   \
@@ -160,158 +166,7 @@ class LCodeGen;
   V(TypeofIsAndBranch)                       \
   V(Uint32ToDouble)                          \
   V(UnknownOSRValue)                         \
-=======
-#define LITHIUM_CONCRETE_INSTRUCTION_LIST(V)    \
-  V(AccessArgumentsAt)                          \
-  V(AddI)                                       \
-  V(Allocate)                                   \
-  V(AllocateBlockContext)                       \
-  V(ApplyArguments)                             \
-  V(ArgumentsElements)                          \
-  V(ArgumentsLength)                            \
-  V(ArithmeticD)                                \
-  V(ArithmeticT)                                \
-  V(BitI)                                       \
-  V(BoundsCheck)                                \
-  V(Branch)                                     \
-  V(CallJSFunction)                             \
-  V(CallWithDescriptor)                         \
-  V(CallFunction)                               \
-  V(CallNew)                                    \
-  V(CallNewArray)                               \
-  V(CallRuntime)                                \
-  V(CallStub)                                   \
-  V(CheckInstanceType)                          \
-  V(CheckMaps)                                  \
-  V(CheckMapValue)                              \
-  V(CheckNonSmi)                                \
-  V(CheckSmi)                                   \
-  V(CheckValue)                                 \
-  V(ClampDToUint8)                              \
-  V(ClampIToUint8)                              \
-  V(ClampTToUint8)                              \
-  V(ClassOfTestAndBranch)                       \
-  V(CompareMinusZeroAndBranch)                  \
-  V(CompareNumericAndBranch)                    \
-  V(CmpObjectEqAndBranch)                       \
-  V(CmpHoleAndBranch)                           \
-  V(CmpMapAndBranch)                            \
-  V(CmpT)                                       \
-  V(ConstantD)                                  \
-  V(ConstantE)                                  \
-  V(ConstantI)                                  \
-  V(ConstantS)                                  \
-  V(ConstantT)                                  \
-  V(ConstructDouble)                            \
-  V(Context)                                    \
-  V(DateField)                                  \
-  V(DebugBreak)                                 \
-  V(DeclareGlobals)                             \
-  V(Deoptimize)                                 \
-  V(DivByConstI)                                \
-  V(DivByPowerOf2I)                             \
-  V(DivI)                                       \
-  V(DoubleBits)                                 \
-  V(DoubleToI)                                  \
-  V(DoubleToSmi)                                \
-  V(Drop)                                       \
-  V(DummyUse)                                   \
-  V(Dummy)                                      \
-  V(FlooringDivByConstI)                        \
-  V(FlooringDivByPowerOf2I)                     \
-  V(FlooringDivI)                               \
-  V(ForInCacheArray)                            \
-  V(ForInPrepareMap)                            \
-  V(FunctionLiteral)                            \
-  V(GetCachedArrayIndex)                        \
-  V(Goto)                                       \
-  V(HasCachedArrayIndexAndBranch)               \
-  V(HasInstanceTypeAndBranch)                   \
-  V(InnerAllocatedObject)                       \
-  V(InstanceOf)                                 \
-  V(InstanceOfKnownGlobal)                      \
-  V(InstructionGap)                             \
-  V(Integer32ToDouble)                          \
-  V(InvokeFunction)                             \
-  V(IsConstructCallAndBranch)                   \
-  V(IsObjectAndBranch)                          \
-  V(IsStringAndBranch)                          \
-  V(IsSmiAndBranch)                             \
-  V(IsUndetectableAndBranch)                    \
-  V(Label)                                      \
-  V(LazyBailout)                                \
-  V(LoadContextSlot)                            \
-  V(LoadRoot)                                   \
-  V(LoadFieldByIndex)                           \
-  V(LoadFunctionPrototype)                      \
-  V(LoadGlobalCell)                             \
-  V(LoadGlobalGeneric)                          \
-  V(LoadKeyed)                                  \
-  V(LoadKeyedGeneric)                           \
-  V(LoadNamedField)                             \
-  V(LoadNamedGeneric)                           \
-  V(MapEnumLength)                              \
-  V(MathAbs)                                    \
-  V(MathClz32)                                  \
-  V(MathExp)                                    \
-  V(MathFloor)                                  \
-  V(MathLog)                                    \
-  V(MathMinMax)                                 \
-  V(MathPowHalf)                                \
-  V(MathRound)                                  \
-  V(MathSqrt)                                   \
-  V(ModByConstI)                                \
-  V(ModByPowerOf2I)                             \
-  V(NullarySIMDOperation)                       \
-  V(UnarySIMDOperation)                         \
-  V(BinarySIMDOperation)                        \
-  V(TernarySIMDOperation)                       \
-  V(QuarternarySIMDOperation)                   \
-  V(ModI)                                       \
-  V(MulI)                                       \
-  V(NumberTagD)                                 \
-  V(SIMD128ToTagged)                            \
-  V(NumberTagI)                                 \
-  V(NumberTagU)                                 \
-  V(NumberUntagD)                               \
-  V(TaggedToSIMD128)                            \
-  V(OsrEntry)                                   \
-  V(Parameter)                                  \
-  V(Power)                                      \
-  V(PushArgument)                               \
-  V(RegExpLiteral)                              \
-  V(Return)                                     \
-  V(SeqStringGetChar)                           \
-  V(SeqStringSetChar)                           \
-  V(ShiftI)                                     \
-  V(SmiTag)                                     \
-  V(SmiUntag)                                   \
-  V(StackCheck)                                 \
-  V(StoreCodeEntry)                             \
-  V(StoreContextSlot)                           \
-  V(StoreFrameContext)                          \
-  V(StoreGlobalCell)                            \
-  V(StoreKeyed)                                 \
-  V(StoreKeyedGeneric)                          \
-  V(StoreNamedField)                            \
-  V(StoreNamedGeneric)                          \
-  V(StringAdd)                                  \
-  V(StringCharCodeAt)                           \
-  V(StringCharFromCode)                         \
-  V(StringCompareAndBranch)                     \
-  V(SubI)                                       \
-  V(TaggedToI)                                  \
-  V(ThisFunction)                               \
-  V(ToFastProperties)                           \
-  V(TransitionElementsKind)                     \
-  V(TrapAllocationMemento)                      \
-  V(Typeof)                                     \
-  V(TypeofIsAndBranch)                          \
-  V(Uint32ToDouble)                             \
-  V(UnknownOSRValue)                            \
->>>>>>> 0b38499... Inline all SIMD operations and optimize the SIMD arrays load and store.
   V(WrapReceiver)
-
 
 #define DECLARE_CONCRETE_INSTRUCTION(type, mnemonic)                        \
   virtual Opcode opcode() const V8_FINAL V8_OVERRIDE {                      \
@@ -1120,7 +975,7 @@ class LNullarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 0, 0> {
   virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
   virtual const char* Mnemonic() const V8_OVERRIDE;
   static LNullarySIMDOperation* cast(LInstruction* instr) {
-    ASSERT(instr->IsNullarySIMDOperation());
+    DCHECK(instr->IsNullarySIMDOperation());
     return reinterpret_cast<LNullarySIMDOperation*>(instr);
   }
 
@@ -1147,7 +1002,7 @@ class LUnarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 1, 0> {
   virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
   virtual const char* Mnemonic() const V8_OVERRIDE;
   static LUnarySIMDOperation* cast(LInstruction* instr) {
-    ASSERT(instr->IsUnarySIMDOperation());
+    DCHECK(instr->IsUnarySIMDOperation());
     return reinterpret_cast<LUnarySIMDOperation*>(instr);
   }
 
@@ -1176,7 +1031,7 @@ class LBinarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 2, 0> {
   virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
   virtual const char* Mnemonic() const V8_OVERRIDE;
   static LBinarySIMDOperation* cast(LInstruction* instr) {
-    ASSERT(instr->IsBinarySIMDOperation());
+    DCHECK(instr->IsBinarySIMDOperation());
     return reinterpret_cast<LBinarySIMDOperation*>(instr);
   }
 
@@ -1208,7 +1063,7 @@ class LTernarySIMDOperation V8_FINAL : public LTemplateInstruction<1, 3, 0> {
   virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
   virtual const char* Mnemonic() const V8_OVERRIDE;
   static LTernarySIMDOperation* cast(LInstruction* instr) {
-    ASSERT(instr->IsTernarySIMDOperation());
+    DCHECK(instr->IsTernarySIMDOperation());
     return reinterpret_cast<LTernarySIMDOperation*>(instr);
   }
 
@@ -1243,7 +1098,7 @@ class LQuarternarySIMDOperation V8_FINAL
   virtual void CompileToNative(LCodeGen* generator) V8_OVERRIDE;
   virtual const char* Mnemonic() const V8_OVERRIDE;
   static LQuarternarySIMDOperation* cast(LInstruction* instr) {
-    ASSERT(instr->IsQuarternarySIMDOperation());
+    DCHECK(instr->IsQuarternarySIMDOperation());
     return reinterpret_cast<LQuarternarySIMDOperation*>(instr);
   }
 

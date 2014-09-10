@@ -540,7 +540,7 @@ class FrameDescription {
   double GetDoubleRegister(unsigned n) const;
 
   simd128_value_t GetSIMD128Register(unsigned n) const {
-    ASSERT(n < ARRAY_SIZE(simd128_registers_));
+    DCHECK(n < ARRAY_SIZE(simd128_registers_));
     return simd128_registers_[n];
   }
 
@@ -552,7 +552,7 @@ class FrameDescription {
   void SetDoubleRegister(unsigned n, double value);
 
   void SetSIMD128Register(unsigned n, simd128_value_t value) {
-    ASSERT(n < ARRAY_SIZE(simd128_registers_));
+    DCHECK(n < ARRAY_SIZE(simd128_registers_));
     simd128_registers_[n] = value;
   }
 

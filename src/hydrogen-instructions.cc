@@ -4862,9 +4862,8 @@ SIMD_NULLARY_OPERATIONS(SIMD_NULLARY_OPERATION_CASE_ITEM)
 }
 
 
-void HNullarySIMDOperation::PrintDataTo(StringStream* stream) {
-  const char* name = OpName();
-  stream->Add("%s", name);
+OStream& HNullarySIMDOperation::PrintDataTo(OStream& os) const {
+  return os << OpName();
 }
 
 
@@ -4883,10 +4882,8 @@ SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(SIMD_UNARY_OPERATION_CASE_ITEM)
 }
 
 
-void HUnarySIMDOperation::PrintDataTo(StringStream* stream) {
-  const char* name = OpName();
-  stream->Add("%s ", name);
-  value()->PrintNameTo(stream);
+OStream& HUnarySIMDOperation::PrintDataTo(OStream& os) const {
+  return os << OpName() << " " << NameOf(value());
 }
 
 
@@ -4904,12 +4901,9 @@ SIMD_BINARY_OPERATIONS(SIMD_BINARY_OPERATION_CASE_ITEM)
 }
 
 
-void HBinarySIMDOperation::PrintDataTo(StringStream* stream) {
-  const char* name = OpName();
-  stream->Add("%s ", name);
-  left()->PrintNameTo(stream);
-  stream->Add(" ");
-  right()->PrintNameTo(stream);
+OStream& HBinarySIMDOperation::PrintDataTo(OStream& os) const {
+  return os << OpName() << " " << NameOf(left()) << " "
+            << NameOf(right());
 }
 
 
@@ -4928,14 +4922,9 @@ SIMD_TERNARY_OPERATIONS(SIMD_TERNARY_OPERATION_CASE_ITEM)
 }
 
 
-void HTernarySIMDOperation::PrintDataTo(StringStream* stream) {
-  const char* name = OpName();
-  stream->Add("%s ", name);
-  first()->PrintNameTo(stream);
-  stream->Add(" ");
-  second()->PrintNameTo(stream);
-  stream->Add(" ");
-  third()->PrintNameTo(stream);
+OStream& HTernarySIMDOperation::PrintDataTo(OStream& os) const {
+  return os << OpName() << " " << NameOf(first()) << " "
+            << NameOf(second()) << " " << NameOf(third());
 }
 
 
@@ -4954,16 +4943,9 @@ SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
 }
 
 
-void HQuarternarySIMDOperation::PrintDataTo(StringStream* stream) {
-  const char* name = OpName();
-  stream->Add("%s ", name);
-  x()->PrintNameTo(stream);
-  stream->Add(" ");
-  y()->PrintNameTo(stream);
-  stream->Add(" ");
-  z()->PrintNameTo(stream);
-  stream->Add(" ");
-  w()->PrintNameTo(stream);
+OStream& HQuarternarySIMDOperation::PrintDataTo(OStream& os) const {
+  return os << OpName() << " " << NameOf(x()) << " " << NameOf(y()) << " "
+            << NameOf(z()) << " " << NameOf(w());
 }
 
 

@@ -2167,7 +2167,7 @@ static Handle<JSObject> ResolveBuiltinSIMDIdHolder(
     Vector<const char> property(name,
                                 static_cast<int>(period_pos - name));
     Handle<String> property_string = factory->InternalizeUtf8String(property);
-    ASSERT(!property_string.is_null());
+    DCHECK(!property_string.is_null());
     holder = Object::GetProperty(holder, property_string).ToHandleChecked();
     if (strcmp(".prototype", period_pos) == 0) {
       Handle<JSFunction> function = Handle<JSFunction>::cast(holder);

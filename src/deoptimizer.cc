@@ -2099,7 +2099,7 @@ void Deoptimizer::MaterializeHeapObjects(JavaScriptFrameIterator* it) {
              x4.storage[0], x4.storage[1], x4.storage[2], x4.storage[3],
              d.destination());
     }
-    ASSERT(values.at(d.destination())->IsTheHole());
+    DCHECK(values.at(d.destination())->IsTheHole());
     values.Set(d.destination(), float32x4);
   }
 
@@ -2120,7 +2120,7 @@ void Deoptimizer::MaterializeHeapObjects(JavaScriptFrameIterator* it) {
              x2.storage[0], x2.storage[1],
              d.destination());
     }
-    ASSERT(values.at(d.destination())->IsTheHole());
+    DCHECK(values.at(d.destination())->IsTheHole());
     values.Set(d.destination(), float64x2);
   }
 
@@ -2141,7 +2141,7 @@ void Deoptimizer::MaterializeHeapObjects(JavaScriptFrameIterator* it) {
              x4.storage[0], x4.storage[1], x4.storage[2], x4.storage[3],
              d.destination());
     }
-    ASSERT(values.at(d.destination())->IsTheHole());
+    DCHECK(values.at(d.destination())->IsTheHole());
     values.Set(d.destination(), int32x4);
   }
 
@@ -2463,7 +2463,7 @@ void Deoptimizer::DoTranslateObject(TranslationIterator* iterator,
                  x2.storage[0], x2.storage[1],
                  SIMD128Register::AllocationIndexToString(input_reg));
         } else {
-          ASSERT(opcode == Translation::INT32x4_REGISTER);
+          DCHECK(opcode == Translation::INT32x4_REGISTER);
           int32x4_value_t x4 = value.i4;
           PrintF(trace_scope_->file(),
                  "      object @0x%08" V8PRIxPTR ": [field #%d] <- ",
@@ -2594,7 +2594,7 @@ void Deoptimizer::DoTranslateObject(TranslationIterator* iterator,
                  x2.storage[0], x2.storage[1],
                  input_offset);
         } else {
-          ASSERT(opcode == Translation::INT32x4_STACK_SLOT);
+          DCHECK(opcode == Translation::INT32x4_STACK_SLOT);
           int32x4_value_t x4 = value.i4;
           PrintF(trace_scope_->file(),
                  "      object @0x%08" V8PRIxPTR ": [field #%d] <- ",
@@ -2819,7 +2819,7 @@ void Deoptimizer::DoTranslateCommand(TranslationIterator* iterator,
                  x2.storage[0], x2.storage[1],
                  SIMD128Register::AllocationIndexToString(input_reg));
         } else {
-          ASSERT(opcode == Translation::INT32x4_REGISTER);
+          DCHECK(opcode == Translation::INT32x4_REGISTER);
           int32x4_value_t x4 = value.i4;
           PrintF(trace_scope_->file(),
                  "    0x%08" V8PRIxPTR ":"
@@ -2965,7 +2965,7 @@ void Deoptimizer::DoTranslateCommand(TranslationIterator* iterator,
                  x2.storage[0], x2.storage[1],
                  input_offset);
         } else {
-          ASSERT(opcode == Translation::INT32x4_STACK_SLOT);
+          DCHECK(opcode == Translation::INT32x4_STACK_SLOT);
           int32x4_value_t x4 = value.i4;
           PrintF(trace_scope_->file(),
                  "    0x%08" V8PRIxPTR ": "
@@ -3144,7 +3144,7 @@ void Deoptimizer::AddObjectSIMD128Value(simd128_value_t value,
              opcode == Translation::FLOAT64x2_STACK_SLOT) {
     deferred_objects_float64x2_values_.Add(value_desc);
   } else {
-    ASSERT(opcode == Translation::INT32x4_REGISTER ||
+    DCHECK(opcode == Translation::INT32x4_REGISTER ||
            opcode == Translation::INT32x4_STACK_SLOT);
     deferred_objects_int32x4_values_.Add(value_desc);
   }
@@ -3172,7 +3172,7 @@ void Deoptimizer::AddSIMD128Value(intptr_t slot_address,
              opcode == Translation::FLOAT64x2_STACK_SLOT) {
     deferred_float64x2s_.Add(value_desc);
   } else {
-    ASSERT(opcode == Translation::INT32x4_REGISTER ||
+    DCHECK(opcode == Translation::INT32x4_REGISTER ||
            opcode == Translation::INT32x4_STACK_SLOT);
     deferred_int32x4s_.Add(value_desc);
   }

@@ -6490,7 +6490,7 @@ static BuiltinFunctionId NameToId(Isolate* isolate, Handle<String> name,
     } else if (type == FLOAT64x2_TYPE) {
       id = kFloat64x2GetSignMask;
     } else {
-      ASSERT(type == INT32x4_TYPE);
+      DCHECK(type == INT32x4_TYPE);
       id = kInt32x4GetSignMask;
     }
   } else if (name->Equals(isolate->heap()->x())) {
@@ -6499,7 +6499,7 @@ static BuiltinFunctionId NameToId(Isolate* isolate, Handle<String> name,
     } else if (type == FLOAT64x2_TYPE) {
       id = kFloat64x2GetX;
     } else {
-      ASSERT(type == INT32x4_TYPE);
+      DCHECK(type == INT32x4_TYPE);
       id = kInt32x4GetX;
     }
   } else if (name->Equals(isolate->heap()->y())) {
@@ -6508,7 +6508,7 @@ static BuiltinFunctionId NameToId(Isolate* isolate, Handle<String> name,
     } else if (type == FLOAT64x2_TYPE) {
       id = kFloat64x2GetY;
     } else {
-      ASSERT(type == INT32x4_TYPE);
+      DCHECK(type == INT32x4_TYPE);
       id = kInt32x4GetY;
     }
   } else if (name->Equals(isolate->heap()->z())) {
@@ -6516,16 +6516,16 @@ static BuiltinFunctionId NameToId(Isolate* isolate, Handle<String> name,
   } else if (name->Equals(isolate->heap()->w())) {
     id = type == FLOAT32x4_TYPE ? kFloat32x4GetW : kInt32x4GetW;
   } else if (name->Equals(isolate->heap()->flagX())) {
-    ASSERT(type == INT32x4_TYPE);
+    DCHECK(type == INT32x4_TYPE);
     id = kInt32x4GetFlagX;
   } else if (name->Equals(isolate->heap()->flagY())) {
-    ASSERT(type == INT32x4_TYPE);
+    DCHECK(type == INT32x4_TYPE);
     id = kInt32x4GetFlagY;
   } else if (name->Equals(isolate->heap()->flagZ())) {
-    ASSERT(type == INT32x4_TYPE);
+    DCHECK(type == INT32x4_TYPE);
     id = kInt32x4GetFlagZ;
   } else if (name->Equals(isolate->heap()->flagW())) {
-    ASSERT(type == INT32x4_TYPE);
+    DCHECK(type == INT32x4_TYPE);
     id = kInt32x4GetFlagW;
   } else {
     UNREACHABLE();
@@ -8821,7 +8821,7 @@ SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
       if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 2) {
         HValue* key = Pop();
         HValue* typed32x4_array = Pop();
-        ASSERT(typed32x4_array == receiver);
+        DCHECK(typed32x4_array == receiver);
         Drop(1);  // Drop function.
         HInstruction* instr = BuildUncheckedMonomorphicElementAccess(
             typed32x4_array, key, NULL,
@@ -8841,7 +8841,7 @@ SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
         HValue* value = Pop();
         HValue* key = Pop();
         HValue* typed32x4_array = Pop();
-        ASSERT(typed32x4_array == receiver);
+        DCHECK(typed32x4_array == receiver);
         Drop(1);  // Drop function.
         // TODO(haitao): add STORE_NO_TRANSITION_IGNORE_OUT_OF_BOUNDS.
         KeyedAccessStoreMode store_mode = STANDARD_STORE;

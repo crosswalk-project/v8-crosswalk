@@ -232,7 +232,7 @@ void LGapResolver::EmitMove(int index) {
     if (destination->IsSIMD128Register()) {
       __ movaps(cgen_->ToSIMD128Register(destination), src);
     } else {
-      ASSERT(destination->IsSIMD128StackSlot());
+      DCHECK(destination->IsSIMD128StackSlot());
       __ movups(cgen_->ToOperand(destination), src);
     }
   } else if (source->IsSIMD128StackSlot()) {
@@ -240,7 +240,7 @@ void LGapResolver::EmitMove(int index) {
     if (destination->IsSIMD128Register()) {
       __ movups(cgen_->ToSIMD128Register(destination), src);
     } else {
-      ASSERT(destination->IsSIMD128StackSlot());
+      DCHECK(destination->IsSIMD128StackSlot());
       __ movups(xmm0, src);
       __ movups(cgen_->ToOperand(destination), xmm0);
     }
@@ -330,7 +330,7 @@ void LGapResolver::EmitSwap(int index) {
 
   } else if (source->IsSIMD128Register() || destination->IsSIMD128Register()) {
     // Swap a xmm register and a xmm stack slot.
-    ASSERT((source->IsSIMD128Register() &&
+    DCHECK((source->IsSIMD128Register() &&
             destination->IsSIMD128StackSlot()) ||
            (source->IsSIMD128StackSlot() &&
             destination->IsSIMD128Register()));
@@ -338,7 +338,7 @@ void LGapResolver::EmitSwap(int index) {
                                                    ? source
                                                    : destination);
     LOperand* other = source->IsSIMD128Register() ? destination : source;
-    ASSERT(other->IsSIMD128StackSlot());
+    DCHECK(other->IsSIMD128StackSlot());
     Operand other_operand = cgen_->ToOperand(other);
     __ movups(xmm0, other_operand);
     __ movups(other_operand, reg);

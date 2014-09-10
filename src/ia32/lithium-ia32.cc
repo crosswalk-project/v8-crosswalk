@@ -2004,7 +2004,7 @@ LInstruction* LChunkBuilder::DoChange(HChange* instr) {
       }
     }
   } else if (from.IsSIMD128()) {
-    ASSERT(to.IsTagged());
+    DCHECK(to.IsTagged());
     info()->MarkAsDeferredCalling();
     LOperand* value = UseRegister(instr->value());
     LOperand* temp = TempRegister();
@@ -2356,7 +2356,7 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
           ? instr->value()->representation().IsInt32x4()
           : instr->value()->representation().IsTagged() &&
        IsInt32x4ElementsKind(elements_kind)));
-  ASSERT((instr->is_fixed_typed_array() &&
+  DCHECK((instr->is_fixed_typed_array() &&
           instr->elements()->representation().IsTagged()) ||
          (instr->is_external() &&
           instr->elements()->representation().IsExternal()));

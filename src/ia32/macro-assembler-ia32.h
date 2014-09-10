@@ -653,7 +653,6 @@ class MacroAssembler: public Assembler {
   // Allocate a float32x4 or int32x4 object in new space with undefined value.
   // Returns tagged pointer in result register, or jumps to gc_required if new
   // space is full.
->>>>>>> 0b38499... Inline all SIMD operations and optimize the SIMD arrays load and store.
   void AllocateSIMDHeapObject(int size,
                               Register result,
                               Register scratch,

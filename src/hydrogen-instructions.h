@@ -620,7 +620,7 @@ class HValue : public ZoneObject {
   void set_type(HType new_type) {
     // TODO(ningxin): for SIMD ops, the initial type is None which
     // hit the following ASSERT.
-    // ASSERT(new_type.IsSubtypeOf(type_));
+    // DCHECK(new_type.IsSubtypeOf(type_));
     type_ = new_type;
   }
 
@@ -7922,7 +7922,7 @@ class HNullarySIMDOperation V8_FINAL : public HTemplateInstruction<1> {
 
   HValue* context() { return OperandAt(0); }
 
-  virtual void PrintDataTo(StringStream* stream) V8_OVERRIDE;
+  virtual OStream& PrintDataTo(OStream& os) const V8_OVERRIDE;
 
   virtual Representation RequiredInputRepresentation(int index) V8_OVERRIDE {
     return Representation::Tagged();
@@ -7972,9 +7972,9 @@ class HUnarySIMDOperation V8_FINAL : public HTemplateInstruction<2> {
                            Representation to = Representation::Float32x4());
 
   HValue* context() { return OperandAt(0); }
-  HValue* value() { return OperandAt(1); }
+  HValue* value() const { return OperandAt(1); }
 
-  virtual void PrintDataTo(StringStream* stream) V8_OVERRIDE;
+  virtual OStream& PrintDataTo(OStream& os) const V8_OVERRIDE;
 
   virtual Representation RequiredInputRepresentation(int index) V8_OVERRIDE {
     if (index == 0) {
@@ -8050,10 +8050,10 @@ class HBinarySIMDOperation V8_FINAL : public HTemplateInstruction<3> {
                            BuiltinFunctionId op);
 
   HValue* context() { return OperandAt(0); }
-  HValue* left() { return OperandAt(1); }
-  HValue* right() { return OperandAt(2); }
+  HValue* left() const { return OperandAt(1); }
+  HValue* right() const { return OperandAt(2); }
 
-  virtual void PrintDataTo(StringStream* stream) V8_OVERRIDE;
+  virtual OStream& PrintDataTo(OStream& os) const V8_OVERRIDE;
 
   virtual Representation RequiredInputRepresentation(int index) V8_OVERRIDE {
     if (index == 0) {
@@ -8127,11 +8127,11 @@ class HTernarySIMDOperation V8_FINAL : public HTemplateInstruction<4> {
                            BuiltinFunctionId op);
 
   HValue* context() { return OperandAt(0); }
-  HValue* first() { return OperandAt(1); }
-  HValue* second() { return OperandAt(2); }
-  HValue* third() { return OperandAt(3); }
+  HValue* first() const { return OperandAt(1); }
+  HValue* second() const { return OperandAt(2); }
+  HValue* third() const { return OperandAt(3); }
 
-  virtual void PrintDataTo(StringStream* stream) V8_OVERRIDE;
+  virtual OStream& PrintDataTo(OStream& os) const V8_OVERRIDE;
 
   virtual Representation RequiredInputRepresentation(int index) V8_OVERRIDE {
     if (index == 0) {
@@ -8214,12 +8214,12 @@ class HQuarternarySIMDOperation V8_FINAL : public HTemplateInstruction<5> {
                            BuiltinFunctionId op);
 
   HValue* context() { return OperandAt(0); }
-  HValue* x() { return OperandAt(1); }
-  HValue* y() { return OperandAt(2); }
-  HValue* z() { return OperandAt(3); }
-  HValue* w() { return OperandAt(4); }
+  HValue* x() const { return OperandAt(1); }
+  HValue* y() const { return OperandAt(2); }
+  HValue* z() const { return OperandAt(3); }
+  HValue* w() const { return OperandAt(4); }
 
-  virtual void PrintDataTo(StringStream* stream) V8_OVERRIDE;
+  virtual OStream& PrintDataTo(OStream& os) const V8_OVERRIDE;
 
   virtual Representation RequiredInputRepresentation(int index) V8_OVERRIDE {
     if (index == 0) {

@@ -348,13 +348,13 @@ void FrameDescription::SetCallerConstantPool(unsigned offset, intptr_t value) {
 
 
 double FrameDescription::GetDoubleRegister(unsigned n) const {
-  ASSERT(n < ARRAY_SIZE(simd128_registers_));
+  DCHECK(n < ARRAY_SIZE(simd128_registers_));
   return simd128_registers_[n].d[0];
 }
 
 
 void FrameDescription::SetDoubleRegister(unsigned n, double value) {
-  ASSERT(n < ARRAY_SIZE(simd128_registers_));
+  DCHECK(n < ARRAY_SIZE(simd128_registers_));
   simd128_registers_[n].d[0] = value;
 }
 

@@ -2238,7 +2238,7 @@ LInstruction* LChunkBuilder::DoChange(HChange* instr) {
       }
     }
   } else if (from.IsSIMD128()) {
-    ASSERT(to.IsTagged());
+    DCHECK(to.IsTagged());
     info()->MarkAsDeferredCalling();
     LOperand* value = UseRegister(instr->value());
     LOperand* temp = TempRegister();

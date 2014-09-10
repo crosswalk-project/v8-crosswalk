@@ -1561,7 +1561,7 @@ int DisassemblerIA32::InstructionDecode(v8::internal::Vector<char> out_buffer,
             int mod, regop, rm;
             get_modrm(*data, &mod, &regop, &rm);
             int8_t imm8 = static_cast<int8_t>(data[1]);
-            ASSERT(regop == esi || regop == edx);
+            DCHECK(regop == esi || regop == edx);
             AppendToBuffer("%s %s,%d",
                            (regop == esi) ? "pslld"
                            : ((regop == edx) ? "psrld" : "psrad"),

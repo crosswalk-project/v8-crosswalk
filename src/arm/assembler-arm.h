@@ -303,12 +303,12 @@ struct QwNeonRegister {
   }
 
   static int ToAllocationIndex(QwNeonRegister reg) {
-    ASSERT(reg.code() < kMaxNumRegisters);
+    DCHECK(reg.code() < kMaxNumRegisters);
     return reg.code();
   }
 
   static const char* AllocationIndexToString(int index) {
-    ASSERT(index >= 0 && index < kMaxNumRegisters);
+    DCHECK(index >= 0 && index < kMaxNumRegisters);
     const char* const names[] = {
       "q0",
       "q1",

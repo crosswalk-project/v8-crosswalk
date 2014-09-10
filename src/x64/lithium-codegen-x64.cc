@@ -425,25 +425,25 @@ XMMRegister LCodeGen::ToDoubleRegister(LOperand* op) const {
 
 
 XMMRegister LCodeGen::ToFloat32x4Register(LOperand* op) const {
-  ASSERT(op->IsFloat32x4Register());
+  DCHECK(op->IsFloat32x4Register());
   return ToSIMD128Register(op->index());
 }
 
 
 XMMRegister LCodeGen::ToFloat64x2Register(LOperand* op) const {
-  ASSERT(op->IsFloat64x2Register());
+  DCHECK(op->IsFloat64x2Register());
   return ToSIMD128Register(op->index());
 }
 
 
 XMMRegister LCodeGen::ToInt32x4Register(LOperand* op) const {
-  ASSERT(op->IsInt32x4Register());
+  DCHECK(op->IsInt32x4Register());
   return ToSIMD128Register(op->index());
 }
 
 
 XMMRegister LCodeGen::ToSIMD128Register(LOperand* op) const {
-  ASSERT(op->IsFloat32x4Register() || op->IsFloat64x2Register() ||
+  DCHECK(op->IsFloat32x4Register() || op->IsFloat64x2Register() ||
          op->IsInt32x4Register());
   return ToSIMD128Register(op->index());
 }
@@ -2166,7 +2166,7 @@ void LCodeGen::DoBranch(LBranch* instr) {
     __ ucomisd(reg, xmm_scratch);
     EmitBranch(instr, not_equal);
   } else if (r.IsSIMD128()) {
-    ASSERT(!info()->IsStub());
+    DCHECK(!info()->IsStub());
     EmitBranch(instr, no_condition);
   } else {
     DCHECK(r.IsTagged());
@@ -3137,7 +3137,7 @@ bool LCodeGen::HandleExternalArrayOpRequiresPreScale(
   if (ExternalArrayOpRequiresPreScale(key_representation, elements_kind)) {
     int pre_shift_size = ElementsKindToShiftSize(elements_kind) -
         static_cast<int>(maximal_scale_factor);
-    ASSERT(pre_shift_size > 0);
+    DCHECK(pre_shift_size > 0);
     __ shll(key_reg, Immediate(pre_shift_size));
     return true;
   }
@@ -3993,8 +3993,8 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
     case kFloat32x4Reciprocal:
     case kFloat32x4ReciprocalSqrt:
     case kFloat32x4Sqrt: {
-      ASSERT(instr->value()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->value()->representation().IsFloat32x4());
+      DCHECK(instr->value()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat32x4());
       XMMRegister input_reg = ToFloat32x4Register(instr->value());
       switch (instr->op()) {
         case kFloat32x4Abs:
@@ -4021,8 +4021,8 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
     case kFloat64x2Abs:
     case kFloat64x2Neg:
     case kFloat64x2Sqrt: {
-      ASSERT(instr->value()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->value()->representation().IsFloat64x2());
+      DCHECK(instr->value()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat64x2());
       XMMRegister input_reg = ToFloat64x2Register(instr->value());
       switch (instr->op()) {
         case kFloat64x2Abs:
@@ -4042,7 +4042,7 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
     }
     case kInt32x4Not:
     case kInt32x4Neg: {
-      ASSERT(instr->hydrogen()->value()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->value()->representation().IsInt32x4());
       XMMRegister input_reg = ToInt32x4Register(instr->value());
       switch (instr->op()) {
         case kInt32x4Not:
@@ -4059,7 +4059,7 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
     }
     case kFloat32x4BitsToInt32x4:
     case kFloat32x4ToInt32x4: {
-      ASSERT(instr->hydrogen()->value()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat32x4());
       XMMRegister input_reg = ToFloat32x4Register(instr->value());
       XMMRegister result_reg = ToInt32x4Register(instr->result());
       if (instr->op() == kFloat32x4BitsToInt32x4) {
@@ -4067,14 +4067,14 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
           __ movaps(result_reg, input_reg);
         }
       } else {
-        ASSERT(instr->op() == kFloat32x4ToInt32x4);
+        DCHECK(instr->op() == kFloat32x4ToInt32x4);
         __ cvtps2dq(result_reg, input_reg);
       }
       return;
     }
     case kInt32x4BitsToFloat32x4:
     case kInt32x4ToFloat32x4: {
-      ASSERT(instr->hydrogen()->value()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->value()->representation().IsInt32x4());
       XMMRegister input_reg = ToInt32x4Register(instr->value());
       XMMRegister result_reg = ToFloat32x4Register(instr->result());
       if (instr->op() == kInt32x4BitsToFloat32x4) {
@@ -4082,13 +4082,13 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
           __ movaps(result_reg, input_reg);
         }
       } else {
-        ASSERT(instr->op() == kInt32x4ToFloat32x4);
+        DCHECK(instr->op() == kInt32x4ToFloat32x4);
         __ cvtdq2ps(result_reg, input_reg);
       }
       return;
     }
     case kFloat32x4Splat: {
-      ASSERT(instr->hydrogen()->value()->representation().IsDouble());
+      DCHECK(instr->hydrogen()->value()->representation().IsDouble());
       XMMRegister input_reg = ToDoubleRegister(instr->value());
       XMMRegister result_reg = ToFloat32x4Register(instr->result());
       XMMRegister xmm_scratch = xmm0;
@@ -4099,7 +4099,7 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
       return;
     }
     case kInt32x4Splat: {
-      ASSERT(instr->hydrogen()->value()->representation().IsInteger32());
+      DCHECK(instr->hydrogen()->value()->representation().IsInteger32());
       Register input_reg = ToRegister(instr->value());
       XMMRegister result_reg = ToInt32x4Register(instr->result());
       __ movd(result_reg, input_reg);
@@ -4107,14 +4107,14 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
       return;
     }
     case kInt32x4GetSignMask: {
-      ASSERT(instr->hydrogen()->value()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->value()->representation().IsInt32x4());
       XMMRegister input_reg = ToInt32x4Register(instr->value());
       Register result = ToRegister(instr->result());
       __ movmskps(result, input_reg);
       return;
     }
     case kFloat32x4GetSignMask: {
-      ASSERT(instr->hydrogen()->value()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat32x4());
       XMMRegister input_reg = ToFloat32x4Register(instr->value());
       Register result = ToRegister(instr->result());
       __ movmskps(result, input_reg);
@@ -4127,7 +4127,7 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
     case kFloat32x4GetY:
       select++;
     case kFloat32x4GetX: {
-      ASSERT(instr->hydrogen()->value()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat32x4());
       XMMRegister input_reg = ToFloat32x4Register(instr->value());
       XMMRegister result = ToDoubleRegister(instr->result());
       XMMRegister xmm_scratch = result.is(input_reg) ? xmm0 : result;
@@ -4148,14 +4148,14 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
       return;
     }
     case kFloat64x2GetSignMask: {
-      ASSERT(instr->hydrogen()->value()->representation().IsFloat64x2());
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat64x2());
       XMMRegister input_reg = ToFloat64x2Register(instr->value());
       Register result = ToRegister(instr->result());
       __ movmskpd(result, input_reg);
       return;
     }
     case kFloat64x2GetX: {
-      ASSERT(instr->hydrogen()->value()->representation().IsFloat64x2());
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat64x2());
       XMMRegister input_reg = ToFloat64x2Register(instr->value());
       XMMRegister result = ToDoubleRegister(instr->result());
 
@@ -4165,7 +4165,7 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
       return;
     }
     case kFloat64x2GetY: {
-      ASSERT(instr->hydrogen()->value()->representation().IsFloat64x2());
+      DCHECK(instr->hydrogen()->value()->representation().IsFloat64x2());
       XMMRegister input_reg = ToFloat64x2Register(instr->value());
       XMMRegister result = ToDoubleRegister(instr->result());
 
@@ -4183,7 +4183,7 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
     case kInt32x4GetFlagY:
     case kInt32x4GetFlagZ:
     case kInt32x4GetFlagW: {
-      ASSERT(instr->hydrogen()->value()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->value()->representation().IsInt32x4());
       bool flag = false;
       switch (instr->op()) {
         case kInt32x4GetFlagX:
@@ -4252,9 +4252,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
     case kFloat32x4Div:
     case kFloat32x4Min:
     case kFloat32x4Max: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsFloat32x4());
-      ASSERT(instr->hydrogen()->right()->representation().IsFloat32x4());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->right()->representation().IsFloat32x4());
       XMMRegister left_reg = ToFloat32x4Register(instr->left());
       XMMRegister right_reg = ToFloat32x4Register(instr->right());
       switch (instr->op()) {
@@ -4283,9 +4283,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
       return;
     }
     case kFloat32x4Scale: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsFloat32x4());
-      ASSERT(instr->hydrogen()->right()->representation().IsDouble());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->right()->representation().IsDouble());
       XMMRegister left_reg = ToFloat32x4Register(instr->left());
       XMMRegister right_reg = ToDoubleRegister(instr->right());
       XMMRegister scratch_reg = xmm0;
@@ -4301,9 +4301,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
     case kFloat64x2Div:
     case kFloat64x2Min:
     case kFloat64x2Max: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsFloat64x2());
-      ASSERT(instr->hydrogen()->right()->representation().IsFloat64x2());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat64x2());
+      DCHECK(instr->hydrogen()->right()->representation().IsFloat64x2());
       XMMRegister left_reg = ToFloat64x2Register(instr->left());
       XMMRegister right_reg = ToFloat64x2Register(instr->right());
       switch (instr->op()) {
@@ -4332,9 +4332,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
       return;
     }
     case kFloat64x2Scale: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsFloat64x2());
-      ASSERT(instr->hydrogen()->right()->representation().IsDouble());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat64x2());
+      DCHECK(instr->hydrogen()->right()->representation().IsDouble());
       XMMRegister left_reg = ToFloat64x2Register(instr->left());
       XMMRegister right_reg = ToDoubleRegister(instr->right());
       __ shufpd(right_reg, right_reg, 0x0);
@@ -4342,8 +4342,8 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
       return;
     }
     case kFloat32x4Shuffle: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsFloat32x4());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat32x4());
       if (instr->hydrogen()->right()->IsConstant() &&
           HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
         int32_t value = ToInteger32(LConstantOperand::cast(instr->right()));
@@ -4358,8 +4358,8 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
       }
     }
     case kInt32x4Shuffle: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsInt32x4());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsInt32x4());
       if (instr->hydrogen()->right()->IsConstant() &&
           HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
         int32_t value = ToInteger32(LConstantOperand::cast(instr->right()));
@@ -4376,8 +4376,8 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
     case kInt32x4ShiftLeft:
     case kInt32x4ShiftRight:
     case kInt32x4ShiftRightArithmetic: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsInt32x4());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsInt32x4());
       if (instr->hydrogen()->right()->IsConstant() &&
           HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
         int32_t value = ToInteger32(LConstantOperand::cast(instr->right()));
@@ -4424,8 +4424,8 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
     case kFloat32x4NotEqual:
     case kFloat32x4GreaterThanOrEqual:
     case kFloat32x4GreaterThan: {
-      ASSERT(instr->hydrogen()->left()->representation().IsFloat32x4());
-      ASSERT(instr->hydrogen()->right()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->right()->representation().IsFloat32x4());
       XMMRegister left_reg = ToFloat32x4Register(instr->left());
       XMMRegister right_reg = ToFloat32x4Register(instr->right());
       XMMRegister result_reg = ToInt32x4Register(instr->result());
@@ -4505,9 +4505,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
     case kInt32x4GreaterThan:
     case kInt32x4Equal:
     case kInt32x4LessThan: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsInt32x4());
-      ASSERT(instr->hydrogen()->right()->representation().IsInt32x4());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->right()->representation().IsInt32x4());
       XMMRegister left_reg = ToInt32x4Register(instr->left());
       XMMRegister right_reg = ToInt32x4Register(instr->right());
       switch (instr->op()) {
@@ -4569,9 +4569,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
     case kFloat32x4WithY:
       imm8++;
     case kFloat32x4WithX: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsFloat32x4());
-      ASSERT(instr->hydrogen()->right()->representation().IsDouble());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->right()->representation().IsDouble());
       XMMRegister left_reg = ToFloat32x4Register(instr->left());
       XMMRegister right_reg = ToDoubleRegister(instr->right());
       XMMRegister xmm_scratch = xmm0;
@@ -4591,9 +4591,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
       return;
     }
     case kFloat64x2WithX: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsFloat64x2());
-      ASSERT(instr->hydrogen()->right()->representation().IsDouble());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat64x2());
+      DCHECK(instr->hydrogen()->right()->representation().IsDouble());
       XMMRegister left_reg = ToFloat64x2Register(instr->left());
       XMMRegister right_reg = ToDoubleRegister(instr->right());
       __ subq(rsp, Immediate(kFloat64x2Size));
@@ -4604,9 +4604,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
       return;
     }
     case kFloat64x2WithY: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsFloat64x2());
-      ASSERT(instr->hydrogen()->right()->representation().IsDouble());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsFloat64x2());
+      DCHECK(instr->hydrogen()->right()->representation().IsDouble());
       XMMRegister left_reg = ToFloat64x2Register(instr->left());
       XMMRegister right_reg = ToDoubleRegister(instr->right());
       __ subq(rsp, Immediate(kFloat64x2Size));
@@ -4617,8 +4617,8 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
       return;
     }
     case kFloat64x2Constructor: {
-      ASSERT(instr->hydrogen()->left()->representation().IsDouble());
-      ASSERT(instr->hydrogen()->right()->representation().IsDouble());
+      DCHECK(instr->hydrogen()->left()->representation().IsDouble());
+      DCHECK(instr->hydrogen()->right()->representation().IsDouble());
       XMMRegister left_reg = ToDoubleRegister(instr->left());
       XMMRegister right_reg = ToDoubleRegister(instr->right());
       XMMRegister result_reg = ToFloat64x2Register(instr->result());
@@ -4636,9 +4636,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
     case kInt32x4WithY:
       imm8++;
     case kInt32x4WithX: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsInt32x4());
-      ASSERT(instr->hydrogen()->right()->representation().IsInteger32());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->right()->representation().IsInteger32());
       XMMRegister left_reg = ToInt32x4Register(instr->left());
       Register right_reg = ToRegister(instr->right());
       if (CpuFeatures::IsSupported(SSE4_1)) {
@@ -4660,9 +4660,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
     case kInt32x4WithFlagY:
       imm8++;
     case kInt32x4WithFlagX: {
-      ASSERT(instr->left()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->left()->representation().IsInt32x4());
-      ASSERT(instr->hydrogen()->right()->representation().IsTagged());
+      DCHECK(instr->left()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->left()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->right()->representation().IsTagged());
       HType type = instr->hydrogen()->right()->type();
       XMMRegister left_reg = ToInt32x4Register(instr->left());
       Register right_reg = ToRegister(instr->right());
@@ -4697,9 +4697,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
 void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
   switch (instr->op()) {
     case kInt32x4Select: {
-      ASSERT(instr->hydrogen()->first()->representation().IsInt32x4());
-      ASSERT(instr->hydrogen()->second()->representation().IsFloat32x4());
-      ASSERT(instr->hydrogen()->third()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->first()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->second()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->third()->representation().IsFloat32x4());
 
       XMMRegister mask_reg = ToInt32x4Register(instr->first());
       XMMRegister left_reg = ToFloat32x4Register(instr->second());
@@ -4736,10 +4736,10 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
       return;
     }
     case kFloat32x4ShuffleMix: {
-      ASSERT(instr->first()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->first()->representation().IsFloat32x4());
-      ASSERT(instr->hydrogen()->second()->representation().IsFloat32x4());
-      ASSERT(instr->hydrogen()->third()->representation().IsInteger32());
+      DCHECK(instr->first()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->first()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->second()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->third()->representation().IsInteger32());
       if (instr->hydrogen()->third()->IsConstant() &&
           HConstant::cast(instr->hydrogen()->third())->HasInteger32Value()) {
         int32_t value = ToInteger32(LConstantOperand::cast(instr->third()));
@@ -4755,10 +4755,10 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
       }
     }
     case kFloat32x4Clamp: {
-      ASSERT(instr->first()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->first()->representation().IsFloat32x4());
-      ASSERT(instr->hydrogen()->second()->representation().IsFloat32x4());
-      ASSERT(instr->hydrogen()->third()->representation().IsFloat32x4());
+      DCHECK(instr->first()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->first()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->second()->representation().IsFloat32x4());
+      DCHECK(instr->hydrogen()->third()->representation().IsFloat32x4());
 
       XMMRegister value_reg = ToFloat32x4Register(instr->first());
       XMMRegister lower_reg = ToFloat32x4Register(instr->second());
@@ -4768,10 +4768,10 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
       return;
     }
     case kFloat64x2Clamp: {
-      ASSERT(instr->first()->Equals(instr->result()));
-      ASSERT(instr->hydrogen()->first()->representation().IsFloat64x2());
-      ASSERT(instr->hydrogen()->second()->representation().IsFloat64x2());
-      ASSERT(instr->hydrogen()->third()->representation().IsFloat64x2());
+      DCHECK(instr->first()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->first()->representation().IsFloat64x2());
+      DCHECK(instr->hydrogen()->second()->representation().IsFloat64x2());
+      DCHECK(instr->hydrogen()->third()->representation().IsFloat64x2());
 
       XMMRegister value_reg = ToFloat64x2Register(instr->first());
       XMMRegister lower_reg = ToFloat64x2Register(instr->second());
@@ -4790,10 +4790,10 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
 void LCodeGen::DoQuarternarySIMDOperation(LQuarternarySIMDOperation* instr) {
   switch (instr->op()) {
     case kFloat32x4Constructor: {
-      ASSERT(instr->hydrogen()->x()->representation().IsDouble());
-      ASSERT(instr->hydrogen()->y()->representation().IsDouble());
-      ASSERT(instr->hydrogen()->z()->representation().IsDouble());
-      ASSERT(instr->hydrogen()->w()->representation().IsDouble());
+      DCHECK(instr->hydrogen()->x()->representation().IsDouble());
+      DCHECK(instr->hydrogen()->y()->representation().IsDouble());
+      DCHECK(instr->hydrogen()->z()->representation().IsDouble());
+      DCHECK(instr->hydrogen()->w()->representation().IsDouble());
       XMMRegister x_reg = ToDoubleRegister(instr->x());
       XMMRegister y_reg = ToDoubleRegister(instr->y());
       XMMRegister z_reg = ToDoubleRegister(instr->z());
@@ -4817,10 +4817,10 @@ void LCodeGen::DoQuarternarySIMDOperation(LQuarternarySIMDOperation* instr) {
       return;
     }
     case kInt32x4Constructor: {
-      ASSERT(instr->hydrogen()->x()->representation().IsInteger32());
-      ASSERT(instr->hydrogen()->y()->representation().IsInteger32());
-      ASSERT(instr->hydrogen()->z()->representation().IsInteger32());
-      ASSERT(instr->hydrogen()->w()->representation().IsInteger32());
+      DCHECK(instr->hydrogen()->x()->representation().IsInteger32());
+      DCHECK(instr->hydrogen()->y()->representation().IsInteger32());
+      DCHECK(instr->hydrogen()->z()->representation().IsInteger32());
+      DCHECK(instr->hydrogen()->w()->representation().IsInteger32());
       Register x_reg = ToRegister(instr->x());
       Register y_reg = ToRegister(instr->y());
       Register z_reg = ToRegister(instr->z());
@@ -4836,10 +4836,10 @@ void LCodeGen::DoQuarternarySIMDOperation(LQuarternarySIMDOperation* instr) {
       return;
     }
     case kInt32x4Bool: {
-      ASSERT(instr->hydrogen()->x()->representation().IsTagged());
-      ASSERT(instr->hydrogen()->y()->representation().IsTagged());
-      ASSERT(instr->hydrogen()->z()->representation().IsTagged());
-      ASSERT(instr->hydrogen()->w()->representation().IsTagged());
+      DCHECK(instr->hydrogen()->x()->representation().IsTagged());
+      DCHECK(instr->hydrogen()->y()->representation().IsTagged());
+      DCHECK(instr->hydrogen()->z()->representation().IsTagged());
+      DCHECK(instr->hydrogen()->w()->representation().IsTagged());
       HType x_type = instr->hydrogen()->x()->type();
       HType y_type = instr->hydrogen()->y()->type();
       HType z_type = instr->hydrogen()->z()->type();
@@ -5932,7 +5932,7 @@ void LCodeGen::DoSIMD128ToTagged(LSIMD128ToTagged* instr) {
   } else if (instr->value()->IsFloat64x2Register()) {
     HandleSIMD128ToTagged<Float64x2>(instr);
   } else {
-    ASSERT(instr->value()->IsInt32x4Register());
+    DCHECK(instr->value()->IsInt32x4Register());
     HandleSIMD128ToTagged<Int32x4>(instr);
   }
 }
@@ -6127,11 +6127,11 @@ void LCodeGen::DoNumberUntagD(LNumberUntagD* instr) {
 template<class T>
 void LCodeGen::HandleTaggedToSIMD128(LTaggedToSIMD128* instr) {
   LOperand* input = instr->value();
-  ASSERT(input->IsRegister());
+  DCHECK(input->IsRegister());
   LOperand* result = instr->result();
-  ASSERT(result->IsSIMD128Register());
+  DCHECK(result->IsSIMD128Register());
   LOperand* temp = instr->temp();
-  ASSERT(temp->IsRegister());
+  DCHECK(temp->IsRegister());
 
   Register input_reg = ToRegister(input);
   XMMRegister result_reg = ToSIMD128Register(result);
@@ -6156,7 +6156,7 @@ void LCodeGen::DoTaggedToSIMD128(LTaggedToSIMD128* instr) {
   } else if (instr->representation().IsFloat64x2()) {
     HandleTaggedToSIMD128<Float64x2>(instr);
   } else {
-    ASSERT(instr->representation().IsInt32x4());
+    DCHECK(instr->representation().IsInt32x4());
     HandleTaggedToSIMD128<Int32x4>(instr);
   }
 }

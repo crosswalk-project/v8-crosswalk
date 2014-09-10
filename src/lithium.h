@@ -772,11 +772,13 @@ class LPhase : public CompilationPhase {
 
 // A register-allocator view of a Lithium instruction. It contains the id of
 // the output operand and a list of input operand uses.
-
 enum RegisterKind {
   UNALLOCATED_REGISTERS,
   GENERAL_REGISTERS,
-  DOUBLE_REGISTERS
+  DOUBLE_REGISTERS,
+  FLOAT32x4_REGISTERS,
+  FLOAT64x2_REGISTERS,
+  INT32x4_REGISTERS
 };
 
 // Iterator for non-null temp operands.
