@@ -44,6 +44,9 @@
 //           - JSTypedArray
 //           - JSDataView
 //         - JSCollection
+//         - Float32x4
+//         - Float64x2
+//         - Int32x4
 //           - JSSet
 //           - JSMap
 //         - JSSetIterator
@@ -91,6 +94,9 @@
 //         - ExternalInt32Array
 //         - ExternalUint32Array
 //         - ExternalFloat32Array
+//         - ExternalFloat32x4Array
+//         - ExternalFloat64x2Array
+//         - ExternalInt32x4Array
 //     - Name
 //       - String
 //         - SeqString
@@ -379,6 +385,9 @@ const int kStubMinorKeyBits = kSmiValueSize - kStubMajorKeyBits - 1;
   V(EXTERNAL_INT32_ARRAY_TYPE)                                                 \
   V(EXTERNAL_UINT32_ARRAY_TYPE)                                                \
   V(EXTERNAL_FLOAT32_ARRAY_TYPE)                                               \
+  V(EXTERNAL_FLOAT32x4_ARRAY_TYPE)                                             \
+  V(EXTERNAL_FLOAT64x2_ARRAY_TYPE)                                             \
+  V(EXTERNAL_INT32x4_ARRAY_TYPE)                                               \
   V(EXTERNAL_FLOAT64_ARRAY_TYPE)                                               \
   V(EXTERNAL_UINT8_CLAMPED_ARRAY_TYPE)                                         \
                                                                                \
@@ -387,9 +396,12 @@ const int kStubMinorKeyBits = kSmiValueSize - kStubMajorKeyBits - 1;
   V(FIXED_INT16_ARRAY_TYPE)                                                    \
   V(FIXED_UINT16_ARRAY_TYPE)                                                   \
   V(FIXED_INT32_ARRAY_TYPE)                                                    \
+  V(FIXED_INT32x4_ARRAY_TYPE)                                                  \
   V(FIXED_UINT32_ARRAY_TYPE)                                                   \
   V(FIXED_FLOAT32_ARRAY_TYPE)                                                  \
+  V(FIXED_FLOAT32x4_ARRAY_TYPE)                                                \
   V(FIXED_FLOAT64_ARRAY_TYPE)                                                  \
+  V(FIXED_FLOAT64x2_ARRAY_TYPE)                                                \
   V(FIXED_UINT8_CLAMPED_ARRAY_TYPE)                                            \
                                                                                \
   V(FILLER_TYPE)                                                               \
@@ -434,6 +446,9 @@ const int kStubMinorKeyBits = kSmiValueSize - kStubMajorKeyBits - 1;
   V(JS_ARRAY_BUFFER_TYPE)                                                      \
   V(JS_TYPED_ARRAY_TYPE)                                                       \
   V(JS_DATA_VIEW_TYPE)                                                         \
+  V(FLOAT32x4_TYPE)                                                            \
+  V(FLOAT64x2_TYPE)                                                            \
+  V(INT32x4_TYPE)                                                              \
   V(JS_PROXY_TYPE)                                                             \
   V(JS_SET_TYPE)                                                               \
   V(JS_MAP_TYPE)                                                               \
@@ -711,6 +726,9 @@ enum InstanceType {
   EXTERNAL_INT32_ARRAY_TYPE,
   EXTERNAL_UINT32_ARRAY_TYPE,
   EXTERNAL_FLOAT32_ARRAY_TYPE,
+  EXTERNAL_FLOAT32x4_ARRAY_TYPE,
+  EXTERNAL_FLOAT64x2_ARRAY_TYPE,
+  EXTERNAL_INT32x4_ARRAY_TYPE,
   EXTERNAL_FLOAT64_ARRAY_TYPE,
   EXTERNAL_UINT8_CLAMPED_ARRAY_TYPE,  // LAST_EXTERNAL_ARRAY_TYPE
 
@@ -719,8 +737,11 @@ enum InstanceType {
   FIXED_INT16_ARRAY_TYPE,
   FIXED_UINT16_ARRAY_TYPE,
   FIXED_INT32_ARRAY_TYPE,
+  FIXED_INT32x4_ARRAY_TYPE,
   FIXED_UINT32_ARRAY_TYPE,
   FIXED_FLOAT32_ARRAY_TYPE,
+  FIXED_FLOAT32x4_ARRAY_TYPE,
+  FIXED_FLOAT64x2_ARRAY_TYPE,
   FIXED_FLOAT64_ARRAY_TYPE,
   FIXED_UINT8_CLAMPED_ARRAY_TYPE,  // LAST_FIXED_TYPED_ARRAY_TYPE
 
@@ -776,6 +797,9 @@ enum InstanceType {
   JS_ARRAY_BUFFER_TYPE,
   JS_TYPED_ARRAY_TYPE,
   JS_DATA_VIEW_TYPE,
+  FLOAT32x4_TYPE,
+  FLOAT64x2_TYPE,
+  INT32x4_TYPE,
   JS_SET_TYPE,
   JS_MAP_TYPE,
   JS_SET_ITERATOR_TYPE,
@@ -943,6 +967,9 @@ template <class C> inline bool Is(Object* obj);
   V(ExternalInt32Array)                        \
   V(ExternalUint32Array)                       \
   V(ExternalFloat32Array)                      \
+  V(ExternalFloat32x4Array)                    \
+  V(ExternalFloat64x2Array)                    \
+  V(ExternalInt32x4Array)                      \
   V(ExternalFloat64Array)                      \
   V(ExternalUint8ClampedArray)                 \
   V(FixedTypedArrayBase)                       \
@@ -953,6 +980,9 @@ template <class C> inline bool Is(Object* obj);
   V(FixedUint32Array)                          \
   V(FixedInt32Array)                           \
   V(FixedFloat32Array)                         \
+  V(FixedFloat32x4Array)                       \
+  V(FixedFloat64x2Array)                       \
+  V(FixedInt32x4Array)                         \
   V(FixedFloat64Array)                         \
   V(FixedUint8ClampedArray)                    \
   V(ByteArray)                                 \
@@ -989,6 +1019,9 @@ template <class C> inline bool Is(Object* obj);
   V(JSArrayBufferView)                         \
   V(JSTypedArray)                              \
   V(JSDataView)                                \
+  V(Float32x4)                                 \
+  V(Float64x2)                                 \
+  V(Int32x4)                                   \
   V(JSProxy)                                   \
   V(JSFunctionProxy)                           \
   V(JSSet)                                     \
@@ -2109,6 +2142,9 @@ class JSObject: public JSReceiver {
   inline bool HasExternalInt32Elements();
   inline bool HasExternalUint32Elements();
   inline bool HasExternalFloat32Elements();
+  inline bool HasExternalFloat32x4Elements();
+  inline bool HasExternalFloat64x2Elements();
+  inline bool HasExternalInt32x4Elements();
   inline bool HasExternalFloat64Elements();
 
   inline bool HasFixedTypedArrayElements();
@@ -2123,6 +2159,9 @@ class JSObject: public JSReceiver {
   inline bool HasFixedUint32Elements();
   inline bool HasFixedFloat32Elements();
   inline bool HasFixedFloat64Elements();
+  inline bool HasFixedFloat32x4Elements();
+  inline bool HasFixedFloat64x2Elements();
+  inline bool HasFixedInt32x4Elements();
 
   bool HasFastArgumentsElements();
   bool HasDictionaryArgumentsElements();
@@ -4883,7 +4922,7 @@ class FreeSpace: public HeapObject {
 
 
 // V has parameters (Type, type, TYPE, C type, element_size)
-#define TYPED_ARRAYS(V) \
+#define BUILTIN_TYPED_ARRAY(V) \
   V(Uint8, uint8, UINT8, uint8_t, 1)                                           \
   V(Int8, int8, INT8, int8_t, 1)                                               \
   V(Uint16, uint16, UINT16, uint16_t, 2)                                       \
@@ -4894,6 +4933,16 @@ class FreeSpace: public HeapObject {
   V(Float64, float64, FLOAT64, double, 8)                                      \
   V(Uint8Clamped, uint8_clamped, UINT8_CLAMPED, uint8_t, 1)
 
+
+#define SIMD128_TYPED_ARRAY(V) \
+  V(Float32x4, float32x4, FLOAT32x4, v8::internal::float32x4_value_t, 16)      \
+  V(Float64x2, float64x2, FLOAT64x2, v8::internal::float64x2_value_t, 16)      \
+  V(Int32x4, int32x4, INT32x4, v8::internal::int32x4_value_t, 16)
+
+
+#define TYPED_ARRAYS(V) \
+  BUILTIN_TYPED_ARRAY(V) \
+  SIMD128_TYPED_ARRAY(V)
 
 
 // An ExternalArray represents a fixed-size array of primitive values
@@ -5134,6 +5183,84 @@ class ExternalFloat32Array: public ExternalArray {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ExternalFloat32Array);
+};
+
+
+class ExternalFloat32x4Array: public ExternalArray {
+ public:
+  // Setter and getter.
+  inline float32x4_value_t get_scalar(int index);
+  static inline Handle<Object> get(Handle<ExternalFloat32x4Array> array,
+                                   int index);
+  inline void set(int index, const float32x4_value_t& value);
+
+  // This accessor applies the correct conversion from Smi, HeapNumber
+  // and undefined.
+  static Handle<Object> SetValue(Handle<ExternalFloat32x4Array> array,
+                                 uint32_t index,
+                                 Handle<Object> value);
+
+  // Casting.
+  DECLARE_CAST(ExternalFloat32x4Array)
+
+  // Dispatched behavior.
+  DECLARE_PRINTER(ExternalFloat32x4Array)
+  DECLARE_VERIFIER(ExternalFloat32x4Array)
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ExternalFloat32x4Array);
+};
+
+
+class ExternalFloat64x2Array: public ExternalArray {
+ public:
+  // Setter and getter.
+  inline float64x2_value_t get_scalar(int index);
+  static inline Handle<Object> get(Handle<ExternalFloat64x2Array> array,
+                                   int index);
+  inline void set(int index, const float64x2_value_t& value);
+
+  // This accessor applies the correct conversion from Smi, HeapNumber
+  // and undefined.
+  static Handle<Object> SetValue(Handle<ExternalFloat64x2Array> array,
+                                 uint32_t index,
+                                 Handle<Object> value);
+
+  // Casting.
+  DECLARE_CAST(ExternalFloat64x2Array)
+
+  // Dispatched behavior.
+  DECLARE_PRINTER(ExternalFloat64x2Array)
+  DECLARE_VERIFIER(ExternalFloat64x2Array)
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ExternalFloat64x2Array);
+};
+
+
+class ExternalInt32x4Array: public ExternalArray {
+ public:
+  // Setter and getter.
+  inline int32x4_value_t get_scalar(int index);
+  static inline Handle<Object> get(Handle<ExternalInt32x4Array> array,
+                                   int index);
+  inline void set(int index, const int32x4_value_t& value);
+
+  // This accessor applies the correct conversion from Smi, HeapNumber
+  // and undefined.
+  static Handle<Object> SetValue(Handle<ExternalInt32x4Array> array,
+                                 uint32_t index,
+                                 Handle<Object> value);
+
+  // Casting.
+  DECLARE_CAST(ExternalInt32x4Array)
+
+  // Dispatched behavior.
+  DECLARE_PRINTER(ExternalInt32x4Array)
+  DECLARE_VERIFIER(ExternalInt32x4Array)
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(ExternalInt32x4Array);
 };
 
 
@@ -7047,15 +7174,173 @@ class Script: public Struct {
   V(Math, clz32, MathClz32)                         \
   V(Math, fround, MathFround)
 
+#define SIMD_NULLARY_OPERATIONS(V)                                             \
+  V(SIMD.float32x4, zero, Float32x4Zero, Float32x4)                            \
+  V(SIMD.float64x2, zero, Float64x2Zero, Float64x2)                            \
+  V(SIMD.int32x4, zero, Int32x4Zero, Int32x4)
+
+#define SIMD_UNARY_OPERATIONS(V)                                               \
+  V(SIMD.float32x4, abs, Float32x4Abs, Float32x4, Float32x4)                   \
+  V(SIMD.float32x4, bitsToInt32x4, Float32x4BitsToInt32x4, Int32x4, Float32x4) \
+  V(SIMD.float32x4, neg, Float32x4Neg, Float32x4, Float32x4)                   \
+  V(SIMD.float32x4, reciprocal, Float32x4Reciprocal, Float32x4, Float32x4)     \
+  V(SIMD.float32x4, reciprocalSqrt, Float32x4ReciprocalSqrt,                   \
+    Float32x4, Float32x4)                                                      \
+  V(SIMD.float32x4, splat, Float32x4Splat, Float32x4, Double)                  \
+  V(SIMD.float32x4, sqrt, Float32x4Sqrt, Float32x4, Float32x4)                 \
+  V(SIMD.float32x4, toInt32x4, Float32x4ToInt32x4, Int32x4, Float32x4)         \
+  V(SIMD.float64x2, abs, Float64x2Abs, Float64x2, Float64x2)                   \
+  V(SIMD.float64x2, neg, Float64x2Neg, Float64x2, Float64x2)                   \
+  V(SIMD.float64x2, sqrt, Float64x2Sqrt, Float64x2, Float64x2)                 \
+  V(SIMD.int32x4, bitsToFloat32x4, Int32x4BitsToFloat32x4, Float32x4, Int32x4) \
+  V(SIMD.int32x4, neg, Int32x4Neg, Int32x4, Int32x4)                           \
+  V(SIMD.int32x4, not, Int32x4Not, Int32x4, Int32x4)                           \
+  V(SIMD.int32x4, splat, Int32x4Splat, Int32x4, Integer32)                     \
+  V(SIMD.int32x4, toFloat32x4, Int32x4ToFloat32x4, Float32x4, Int32x4)
+
+// Do not need to install them in InstallExperimentalSIMDBuiltinFunctionIds.
+#define SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(V)                           \
+  V(SIMD.float32x4.prototype, signMask, Float32x4GetSignMask, Integer32,       \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4.prototype, x, Float32x4GetX, Double, Float32x4)             \
+  V(SIMD.float32x4.prototype, y, Float32x4GetY, Double, Float32x4)             \
+  V(SIMD.float32x4.prototype, z, Float32x4GetZ, Double, Float32x4)             \
+  V(SIMD.float32x4.prototype, w, Float32x4GetW, Double, Float32x4)             \
+  V(SIMD.float64x2.prototype, signMask, Float64x2GetSignMask, Integer32,       \
+    Float64x2)                                                                 \
+  V(SIMD.float64x2.prototype, x, Float64x2GetX, Double, Float64x2)             \
+  V(SIMD.float64x2.prototype, y, Float64x2GetY, Double, Float64x2)             \
+  V(SIMD.int32x4.prototype, signMask, Int32x4GetSignMask, Integer32, Int32x4)  \
+  V(SIMD.int32x4.prototype, x, Int32x4GetX, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, y, Int32x4GetY, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, z, Int32x4GetZ, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, w, Int32x4GetW, Integer32, Int32x4)                \
+  V(SIMD.int32x4.prototype, flagX, Int32x4GetFlagX, Tagged, Int32x4)           \
+  V(SIMD.int32x4.prototype, flagY, Int32x4GetFlagY, Tagged, Int32x4)           \
+  V(SIMD.int32x4.prototype, flagZ, Int32x4GetFlagZ, Tagged, Int32x4)           \
+  V(SIMD.int32x4.prototype, flagW, Int32x4GetFlagW, Tagged, Int32x4)
+
+#define SIMD_BINARY_OPERATIONS(V)                                              \
+  V(SIMD.float32x4, add, Float32x4Add, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, div, Float32x4Div, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, max, Float32x4Max, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, min, Float32x4Min, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, mul, Float32x4Mul, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, sub, Float32x4Sub, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.float32x4, equal, Float32x4Equal, Int32x4, Float32x4, Float32x4)      \
+  V(SIMD.float32x4, notEqual, Float32x4NotEqual, Int32x4, Float32x4,           \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, greaterThan, Float32x4GreaterThan, Int32x4, Float32x4,     \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, greaterThanOrEqual, Float32x4GreaterThanOrEqual, Int32x4,  \
+    Float32x4, Float32x4)                                                      \
+  V(SIMD.float32x4, lessThan, Float32x4LessThan, Int32x4, Float32x4,           \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, lessThanOrEqual, Float32x4LessThanOrEqual, Int32x4,        \
+    Float32x4, Float32x4)                                                      \
+  V(SIMD.float32x4, shuffle, Float32x4Shuffle, Float32x4, Float32x4,           \
+    Integer32)                                                                 \
+  V(SIMD.float32x4, scale, Float32x4Scale, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withX, Float32x4WithX, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withY, Float32x4WithY, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withZ, Float32x4WithZ, Float32x4, Float32x4, Double)       \
+  V(SIMD.float32x4, withW, Float32x4WithW, Float32x4, Float32x4, Double)       \
+  V(SIMD.float64x2, add, Float64x2Add, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, div, Float64x2Div, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, max, Float64x2Max, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, min, Float64x2Min, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, mul, Float64x2Mul, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, sub, Float64x2Sub, Float64x2, Float64x2, Float64x2)        \
+  V(SIMD.float64x2, scale, Float64x2Scale, Float64x2, Float64x2, Double)       \
+  V(SIMD.float64x2, withX, Float64x2WithX, Float64x2, Float64x2, Double)       \
+  V(SIMD.float64x2, withY, Float64x2WithY, Float64x2, Float64x2, Double)       \
+  V(SIMD, float64x2, Float64x2Constructor, Float64x2, Double, Double)          \
+  V(SIMD.int32x4, add, Int32x4Add, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, and, Int32x4And, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, mul, Int32x4Mul, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, or, Int32x4Or, Int32x4, Int32x4, Int32x4)                    \
+  V(SIMD.int32x4, sub, Int32x4Sub, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, xor, Int32x4Xor, Int32x4, Int32x4, Int32x4)                  \
+  V(SIMD.int32x4, shuffle, Int32x4Shuffle, Int32x4, Int32x4, Integer32)        \
+  V(SIMD.int32x4, withX, Int32x4WithX, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withY, Int32x4WithY, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withZ, Int32x4WithZ, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withW, Int32x4WithW, Int32x4, Int32x4, Integer32)            \
+  V(SIMD.int32x4, withFlagX, Int32x4WithFlagX, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, withFlagY, Int32x4WithFlagY, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, withFlagZ, Int32x4WithFlagZ, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, withFlagW, Int32x4WithFlagW, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.int32x4, greaterThan, Int32x4GreaterThan, Int32x4, Int32x4, Int32x4)  \
+  V(SIMD.int32x4, equal, Int32x4Equal, Int32x4, Int32x4, Int32x4)              \
+  V(SIMD.int32x4, lessThan, Int32x4LessThan, Int32x4, Int32x4, Int32x4)        \
+  V(SIMD.int32x4, shiftLeft, Int32x4ShiftLeft, Int32x4, Int32x4, Integer32)    \
+  V(SIMD.int32x4, shiftRight, Int32x4ShiftRight, Int32x4, Int32x4, Integer32)  \
+  V(SIMD.int32x4, shiftRightArithmetic, Int32x4ShiftRightArithmetic, Int32x4,  \
+    Int32x4, Integer32)
+
+#define SIMD_TERNARY_OPERATIONS(V)                                             \
+  V(SIMD.float32x4, clamp, Float32x4Clamp, Float32x4, Float32x4, Float32x4,    \
+    Float32x4)                                                                 \
+  V(SIMD.float32x4, shuffleMix, Float32x4ShuffleMix, Float32x4, Float32x4,     \
+    Float32x4, Integer32)                                                      \
+  V(SIMD.float64x2, clamp, Float64x2Clamp, Float64x2, Float64x2, Float64x2,    \
+    Float64x2)                                                                 \
+  V(SIMD.int32x4, select, Int32x4Select, Float32x4, Int32x4, Float32x4,        \
+    Float32x4)
+
+#define SIMD_QUARTERNARY_OPERATIONS(V)                                         \
+  V(SIMD, float32x4, Float32x4Constructor, Float32x4, Double, Double, Double,  \
+    Double)                                                                    \
+  V(SIMD, int32x4, Int32x4Constructor, Int32x4, Integer32, Integer32,          \
+    Integer32, Integer32)                                                      \
+  V(SIMD.int32x4, bool, Int32x4Bool, Int32x4, Tagged, Tagged, Tagged, Tagged)
+
+#define SIMD_ARRAY_OPERATIONS(V)                                               \
+  V(Float32x4Array.prototype, getAt, Float32x4ArrayGetAt)                      \
+  V(Float32x4Array.prototype, setAt, Float32x4ArraySetAt)                      \
+  V(Float64x2Array.prototype, getAt, Float64x2ArrayGetAt)                      \
+  V(Float64x2Array.prototype, setAt, Float64x2ArraySetAt)                      \
+  V(Int32x4Array.prototype, getAt, Int32x4ArrayGetAt)                          \
+  V(Int32x4Array.prototype, setAt, Int32x4ArraySetAt)
+
+// Do not need to install them in InstallExperimentalSIMDBuiltinFunctionIds.
+#define SIMD_FAKE_ID_LISTS(V)                                                  \
+  V(SIMD, unreachable, SIMD128Unreachable)                                     \
+  V(SIMD, change, SIMD128Change)
+
 enum BuiltinFunctionId {
   kArrayCode,
 #define DECLARE_FUNCTION_ID(ignored1, ignore2, name)    \
   k##name,
   FUNCTIONS_WITH_ID_LIST(DECLARE_FUNCTION_ID)
-#undef DECLARE_FUNCTION_ID
   // Fake id for a special case of Math.pow. Note, it continues the
   // list of math functions.
-  kMathPowHalf
+  kMathPowHalf,
+  SIMD_FAKE_ID_LISTS(DECLARE_FUNCTION_ID)
+  SIMD_ARRAY_OPERATIONS(DECLARE_FUNCTION_ID)
+#undef DECLARE_FUNCTION_ID
+#define DECLARE_SIMD_NULLARY_FUNCTION_ID(i1, i2, name, i3)                     \
+  k##name,
+  SIMD_NULLARY_OPERATIONS(DECLARE_SIMD_NULLARY_FUNCTION_ID)
+#undef DECLARE_SIMD_NULLARY_FUNCTION_ID
+#define DECLARE_SIMD_UNARY_FUNCTION_ID(i1, i2, name, i3, i4)                   \
+  k##name,
+  SIMD_UNARY_OPERATIONS(DECLARE_SIMD_UNARY_FUNCTION_ID)
+  SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(DECLARE_SIMD_UNARY_FUNCTION_ID)
+#undef DECLARE_SIMD_UNARY_FUNCTION_ID
+#define DECLARE_SIMD_BINARY_FUNCTION_ID(i1, i2, name, i3, i4, i5)              \
+  k##name,
+  SIMD_BINARY_OPERATIONS(DECLARE_SIMD_BINARY_FUNCTION_ID)
+#undef DECLARE_SIMD_BINARY_FUNCTION_ID
+#define DECLARE_SIMD_TERNARY_FUNCTION_ID(i1, i2, name, i3, i4, i5, i6)         \
+  k##name,
+  SIMD_TERNARY_OPERATIONS(DECLARE_SIMD_TERNARY_FUNCTION_ID)
+#undef DECLARE_SIMD_TERNARY_FUNCTION_ID
+#define DECLARE_SIMD_QUARTERNARY_FUNCTION_ID(i1, i2, name, i3, i4, i5, i6, i7) \
+  k##name,
+  SIMD_QUARTERNARY_OPERATIONS(DECLARE_SIMD_QUARTERNARY_FUNCTION_ID)
+#undef DECLARE_SIMD_QUARTERNARY_FUNCTION_ID
+  kNumberOfBuiltinFunction
 };
 
 
@@ -10434,6 +10719,115 @@ class JSDataView: public JSArrayBufferView {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(JSDataView);
+};
+
+
+class Float32x4: public JSObject {
+ public:
+  typedef float32x4_value_t value_t;
+  static const int kValueSize = kFloat32x4Size;
+  static const InstanceType kInstanceType = FLOAT32x4_TYPE;
+  static inline const char* Name();
+  static inline int kRuntimeAllocatorId();
+
+  // [value]: the FixedFloat32x4Array with length 1.
+  DECL_ACCESSORS(value, Object)
+
+  // Casting.
+  DECLARE_CAST(Float32x4)
+
+  // Dispatched behavior.
+  void Float32x4Print(OStream& os);
+  DECLARE_VERIFIER(Float32x4)
+
+  // Helpers.
+  static const int kLanes = 4;
+  inline float getAt(int index);
+  inline float x() { return getAt(0); }
+  inline float y() { return getAt(1); }
+  inline float z() { return getAt(2); }
+  inline float w() { return getAt(3); }
+  inline float32x4_value_t get();
+  inline void set(float32x4_value_t f32x4);
+
+  // Layout description.
+  static const int kValueOffset = JSObject::kHeaderSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Float32x4);
+};
+
+
+class Float64x2: public JSObject {
+ public:
+  typedef float64x2_value_t value_t;
+  static const int kValueSize = kFloat64x2Size;
+  static const InstanceType kInstanceType = FLOAT64x2_TYPE;
+  static inline const char* Name();
+  static inline int kRuntimeAllocatorId();
+
+  // [value]: the FixedFloat64x2Array with length 1.
+  DECL_ACCESSORS(value, Object)
+
+  // Casting.
+  DECLARE_CAST(Float64x2)
+
+  // Dispatched behavior.
+  void Float64x2Print(OStream& os);
+  DECLARE_VERIFIER(Float64x2)
+
+  // Helpers.
+  static const int kLanes = 2;
+  inline double getAt(int index);
+  inline double x() { return getAt(0); }
+  inline double y() { return getAt(1); }
+  inline float64x2_value_t get();
+  inline void set(float64x2_value_t f64x2);
+
+  // Layout description.
+  static const int kValueOffset = JSObject::kHeaderSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Float64x2);
+};
+
+
+class Int32x4: public JSObject {
+ public:
+  typedef int32x4_value_t value_t;
+  static const int kValueSize = kInt32x4Size;
+  static const InstanceType kInstanceType = INT32x4_TYPE;
+  static inline const char* Name();
+  static inline int kRuntimeAllocatorId();
+
+  // [value]: the FixedInt32x4Array with length 1.
+  DECL_ACCESSORS(value, Object)
+
+  // Casting.
+  DECLARE_CAST(Int32x4)
+
+  // Dispatched behavior.
+  void Int32x4Print(OStream& os);
+  DECLARE_VERIFIER(Int32x4)
+
+  // Helpers.
+  static const int kLanes = 4;
+  inline int32_t getAt(int32_t index);
+  inline int32_t x() { return getAt(0); }
+  inline int32_t y() { return getAt(1); }
+  inline int32_t z() { return getAt(2); }
+  inline int32_t w() { return getAt(3); }
+  inline int32x4_value_t get();
+  inline void set(int32x4_value_t i32x4);
+
+  // Layout description.
+  static const int kValueOffset = JSObject::kHeaderSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Int32x4);
 };
 
 

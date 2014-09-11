@@ -215,6 +215,7 @@ class Genesis BASE_EMBEDDED {
       Handle<Map>* external_map);
   bool InstallExperimentalNatives();
   void InstallBuiltinFunctionIds();
+  void InstallExperimentalSIMDBuiltinFunctionIds();
   void InstallJSFunctionResultCaches();
   void InitializeNormalizedMapCaches();
 
@@ -1129,7 +1130,7 @@ void Genesis::InitializeGlobal(Handle<GlobalObject> global_object,
       native_context()->set_##type##_array_fun(*fun);                         \
       native_context()->set_##type##_array_external_map(*external_map);       \
     }
-    TYPED_ARRAYS(INSTALL_TYPED_ARRAY)
+    BUILTIN_TYPED_ARRAY(INSTALL_TYPED_ARRAY)
 #undef INSTALL_TYPED_ARRAY
 
     Handle<JSFunction> data_view_fun =
@@ -1414,6 +1415,65 @@ void Genesis::InitializeExperimentalGlobal() {
         *generator_object_prototype);
     native_context()->set_generator_object_prototype_map(
         *generator_object_prototype_map);
+  }
+
+  Handle<JSObject> global = Handle<JSObject>(native_context()->global_object());
+  if (FLAG_simd_object) {
+    // --- S I M D ---
+    Handle<String> name = factory()->InternalizeUtf8String("SIMD");
+    Handle<JSFunction> cons = factory()->NewFunction(name);
+    JSFunction::SetInstancePrototype(cons,
+        Handle<Object>(native_context()->initial_object_prototype(),
+                       isolate()));
+    cons->SetInstanceClassName(*name);
+    Handle<JSObject> simd_object = factory()->NewJSObject(cons, TENURED);
+    DCHECK(simd_object->IsJSObject());
+    JSObject::SetOwnPropertyIgnoreAttributes(
+        global, name, simd_object, DONT_ENUM).Check();
+    native_context()->set_simd_object(*simd_object);
+    // --- f l o a t 3 2 x 4 ---
+    Handle<JSFunction> float32x4_fun =
+        InstallFunction(simd_object, "float32x4", FLOAT32x4_TYPE,
+                        Float32x4::kSize,
+                        isolate()->initial_object_prototype(),
+                        Builtins::kIllegal);
+    native_context()->set_float32x4_function(*float32x4_fun);
+
+    // --- f l o a t 6 4 x 2 ---
+    Handle<JSFunction> float64x2_fun =
+        InstallFunction(simd_object, "float64x2", FLOAT64x2_TYPE,
+                        Float64x2::kSize,
+                        isolate()->initial_object_prototype(),
+                        Builtins::kIllegal);
+    native_context()->set_float64x2_function(*float64x2_fun);
+
+    // --- i n t 3 2 x 4 ---
+    Handle<JSFunction> int32x4_fun =
+        InstallFunction(simd_object, "int32x4", INT32x4_TYPE,
+                        Int32x4::kSize,
+                        isolate()->initial_object_prototype(),
+                        Builtins::kIllegal);
+    native_context()->set_int32x4_function(*int32x4_fun);
+
+    // --- F l o a t 3 2 x 4 A r r a y---
+    Handle<JSFunction> fun;
+    Handle<Map> external_map;
+    InstallTypedArray(
+        "Float32x4Array", FLOAT32x4_ELEMENTS, &fun, &external_map);
+    native_context()->set_float32x4_array_fun(*fun);
+    native_context()->set_float32x4_array_external_map(*external_map);
+
+    // --- F l o a t 6 4 x 2 A r r a y---
+    InstallTypedArray(
+        "Float64x2Array", FLOAT64x2_ELEMENTS, &fun, &external_map);
+    native_context()->set_float64x2_array_fun(*fun);
+    native_context()->set_float64x2_array_external_map(*external_map);
+
+    // --- I n t 3 2 x 4 A r r a y---
+    InstallTypedArray(
+        "Int32x4Array", INT32x4_ELEMENTS, &fun, &external_map);
+    native_context()->set_int32x4_array_fun(*fun);
+    native_context()->set_int32x4_array_external_map(*external_map);
   }
 }
 
@@ -2067,10 +2127,59 @@ bool Genesis::InstallExperimentalNatives() {
     INSTALL_EXPERIMENTAL_NATIVE(i, generators, "generator.js")
     INSTALL_EXPERIMENTAL_NATIVE(i, strings, "harmony-string.js")
     INSTALL_EXPERIMENTAL_NATIVE(i, arrays, "harmony-array.js")
+    if (FLAG_simd_object &&
+        strcmp(ExperimentalNatives::GetScriptName(i).start(),
+               "native simd128.js") == 0) {
+      if (!CompileExperimentalBuiltin(isolate(), i)) return false;
+      // Store the map for the float32x4, float64x2 and int32x4 function
+      // prototype after the float32x4 and int32x4 function has been set up.
+      InstallExperimentalSIMDBuiltinFunctionIds();
+      JSObject* float32x4_function_prototype = JSObject::cast(
+          native_context()->float32x4_function()->instance_prototype());
+      native_context()->set_float32x4_function_prototype_map(
+          float32x4_function_prototype->map());
+      JSObject* float64x2_function_prototype = JSObject::cast(
+          native_context()->float64x2_function()->instance_prototype());
+      native_context()->set_float64x2_function_prototype_map(
+          float64x2_function_prototype->map());
+      JSObject* int32x4_function_prototype = JSObject::cast(
+          native_context()->int32x4_function()->instance_prototype());
+      native_context()->set_int32x4_function_prototype_map(
+          int32x4_function_prototype->map());
+    }
   }
 
   InstallExperimentalNativeFunctions();
   return true;
+}
+
+
+static Handle<JSObject> ResolveBuiltinSIMDIdHolder(
+    Handle<Context> native_context,
+    const char* holder_expr) {
+  Isolate* isolate = native_context->GetIsolate();
+  Factory* factory = isolate->factory();
+  Handle<GlobalObject> global(native_context->global_object());
+  Handle<Object>  holder = global;
+  char* name = const_cast<char*>(holder_expr);
+  char* period_pos = strchr(name, '.');
+  while (period_pos != NULL) {
+    Vector<const char> property(name,
+                                static_cast<int>(period_pos - name));
+    Handle<String> property_string = factory->InternalizeUtf8String(property);
+    DCHECK(!property_string.is_null());
+    holder = Object::GetProperty(holder, property_string).ToHandleChecked();
+    if (strcmp(".prototype", period_pos) == 0) {
+      Handle<JSFunction> function = Handle<JSFunction>::cast(holder);
+      return Handle<JSObject>(JSObject::cast(function->prototype()));
+    } else {
+      name = period_pos + 1;
+      period_pos = strchr(name, '.');
+    }
+  }
+
+  return Handle<JSObject>::cast(Object::GetPropertyOrElement(
+      holder, factory->InternalizeUtf8String(name)).ToHandleChecked());
 }
 
 
@@ -2095,6 +2204,40 @@ void Genesis::InstallBuiltinFunctionIds() {
     InstallBuiltinFunctionId(holder, #fun_name, id);    \
   }
   FUNCTIONS_WITH_ID_LIST(INSTALL_BUILTIN_ID)
+#undef INSTALL_BUILTIN_ID
+}
+
+
+void Genesis::InstallExperimentalSIMDBuiltinFunctionIds() {
+  HandleScope scope(isolate());
+#define INSTALL_BUILTIN_ID(holder_expr, fun_name, name)     \
+  {                                                         \
+    Handle<JSObject> holder = ResolveBuiltinSIMDIdHolder(   \
+        native_context(), #holder_expr);                    \
+    BuiltinFunctionId id = k##name;                         \
+    InstallBuiltinFunctionId(holder, #fun_name, id);        \
+  }
+  SIMD_ARRAY_OPERATIONS(INSTALL_BUILTIN_ID)
+#define INSTALL_SIMD_NULLARY_FUNCTION_ID(p1, p2, p3, p4)                       \
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_NULLARY_OPERATIONS(INSTALL_SIMD_NULLARY_FUNCTION_ID)
+#undef INSTALL_SIMD_NULLARY_FUNCTION_ID
+#define INSTALL_SIMD_UNARY_FUNCTION_ID(p1, p2, p3, p4, p5)                     \
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_UNARY_OPERATIONS(INSTALL_SIMD_UNARY_FUNCTION_ID)
+#undef INSTALL_SIMD_UNARY_FUNCTION_ID
+#define INSTALL_SIMD_BINARY_FUNCTION_ID(p1, p2, p3, p4, p5, p6)                \
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_BINARY_OPERATIONS(INSTALL_SIMD_BINARY_FUNCTION_ID)
+#undef INSTALL_SIMD_BINARY_FUNCTION_ID
+#define INSTALL_SIMD_TERNARY_FUNCTION_ID(p1, p2, p3, p4, p5, p6, p7)           \
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_TERNARY_OPERATIONS(INSTALL_SIMD_TERNARY_FUNCTION_ID)
+#undef INSTALL_SIMD_TERNARY_FUNCTION_ID
+#define INSTALL_SIMD_QUARTERNARY_FUNCTION_ID(p1, p2, p3, p4, p5, p6, p7, p8)   \
+  INSTALL_BUILTIN_ID(p1, p2, p3)
+  SIMD_QUARTERNARY_OPERATIONS(INSTALL_SIMD_QUARTERNARY_FUNCTION_ID)
+#undef INSTALL_SIMD_QUARTERNARY_FUNCTION_ID
 #undef INSTALL_BUILTIN_ID
 }
 

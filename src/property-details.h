@@ -70,6 +70,9 @@ class Representation {
     kSmi,
     kInteger32,
     kDouble,
+    kFloat32x4,
+    kFloat64x2,
+    kInt32x4,
     kHeapObject,
     kTagged,
     kExternal,
@@ -87,6 +90,9 @@ class Representation {
   static Representation Smi() { return Representation(kSmi); }
   static Representation Integer32() { return Representation(kInteger32); }
   static Representation Double() { return Representation(kDouble); }
+  static Representation Float32x4() { return Representation(kFloat32x4); }
+  static Representation Float64x2() { return Representation(kFloat64x2); }
+  static Representation Int32x4() { return Representation(kInt32x4); }
   static Representation HeapObject() { return Representation(kHeapObject); }
   static Representation External() { return Representation(kExternal); }
 
@@ -117,6 +123,7 @@ class Representation {
     if (IsHeapObject()) return other.IsNone();
     if (kind_ == kUInteger8 && other.kind_ == kInteger8) return false;
     if (kind_ == kUInteger16 && other.kind_ == kInteger16) return false;
+    if (IsSIMD128() && other.IsSIMD128()) return false;
     return kind_ > other.kind_;
   }
 
@@ -158,6 +165,12 @@ class Representation {
   bool IsInteger32() const { return kind_ == kInteger32; }
   bool IsSmiOrInteger32() const { return IsSmi() || IsInteger32(); }
   bool IsDouble() const { return kind_ == kDouble; }
+  bool IsFloat32x4() const { return kind_ == kFloat32x4; }
+  bool IsFloat64x2() const { return kind_ == kFloat64x2; }
+  bool IsInt32x4() const { return kind_ == kInt32x4; }
+  bool IsSIMD128() const {
+    return IsFloat32x4() || IsFloat64x2() || IsInt32x4();
+  }
   bool IsHeapObject() const { return kind_ == kHeapObject; }
   bool IsExternal() const { return kind_ == kExternal; }
   bool IsSpecialization() const {

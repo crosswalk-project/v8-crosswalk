@@ -832,6 +832,9 @@ TYPE_CHECKER(JSArrayBuffer, JS_ARRAY_BUFFER_TYPE)
 TYPE_CHECKER(JSTypedArray, JS_TYPED_ARRAY_TYPE)
 TYPE_CHECKER(JSDataView, JS_DATA_VIEW_TYPE)
 
+TYPE_CHECKER(Float32x4, FLOAT32x4_TYPE)
+TYPE_CHECKER(Float64x2, FLOAT64x2_TYPE)
+TYPE_CHECKER(Int32x4, INT32x4_TYPE)
 
 bool Object::IsJSArrayBufferView() const {
   return IsJSDataView() || IsJSTypedArray();
@@ -1275,6 +1278,29 @@ Maybe<bool> JSProxy::HasElementWithHandler(Handle<JSProxy> proxy,
     write_double_field(p, offset, value)
 #endif  // V8_TARGET_ARCH_MIPS
 
+#define READ_FLOAT32x4_FIELD(p, offset) \
+  (*reinterpret_cast<float32x4_value_t*>(FIELD_ADDR(p, offset)))
+
+#define WRITE_FLOAT32x4_FIELD(p, offset, value) \
+  (*reinterpret_cast<float32x4_value_t*>(FIELD_ADDR(p, offset)) = value)
+
+#define READ_FLOAT64x2_FIELD(p, offset) \
+  (*reinterpret_cast<float64x2_value_t*>(FIELD_ADDR(p, offset)))
+
+#define WRITE_FLOAT64x2_FIELD(p, offset, value) \
+  (*reinterpret_cast<float64x2_value_t*>(FIELD_ADDR(p, offset)) = value)
+
+#define READ_INT32x4_FIELD(p, offset) \
+  (*reinterpret_cast<int32x4_value_t*>(FIELD_ADDR(p, offset)))
+
+#define WRITE_INT32x4_FIELD(p, offset, value) \
+  (*reinterpret_cast<int32x4_value_t*>(FIELD_ADDR(p, offset)) = value)
+
+#define READ_FLOAT_FIELD(p, offset) \
+  (*reinterpret_cast<float*>(FIELD_ADDR(p, offset)))
+
+#define WRITE_FLOAT_FIELD(p, offset, value) \
+  (*reinterpret_cast<float*>(FIELD_ADDR(p, offset)) = value)
 
 #define READ_INT_FIELD(p, offset) \
   (*reinterpret_cast<const int*>(FIELD_ADDR_CONST(p, offset)))
@@ -1548,6 +1574,88 @@ int HeapNumber::get_exponent() {
 
 int HeapNumber::get_sign() {
   return READ_INT_FIELD(this, kExponentOffset) & kSignMask;
+}
+
+
+ACCESSORS(Float32x4, value, Object, kValueOffset)
+ACCESSORS(Float64x2, value, Object, kValueOffset)
+ACCESSORS(Int32x4, value, Object, kValueOffset)
+
+
+const char* Float32x4::Name() {
+  return "float32x4";
+}
+
+
+int Float32x4::kRuntimeAllocatorId() {
+  return Runtime::kAllocateFloat32x4;
+}
+
+
+float Float32x4::getAt(int index) {
+  DCHECK(index >= 0 && index < kLanes);
+  return get().storage[index];
+}
+
+
+float32x4_value_t Float32x4::get() {
+  return FixedFloat32x4Array::cast(value())->get_scalar(0);
+}
+
+
+void Float32x4::set(float32x4_value_t f32x4) {
+  FixedFloat32x4Array::cast(value())->set(0, f32x4);
+}
+
+
+const char* Float64x2::Name() {
+  return "float64x2";
+}
+
+
+int Float64x2::kRuntimeAllocatorId() {
+  return Runtime::kAllocateFloat64x2;
+}
+
+
+double Float64x2::getAt(int index) {
+  DCHECK(index >= 0 && index < kLanes);
+  return get().storage[index];
+}
+
+float64x2_value_t Float64x2::get() {
+  return FixedFloat64x2Array::cast(value())->get_scalar(0);
+}
+
+
+void Float64x2::set(float64x2_value_t f64x2) {
+  FixedFloat64x2Array::cast(value())->set(0, f64x2);
+}
+
+
+const char* Int32x4::Name() {
+  return "int32x4";
+}
+
+
+int Int32x4::kRuntimeAllocatorId() {
+  return Runtime::kAllocateInt32x4;
+}
+
+
+int32_t Int32x4::getAt(int index) {
+  DCHECK(index >= 0 && index < kLanes);
+  return get().storage[index];;
+}
+
+
+int32x4_value_t Int32x4::get() {
+  return FixedInt32x4Array::cast(value())->get_scalar(0);
+}
+
+
+void Int32x4::set(int32x4_value_t i32x4) {
+  FixedInt32x4Array::cast(value())->set(0, i32x4);
 }
 
 
@@ -1965,6 +2073,12 @@ int JSObject::GetHeaderSize() {
       return JSTypedArray::kSize;
     case JS_DATA_VIEW_TYPE:
       return JSDataView::kSize;
+    case FLOAT32x4_TYPE:
+      return Float32x4::kSize;
+    case FLOAT64x2_TYPE:
+      return Float64x2::kSize;
+    case INT32x4_TYPE:
+      return Int32x4::kSize;
     case JS_SET_TYPE:
       return JSSet::kSize;
     case JS_MAP_TYPE:
@@ -3213,9 +3327,12 @@ CAST_ACCESSOR(DescriptorArray)
 CAST_ACCESSOR(ExternalArray)
 CAST_ACCESSOR(ExternalAsciiString)
 CAST_ACCESSOR(ExternalFloat32Array)
+CAST_ACCESSOR(ExternalFloat32x4Array)
 CAST_ACCESSOR(ExternalFloat64Array)
+CAST_ACCESSOR(ExternalFloat64x2Array)
 CAST_ACCESSOR(ExternalInt16Array)
 CAST_ACCESSOR(ExternalInt32Array)
+CAST_ACCESSOR(ExternalInt32x4Array)
 CAST_ACCESSOR(ExternalInt8Array)
 CAST_ACCESSOR(ExternalString)
 CAST_ACCESSOR(ExternalTwoByteString)
@@ -3231,6 +3348,9 @@ CAST_ACCESSOR(Foreign)
 CAST_ACCESSOR(FreeSpace)
 CAST_ACCESSOR(GlobalObject)
 CAST_ACCESSOR(HeapObject)
+CAST_ACCESSOR(Float32x4)
+CAST_ACCESSOR(Float64x2)
+CAST_ACCESSOR(Int32x4)
 CAST_ACCESSOR(JSArray)
 CAST_ACCESSOR(JSArrayBuffer)
 CAST_ACCESSOR(JSArrayBufferView)
@@ -4022,6 +4142,89 @@ void ExternalFloat32Array::set(int index, float value) {
 }
 
 
+float32x4_value_t ExternalFloat32x4Array::get_scalar(int index) {
+  DCHECK((index >= 0) && (index < this->length()));
+  float* ptr = static_cast<float*>(external_pointer());
+  float32x4_value_t value;
+  value.storage[0] = ptr[index * 4 + 0];
+  value.storage[1] = ptr[index * 4 + 1];
+  value.storage[2] = ptr[index * 4 + 2];
+  value.storage[3] = ptr[index * 4 + 3];
+  return value;
+}
+
+
+Handle<Object> ExternalFloat32x4Array::get(Handle<ExternalFloat32x4Array> array,
+                                           int index) {
+  float32x4_value_t value = array->get_scalar(index);
+  return array->GetIsolate()->factory()->NewFloat32x4(value);
+}
+
+
+void ExternalFloat32x4Array::set(int index, const float32x4_value_t& value) {
+  DCHECK((index >= 0) && (index < this->length()));
+  float* ptr = static_cast<float*>(external_pointer());
+  ptr[index * 4 + 0] = value.storage[0];
+  ptr[index * 4 + 1] = value.storage[1];
+  ptr[index * 4 + 2] = value.storage[2];
+  ptr[index * 4 + 3] = value.storage[3];
+}
+
+
+float64x2_value_t ExternalFloat64x2Array::get_scalar(int index) {
+  DCHECK((index >= 0) && (index < this->length()));
+  double* ptr = static_cast<double*>(external_pointer());
+  float64x2_value_t value;
+  value.storage[0] = ptr[index * 2 + 0];
+  value.storage[1] = ptr[index * 2 + 1];
+  return value;
+}
+
+
+Handle<Object> ExternalFloat64x2Array::get(Handle<ExternalFloat64x2Array> array,
+                                           int index) {
+  float64x2_value_t value = array->get_scalar(index);
+  return array->GetIsolate()->factory()->NewFloat64x2(value);
+}
+
+
+void ExternalFloat64x2Array::set(int index, const float64x2_value_t& value) {
+  DCHECK((index >= 0) && (index < this->length()));
+  double* ptr = static_cast<double*>(external_pointer());
+  ptr[index * 2 + 0] = value.storage[0];
+  ptr[index * 2 + 1] = value.storage[1];
+}
+
+
+int32x4_value_t ExternalInt32x4Array::get_scalar(int index) {
+  DCHECK((index >= 0) && (index < this->length()));
+  int32_t* ptr = static_cast<int32_t*>(external_pointer());
+  int32x4_value_t value;
+  value.storage[0] = ptr[index * 4 + 0];
+  value.storage[1] = ptr[index * 4 + 1];
+  value.storage[2] = ptr[index * 4 + 2];
+  value.storage[3] = ptr[index * 4 + 3];
+  return value;
+}
+
+
+Handle<Object> ExternalInt32x4Array::get(Handle<ExternalInt32x4Array> array,
+                                         int index) {
+  int32x4_value_t value = array->get_scalar(index);
+  return array->GetIsolate()->factory()->NewInt32x4(value);
+}
+
+
+void ExternalInt32x4Array::set(int index, const int32x4_value_t& value) {
+  DCHECK((index >= 0) && (index < this->length()));
+  int32_t* ptr = static_cast<int32_t*>(external_pointer());
+  ptr[index * 4 + 0] = value.storage[0];
+  ptr[index * 4 + 1] = value.storage[1];
+  ptr[index * 4 + 2] = value.storage[2];
+  ptr[index * 4 + 3] = value.storage[3];
+}
+
+
 double ExternalFloat64Array::get_scalar(int index) {
   DCHECK((index >= 0) && (index < this->length()));
   double* ptr = static_cast<double*>(external_pointer());
@@ -4215,6 +4418,72 @@ Handle<Object> FixedTypedArray<Traits>::SetValue(
   return Traits::ToHandle(array->GetIsolate(), cast_value);
 }
 
+template<> inline
+Handle<Object> FixedTypedArray<Float32x4ArrayTraits>::SetValue(
+    Handle<FixedTypedArray<Float32x4ArrayTraits> > array,
+    uint32_t index, Handle<Object> value) {
+  float32x4_value_t cast_value;
+  cast_value.storage[0] = static_cast<float>(base::OS::nan_value());
+  cast_value.storage[1] = static_cast<float>(base::OS::nan_value());
+  cast_value.storage[2] = static_cast<float>(base::OS::nan_value());
+  cast_value.storage[3] = static_cast<float>(base::OS::nan_value());
+  if (index < static_cast<uint32_t>(array->length())) {
+    if (value->IsFloat32x4()) {
+      cast_value = Handle<Float32x4>::cast(value)->get();
+    } else {
+      // Clamp undefined to NaN (default). All other types have been
+      // converted to a number type further up in the call chain.
+      DCHECK(value->IsUndefined());
+    }
+    array->set(index, cast_value);
+  }
+  return Float32x4ArrayTraits::ToHandle(array->GetIsolate(), cast_value);
+}
+
+
+template<> inline
+Handle<Object> FixedTypedArray<Float64x2ArrayTraits>::SetValue(
+    Handle<FixedTypedArray<Float64x2ArrayTraits> > array,
+    uint32_t index, Handle<Object> value) {
+  float64x2_value_t cast_value;
+  cast_value.storage[0] = base::OS::nan_value();
+  cast_value.storage[1] = base::OS::nan_value();
+  if (index < static_cast<uint32_t>(array->length())) {
+    if (value->IsFloat64x2()) {
+      cast_value = Handle<Float64x2>::cast(value)->get();
+    } else {
+      // Clamp undefined to NaN (default). All other types have been
+      // converted to a number type further up in the call chain.
+      DCHECK(value->IsUndefined());
+    }
+    array->set(index, cast_value);
+  }
+  return Float64x2ArrayTraits::ToHandle(array->GetIsolate(), cast_value);
+}
+
+
+template<> inline
+Handle<Object> FixedTypedArray<Int32x4ArrayTraits>::SetValue(
+    Handle<FixedTypedArray<Int32x4ArrayTraits> > array,
+    uint32_t index, Handle<Object> value) {
+  int32x4_value_t cast_value;
+  cast_value.storage[0] = 0;
+  cast_value.storage[1] = 0;
+  cast_value.storage[2] = 0;
+  cast_value.storage[3] = 0;
+  if (index < static_cast<uint32_t>(array->length())) {
+    if (value->IsInt32x4()) {
+      cast_value = Handle<Int32x4>::cast(value)->get();
+    } else {
+      // Clamp undefined to zero (default). All other types have been
+      // converted to a number type further up in the call chain.
+      DCHECK(value->IsUndefined());
+    }
+    array->set(index, cast_value);
+  }
+  return Int32x4ArrayTraits::ToHandle(array->GetIsolate(), cast_value);
+}
+
 
 Handle<Object> Uint8ArrayTraits::ToHandle(Isolate* isolate, uint8_t scalar) {
   return handle(Smi::FromInt(scalar), isolate);
@@ -4254,6 +4523,24 @@ Handle<Object> Int32ArrayTraits::ToHandle(Isolate* isolate, int32_t scalar) {
 
 Handle<Object> Float32ArrayTraits::ToHandle(Isolate* isolate, float scalar) {
   return isolate->factory()->NewNumber(scalar);
+}
+
+
+Handle<Object> Int32x4ArrayTraits::ToHandle(
+    Isolate* isolate, int32x4_value_t scalar) {
+  return isolate->factory()->NewInt32x4(scalar);
+}
+
+
+Handle<Object> Float32x4ArrayTraits::ToHandle(
+    Isolate* isolate, float32x4_value_t scalar) {
+  return isolate->factory()->NewFloat32x4(scalar);
+}
+
+
+Handle<Object> Float64x2ArrayTraits::ToHandle(
+    Isolate* isolate, float64x2_value_t scalar) {
+  return isolate->factory()->NewFloat64x2(scalar);
 }
 
 
