@@ -224,6 +224,9 @@ int TypeImpl<Config>::BitsetType::Lub(i::Map* map) {
     case JS_MAP_ITERATOR_TYPE:
     case JS_WEAK_MAP_TYPE:
     case JS_WEAK_SET_TYPE:
+    case FLOAT32x4_TYPE:
+    case FLOAT64x2_TYPE:
+    case INT32x4_TYPE:
       if (map->is_undetectable()) return kUndetectable;
       return kOtherObject;
     case JS_ARRAY_TYPE:

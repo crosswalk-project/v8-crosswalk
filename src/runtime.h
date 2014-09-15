@@ -152,6 +152,76 @@ namespace internal {
   F(MathFround, 1, 1)                                       \
   F(RemPiO2, 1, 1)                                          \
                                                             \
+  /* Float32x4 and Int32x4 */                               \
+  F(AllocateFloat32x4, 0, 1)                                \
+  F(AllocateFloat64x2, 0, 1)                                \
+  F(AllocateInt32x4, 0, 1)                                  \
+                                                            \
+  /* SIMD */                                                \
+  F(Float32x4Abs, 1, 1)                                     \
+  F(Float32x4BitsToInt32x4, 1, 1)                           \
+  F(Float32x4Neg, 1, 1)                                     \
+  F(Float32x4Reciprocal, 1, 1)                              \
+  F(Float32x4ReciprocalSqrt, 1, 1)                          \
+  F(Float32x4Sqrt, 1, 1)                                    \
+  F(Float32x4ToInt32x4, 1, 1)                               \
+  F(Float32x4Add, 2, 1)                                     \
+  F(Float32x4Div, 2, 1)                                     \
+  F(Float32x4Max, 2, 1)                                     \
+  F(Float32x4Min, 2, 1)                                     \
+  F(Float32x4Mul, 2, 1)                                     \
+  F(Float32x4Sub, 2, 1)                                     \
+  F(Float32x4Equal, 2, 1)                                   \
+  F(Float32x4NotEqual, 2, 1)                                \
+  F(Float32x4GreaterThanOrEqual, 2, 1)                      \
+  F(Float32x4GreaterThan, 2, 1)                             \
+  F(Float32x4LessThan, 2, 1)                                \
+  F(Float32x4LessThanOrEqual, 2, 1)                         \
+  F(Float32x4Shuffle, 2, 1)                                 \
+  F(Float32x4Scale, 2, 1)                                   \
+  F(Float32x4WithX, 2, 1)                                   \
+  F(Float32x4WithY, 2, 1)                                   \
+  F(Float32x4WithZ, 2, 1)                                   \
+  F(Float32x4WithW, 2, 1)                                   \
+  F(Float32x4Clamp, 3, 1)                                   \
+  F(Float32x4ShuffleMix, 3, 1)                              \
+  F(Float64x2Abs, 1, 1)                                     \
+  F(Float64x2Neg, 1, 1)                                     \
+  F(Float64x2Sqrt, 1, 1)                                    \
+  F(Float64x2Add, 2, 1)                                     \
+  F(Float64x2Div, 2, 1)                                     \
+  F(Float64x2Max, 2, 1)                                     \
+  F(Float64x2Min, 2, 1)                                     \
+  F(Float64x2Mul, 2, 1)                                     \
+  F(Float64x2Sub, 2, 1)                                     \
+  F(Float64x2Scale, 2, 1)                                   \
+  F(Float64x2WithX, 2, 1)                                   \
+  F(Float64x2WithY, 2, 1)                                   \
+  F(Float64x2Clamp, 3, 1)                                   \
+  F(Int32x4BitsToFloat32x4, 1, 1)                           \
+  F(Int32x4Neg, 1, 1)                                       \
+  F(Int32x4Not, 1, 1)                                       \
+  F(Int32x4ToFloat32x4, 1, 1)                               \
+  F(Int32x4And, 2, 1)                                       \
+  F(Int32x4Or, 2, 1)                                        \
+  F(Int32x4Xor, 2, 1)                                       \
+  F(Int32x4Add, 2, 1)                                       \
+  F(Int32x4Sub, 2, 1)                                       \
+  F(Int32x4Mul, 2, 1)                                       \
+  F(Int32x4Shuffle, 2, 1)                                   \
+  F(Int32x4WithX, 2, 1)                                     \
+  F(Int32x4WithY, 2, 1)                                     \
+  F(Int32x4WithZ, 2, 1)                                     \
+  F(Int32x4WithW, 2, 1)                                     \
+  F(Int32x4WithFlagX, 2, 1)                                 \
+  F(Int32x4WithFlagY, 2, 1)                                 \
+  F(Int32x4WithFlagZ, 2, 1)                                 \
+  F(Int32x4WithFlagW, 2, 1)                                 \
+  F(Int32x4GreaterThan, 2, 1)                               \
+  F(Int32x4Equal, 2, 1)                                     \
+  F(Int32x4LessThan, 2, 1)                                  \
+  F(Int32x4Select, 3, 1)                                    \
+                                                            \
   /* Regular expressions */                                 \
   F(RegExpCompile, 3, 1)                                    \
   F(RegExpExecMultiple, 4, 1)                               \
@@ -223,6 +293,28 @@ namespace internal {
   F(DateMakeDay, 2, 1)                                                \
   F(DateSetValue, 3, 1)                                               \
   F(DateCacheVersion, 0, 1)                                           \
+                                                                      \
+  /* Float32x4, Float64x2 and Int32x4 */                              \
+  F(CreateFloat32x4, 4, 1)                                            \
+  F(Float32x4GetX, 1, 1)                                              \
+  F(Float32x4GetY, 1, 1)                                              \
+  F(Float32x4GetZ, 1, 1)                                              \
+  F(Float32x4GetW, 1, 1)                                              \
+  F(Float32x4GetSignMask, 1, 1)                                       \
+  F(CreateFloat64x2, 2, 1)                                            \
+  F(Float64x2GetX, 1, 1)                                              \
+  F(Float64x2GetY, 1, 1)                                              \
+  F(Float64x2GetSignMask, 1, 1)                                       \
+  F(CreateInt32x4, 4, 1)                                              \
+  F(Int32x4GetX, 1, 1)                                                \
+  F(Int32x4GetY, 1, 1)                                                \
+  F(Int32x4GetZ, 1, 1)                                                \
+  F(Int32x4GetW, 1, 1)                                                \
+  F(Int32x4GetFlagX, 1, 1)                                            \
+  F(Int32x4GetFlagY, 1, 1)                                            \
+  F(Int32x4GetFlagZ, 1, 1)                                            \
+  F(Int32x4GetFlagW, 1, 1)                                            \
+  F(Int32x4GetSignMask, 1, 1)                                         \
                                                                       \
   /* Globals */                                                       \
   F(CompileString, 2, 1)                                              \
@@ -394,7 +486,10 @@ namespace internal {
   F(HasExternalInt32Elements, 1, 1)                                   \
   F(HasExternalUint32Elements, 1, 1)                                  \
   F(HasExternalFloat32Elements, 1, 1)                                 \
+  F(HasExternalFloat32x4Elements, 1, 1)                               \
+  F(HasExternalInt32x4Elements, 1, 1)                                 \
   F(HasExternalFloat64Elements, 1, 1)                                 \
+  F(HasExternalFloat64x2Elements, 1, 1)                               \
   F(HasFixedUint8ClampedElements, 1, 1)                               \
   F(HasFixedInt8Elements, 1, 1)                                       \
   F(HasFixedUint8Elements, 1, 1)                                      \
@@ -878,9 +973,11 @@ class Runtime : public AllStatic {
     ARRAY_ID_FLOAT32 = 7,
     ARRAY_ID_FLOAT64 = 8,
     ARRAY_ID_UINT8_CLAMPED = 9,
-
+    ARRAY_ID_FLOAT32x4 = 10,
+    ARRAY_ID_FLOAT64x2 = 11,
+    ARRAY_ID_INT32x4 = 12,
     ARRAY_ID_FIRST = ARRAY_ID_UINT8,
-    ARRAY_ID_LAST = ARRAY_ID_UINT8_CLAMPED
+    ARRAY_ID_LAST = ARRAY_ID_INT32x4
   };
 
   static void ArrayIdToTypeAndSize(int array_id,

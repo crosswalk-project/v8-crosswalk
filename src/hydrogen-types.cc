@@ -5,6 +5,7 @@
 #include "src/hydrogen-types.h"
 
 #include "src/ostreams.h"
+#include "src/property-details.h"
 #include "src/types-inl.h"
 
 
@@ -43,6 +44,9 @@ HType HType::FromValue(Handle<Object> value) {
   if (value->IsSmi()) return HType::Smi();
   if (value->IsNull()) return HType::Null();
   if (value->IsHeapNumber()) return HType::HeapNumber();
+  if (value->IsFloat32x4()) return HType::Float32x4();
+  if (value->IsFloat64x2()) return HType::Float64x2();
+  if (value->IsInt32x4()) return HType::Int32x4();
   if (value->IsString()) return HType::String();
   if (value->IsBoolean()) return HType::Boolean();
   if (value->IsUndefined()) return HType::Undefined();
@@ -50,6 +54,24 @@ HType HType::FromValue(Handle<Object> value) {
   if (value->IsJSObject()) return HType::JSObject();
   DCHECK(value->IsHeapObject());
   return HType::HeapObject();
+}
+
+
+// static
+HType HType::FromRepresentation(Representation representation) {
+  HType result = HType::Tagged();
+  if (representation.IsSmi()) {
+    result = HType::Smi();
+  } else if (representation.IsDouble()) {
+    result = HType::HeapNumber();
+  } else if (representation.IsFloat32x4()) {
+    result = HType::Float32x4();
+  } else if (representation.IsFloat64x2()) {
+    result = HType::Float64x2();
+  } else if (representation.IsInt32x4()) {
+    result = HType::Int32x4();
+  }
+  return result;
 }
 
 
