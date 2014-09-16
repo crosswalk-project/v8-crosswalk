@@ -37,6 +37,20 @@ function testConstructor() {
 
 testConstructor();
 
+function test1ArgumentConstructor() {
+  var u4 = SIMD.int32x4(1, 2, 3, 4);
+  var u4_new = SIMD.int32x4(u4);
+  assertEquals(u4_new.x, u4.x);
+  assertEquals(u4_new.y, u4.y);
+  assertEquals(u4_new.z, u4.z);
+  assertEquals(u4_new.w, u4.w);
+}
+
+test1ArgumentConstructor();
+test1ArgumentConstructor();
+%OptimizeFunctionOnNextCall(test1ArgumentConstructor);
+test1ArgumentConstructor();
+
 function testZeroConstructor() {
   var u4 = SIMD.int32x4.zero();
   assertEquals(0, u4.x);
@@ -213,13 +227,13 @@ testSIMDNegu32();
 
 function testSIMDSelect() {
   var m = SIMD.int32x4.bool(true, true, false, false);
-  var t = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
-  var f = SIMD.float32x4(5.0, 6.0, 7.0, 8.0);
+  var t = SIMD.int32x4(1, 2, 3, 4);
+  var f = SIMD.int32x4(5, 6, 7, 8);
   var s = SIMD.int32x4.select(m, t, f);
-  assertEquals(1.0, s.x);
-  assertEquals(2.0, s.y);
-  assertEquals(7.0, s.z);
-  assertEquals(8.0, s.w);
+  assertEquals(1, s.x);
+  assertEquals(2, s.y);
+  assertEquals(7, s.z);
+  assertEquals(8, s.w);
 }
 
 testSIMDSelect();

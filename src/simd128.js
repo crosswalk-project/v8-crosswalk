@@ -55,17 +55,17 @@ endmacro
 
 SIMD128_DATA_TYPES(DECLARE_DATA_TYPE_COMMON_FUNCTION)
 
-function StringfyFloat32x4_() {
+function StringfyFloat32x4JS() {
   CheckFloat32x4(this);
   return "float32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
 }
 
-function StringfyFloat64x2_() {
+function StringfyFloat64x2JS() {
   CheckFloat64x2(this);
   return "float64x2(" + this.x + "," + this.y + ")";
 }
 
-function StringfyInt32x4_() {
+function StringfyInt32x4JS() {
   CheckInt32x4(this);
   return "int32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
 }
@@ -91,7 +91,7 @@ FUNCTION(Int32x4, GetSignMask)
 endmacro
 
 macro DECLARE_DATA_TYPE_FUNCTION(TYPE, FUNCTION)
-function TYPEFUNCTION_() {
+function TYPEFUNCTIONJS() {
   CheckTYPE(this);
   return %TYPEFUNCTION(this);
 }
@@ -100,28 +100,40 @@ endmacro
 SIMD128_DATA_TYPE_FUNCTIONS(DECLARE_DATA_TYPE_FUNCTION)
 
 function Float32x4Constructor(x, y, z, w) {
-  x = TO_NUMBER_INLINE(x);
-  y = TO_NUMBER_INLINE(y);
-  z = TO_NUMBER_INLINE(z);
-  w = TO_NUMBER_INLINE(w);
-
-  return %CreateFloat32x4(x, y, z, w);
+  if (arguments.length == 1) {
+    CheckFloat32x4(x);
+    return %CreateFloat32x4(x.x, x.y, x.z, x.w);
+  } else {
+    x = TO_NUMBER_INLINE(x);
+    y = TO_NUMBER_INLINE(y);
+    z = TO_NUMBER_INLINE(z);
+    w = TO_NUMBER_INLINE(w);
+    return %CreateFloat32x4(x, y, z, w);
+  }
 }
 
 function Float64x2Constructor(x, y) {
-  x = TO_NUMBER_INLINE(x);
-  y = TO_NUMBER_INLINE(y);
-
-  return %CreateFloat64x2(x, y);
+  if (arguments.length == 1) {
+    CheckFloat64x2(x);
+    return %CreateFloat64x2(x.x, x.y);
+  } else {
+    x = TO_NUMBER_INLINE(x);
+    y = TO_NUMBER_INLINE(y);
+    return %CreateFloat64x2(x, y);
+  }
 }
 
 function Int32x4Constructor(x, y, z, w) {
-  x = TO_INT32(x);
-  y = TO_INT32(y);
-  z = TO_INT32(z);
-  w = TO_INT32(w);
-
-  return %CreateInt32x4(x, y, z, w);
+  if (arguments.length == 1) {
+    CheckInt32x4(x);
+    return %CreateInt32x4(x.x, x.y, x.z, x.w);
+  } else {
+    x = TO_INT32(x);
+    y = TO_INT32(y);
+    z = TO_INT32(z);
+    w = TO_INT32(w);
+    return %CreateInt32x4(x, y, z, w);
+  }
 }
 
 function SetUpFloat32x4() {
@@ -132,13 +144,13 @@ function SetUpFloat32x4() {
   %FunctionSetPrototype($Float32x4, new $Object());
   %AddNamedProperty($Float32x4.prototype, "constructor", $Float32x4, DONT_ENUM);
 
-  InstallGetter($Float32x4.prototype, "x", Float32x4GetX_);
-  InstallGetter($Float32x4.prototype, "y", Float32x4GetY_);
-  InstallGetter($Float32x4.prototype, "z", Float32x4GetZ_);
-  InstallGetter($Float32x4.prototype, "w", Float32x4GetW_);
-  InstallGetter($Float32x4.prototype, "signMask", Float32x4GetSignMask_);
+  InstallGetter($Float32x4.prototype, "x", Float32x4GetXJS);
+  InstallGetter($Float32x4.prototype, "y", Float32x4GetYJS);
+  InstallGetter($Float32x4.prototype, "z", Float32x4GetZJS);
+  InstallGetter($Float32x4.prototype, "w", Float32x4GetWJS);
+  InstallGetter($Float32x4.prototype, "signMask", Float32x4GetSignMaskJS);
   InstallFunctions($Float32x4.prototype, DONT_ENUM, $Array(
-    "toString", StringfyFloat32x4_
+    "toString", StringfyFloat32x4JS
   ));
 }
 
@@ -150,11 +162,11 @@ function SetUpFloat64x2() {
   %FunctionSetPrototype($Float64x2, new $Object());
   %AddNamedProperty($Float64x2.prototype, "constructor", $Float64x2, DONT_ENUM);
 
-  InstallGetter($Float64x2.prototype, "x", Float64x2GetX_);
-  InstallGetter($Float64x2.prototype, "y", Float64x2GetY_);
-  InstallGetter($Float64x2.prototype, "signMask", Float64x2GetSignMask_);
+  InstallGetter($Float64x2.prototype, "x", Float64x2GetXJS);
+  InstallGetter($Float64x2.prototype, "y", Float64x2GetYJS);
+  InstallGetter($Float64x2.prototype, "signMask", Float64x2GetSignMaskJS);
   InstallFunctions($Float64x2.prototype, DONT_ENUM, $Array(
-    "toString", StringfyFloat64x2_
+    "toString", StringfyFloat64x2JS
   ));
 }
 
@@ -166,17 +178,17 @@ function SetUpInt32x4() {
   %FunctionSetPrototype($Int32x4, new $Object());
   %AddNamedProperty($Int32x4.prototype, "constructor", $Int32x4, DONT_ENUM);
 
-  InstallGetter($Int32x4.prototype, "x", Int32x4GetX_);
-  InstallGetter($Int32x4.prototype, "y", Int32x4GetY_);
-  InstallGetter($Int32x4.prototype, "z", Int32x4GetZ_);
-  InstallGetter($Int32x4.prototype, "w", Int32x4GetW_);
-  InstallGetter($Int32x4.prototype, "flagX", Int32x4GetFlagX_);
-  InstallGetter($Int32x4.prototype, "flagY", Int32x4GetFlagY_);
-  InstallGetter($Int32x4.prototype, "flagZ", Int32x4GetFlagZ_);
-  InstallGetter($Int32x4.prototype, "flagW", Int32x4GetFlagW_);
-  InstallGetter($Int32x4.prototype, "signMask", Int32x4GetSignMask_);
+  InstallGetter($Int32x4.prototype, "x", Int32x4GetXJS);
+  InstallGetter($Int32x4.prototype, "y", Int32x4GetYJS);
+  InstallGetter($Int32x4.prototype, "z", Int32x4GetZJS);
+  InstallGetter($Int32x4.prototype, "w", Int32x4GetWJS);
+  InstallGetter($Int32x4.prototype, "flagX", Int32x4GetFlagXJS);
+  InstallGetter($Int32x4.prototype, "flagY", Int32x4GetFlagYJS);
+  InstallGetter($Int32x4.prototype, "flagZ", Int32x4GetFlagZJS);
+  InstallGetter($Int32x4.prototype, "flagW", Int32x4GetFlagWJS);
+  InstallGetter($Int32x4.prototype, "signMask", Int32x4GetSignMaskJS);
   InstallFunctions($Int32x4.prototype, DONT_ENUM, $Array(
-    "toString", StringfyInt32x4_
+    "toString", StringfyInt32x4JS
   ));
 }
 
@@ -266,14 +278,14 @@ FUNCTION(WithFlagW)
 endmacro
 
 macro DECLARE_SIMD_UNARY_FUNCTION(TYPE, FUNCTION)
-function TYPEFUNCTION_(x4) {
+function TYPEFUNCTIONJS(x4) {
   CheckTYPE(x4);
   return %TYPEFUNCTION(x4);
 }
 endmacro
 
 macro DECLARE_SIMD_BINARY_FUNCTION(TYPE, FUNCTION)
-function TYPEFUNCTION_(a4, b4) {
+function TYPEFUNCTIONJS(a4, b4) {
   CheckTYPE(a4);
   CheckTYPE(b4);
   return %TYPEFUNCTION(a4, b4);
@@ -281,7 +293,7 @@ function TYPEFUNCTION_(a4, b4) {
 endmacro
 
 macro DECLARE_SIMD_BINARY_SHUFFLE_FUNCTION(TYPE)
-function TYPEShuffle_(x4, mask) {
+function TYPEShuffleJS(x4, mask) {
   CheckTYPE(x4);
   var value = TO_INT32(mask);
   if ((value < 0) || (value > 0xFF)) {
@@ -292,7 +304,7 @@ function TYPEShuffle_(x4, mask) {
 endmacro
 
 macro DECLARE_FLOAT32x4_BINARY_FUNCTION_WITH_FLOAT32_PARAMETER(FUNCTION)
-function Float32x4FUNCTION_(x4, f) {
+function Float32x4FUNCTIONJS(x4, f) {
   CheckFloat32x4(x4);
   f = TO_NUMBER_INLINE(f);
   return %Float32x4FUNCTION(x4, f);
@@ -300,7 +312,7 @@ function Float32x4FUNCTION_(x4, f) {
 endmacro
 
 macro DECLARE_FLOAT64x2_BINARY_FUNCTION_WITH_FLOAT64_PARAMETER(FUNCTION)
-function Float64x2FUNCTION_(x2, f) {
+function Float64x2FUNCTIONJS(x2, f) {
   CheckFloat64x2(x2);
   f = TO_NUMBER_INLINE(f);
   return %Float64x2FUNCTION(x2, f);
@@ -308,7 +320,7 @@ function Float64x2FUNCTION_(x2, f) {
 endmacro
 
 macro DECLARE_INT32x4_BINARY_FUNCTION_WITH_INT32_PARAMETER(FUNCTION)
-function Int32x4FUNCTION_(x4, i) {
+function Int32x4FUNCTIONJS(x4, i) {
   CheckInt32x4(x4);
   i = TO_INT32(i);
   return %Int32x4FUNCTION(x4, i);
@@ -316,7 +328,7 @@ function Int32x4FUNCTION_(x4, i) {
 endmacro
 
 macro DECLARE_INT32x4_BINARY_FUNCTION_WITH_BOOLEAN_PARAMETER(FUNCTION)
-function Int32x4FUNCTION_(x4, b) {
+function Int32x4FUNCTIONJS(x4, b) {
   CheckInt32x4(x4);
   b = ToBoolean(b);
   return %Int32x4FUNCTION(x4, b);
@@ -331,46 +343,46 @@ FLOAT64x2_BINARY_FUNCTIONS_WITH_FLOAT64_PARAMETER(DECLARE_FLOAT64x2_BINARY_FUNCT
 INT32x4_BINARY_FUNCTIONS_WITH_INT32_PARAMETER(DECLARE_INT32x4_BINARY_FUNCTION_WITH_INT32_PARAMETER)
 INT32x4_BINARY_FUNCTIONS_WITH_BOOLEAN_PARAMETER(DECLARE_INT32x4_BINARY_FUNCTION_WITH_BOOLEAN_PARAMETER)
 
-function Float32x4Splat_(f) {
+function Float32x4SplatJS(f) {
   f = TO_NUMBER_INLINE(f);
   return %CreateFloat32x4(f, f, f, f);
 }
 
-function Float32x4Zero_() {
+function Float32x4ZeroJS() {
   return %CreateFloat32x4(0.0, 0.0, 0.0, 0.0);
 }
 
-function Float32x4And_(a4, b4) {
-  a4 = Float32x4BitsToInt32x4_(a4);
-  b4 = Float32x4BitsToInt32x4_(b4);
-  return Int32x4BitsToFloat32x4_(Int32x4And_(a4, b4));
+function Float32x4AndJS(a4, b4) {
+  a4 = Float32x4BitsToInt32x4JS(a4);
+  b4 = Float32x4BitsToInt32x4JS(b4);
+  return Int32x4BitsToFloat32x4JS(Int32x4AndJS(a4, b4));
 }
 
-function Float32x4Or_(a4, b4) {
-  a4 = Float32x4BitsToInt32x4_(a4);
-  b4 = Float32x4BitsToInt32x4_(b4);
-  return Int32x4BitsToFloat32x4_(Int32x4Or_(a4, b4));
+function Float32x4OrJS(a4, b4) {
+  a4 = Float32x4BitsToInt32x4JS(a4);
+  b4 = Float32x4BitsToInt32x4JS(b4);
+  return Int32x4BitsToFloat32x4JS(Int32x4OrJS(a4, b4));
 }
 
-function Float32x4Xor_(a4, b4) {
-  a4 = Float32x4BitsToInt32x4_(a4);
-  b4 = Float32x4BitsToInt32x4_(b4);
-  return Int32x4BitsToFloat32x4_(Int32x4Xor_(a4, b4));
+function Float32x4XorJS(a4, b4) {
+  a4 = Float32x4BitsToInt32x4JS(a4);
+  b4 = Float32x4BitsToInt32x4JS(b4);
+  return Int32x4BitsToFloat32x4JS(Int32x4XorJS(a4, b4));
 }
 
-function Float32x4Not_(x4) {
-  x4 = Float32x4BitsToInt32x4_(x4);
-  return Int32x4BitsToFloat32x4_(Int32x4Not_(x4));
+function Float32x4NotJS(x4) {
+  x4 = Float32x4BitsToInt32x4JS(x4);
+  return Int32x4BitsToFloat32x4JS(Int32x4NotJS(x4));
 }
 
-function Float32x4Clamp_(x4, lowerLimit, upperLimit) {
+function Float32x4ClampJS(x4, lowerLimit, upperLimit) {
   CheckFloat32x4(x4);
   CheckFloat32x4(lowerLimit);
   CheckFloat32x4(upperLimit);
   return %Float32x4Clamp(x4, lowerLimit, upperLimit);
 }
 
-function Float32x4ShuffleMix_(a4, b4, mask) {
+function Float32x4ShuffleMixJS(a4, b4, mask) {
   CheckFloat32x4(a4);
   CheckFloat32x4(b4);
   var value = TO_INT32(mask);
@@ -380,27 +392,34 @@ function Float32x4ShuffleMix_(a4, b4, mask) {
   return %Float32x4ShuffleMix(a4, b4, mask);
 }
 
-function Float64x2Splat_(f) {
+function Float32x4SelectJS(x4, trueValue, falseValue) {
+  CheckInt32x4(x4);
+  CheckFloat32x4(trueValue);
+  CheckFloat32x4(falseValue);
+  return %Float32x4Select(x4, trueValue, falseValue);
+}
+
+function Float64x2SplatJS(f) {
   f = TO_NUMBER_INLINE(f);
   return %CreateFloat64x2(f, f);
 }
 
-function Float64x2Zero_() {
+function Float64x2ZeroJS() {
   return %CreateFloat64x2(0.0, 0.0);
 }
 
-function Float64x2Clamp_(x2, lowerLimit, upperLimit) {
+function Float64x2ClampJS(x2, lowerLimit, upperLimit) {
   CheckFloat64x2(x2);
   CheckFloat64x2(lowerLimit);
   CheckFloat64x2(upperLimit);
   return %Float64x2Clamp(x2, lowerLimit, upperLimit);
 }
 
-function Int32x4Zero_() {
+function Int32x4ZeroJS() {
   return %CreateInt32x4(0, 0, 0, 0);
 }
 
-function Int32x4Bool_(x, y, z, w) {
+function Int32x4BoolJS(x, y, z, w) {
   x = x ? -1 : 0;
   y = y ? -1 : 0;
   z = z ? -1 : 0;
@@ -408,19 +427,19 @@ function Int32x4Bool_(x, y, z, w) {
   return %CreateInt32x4(x, y, z, w);
 }
 
-function Int32x4Splat_(s) {
+function Int32x4SplatJS(s) {
   s = TO_INT32(s);
   return %CreateInt32x4(s, s, s, s);
 }
 
-function Int32x4Select_(x4, trueValue, falseValue) {
+function Int32x4SelectJS(x4, trueValue, falseValue) {
   CheckInt32x4(x4);
-  CheckFloat32x4(trueValue);
-  CheckFloat32x4(falseValue);
+  CheckInt32x4(trueValue);
+  CheckInt32x4(falseValue);
   return %Int32x4Select(x4, trueValue, falseValue);
 }
 
-function Int32x4ShiftLeft_(t, s) {
+function Int32x4ShiftLeftJS(t, s) {
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x << s;
@@ -430,7 +449,7 @@ function Int32x4ShiftLeft_(t, s) {
   return %CreateInt32x4(x, y, z, w);
 }
 
-function Int32x4ShiftRight_(t, s) {
+function Int32x4ShiftRightJS(t, s) {
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x >>> s;
@@ -440,7 +459,7 @@ function Int32x4ShiftRight_(t, s) {
   return %CreateInt32x4(x, y, z, w);
 }
 
-function Int32x4ShiftRightArithmetic_(t, s) {
+function Int32x4ShiftRightArithmeticJS(t, s) {
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x >> s;
@@ -716,102 +735,103 @@ function SetUpSIMD() {
   // Set up non-enumerable properties of the SIMD float32x4 object.
   InstallFunctions($SIMD.float32x4, DONT_ENUM, $Array(
     // Float32x4 operations
-    "splat", Float32x4Splat_,
-    "zero", Float32x4Zero_,
+    "splat", Float32x4SplatJS,
+    "zero", Float32x4ZeroJS,
     // Unary
-    "abs", Float32x4Abs_,
-    "bitsToInt32x4", Float32x4BitsToInt32x4_,
-    "neg", Float32x4Neg_,
-    "reciprocal", Float32x4Reciprocal_,
-    "reciprocalSqrt", Float32x4ReciprocalSqrt_,
-    "sqrt", Float32x4Sqrt_,
-    "toInt32x4", Float32x4ToInt32x4_,
+    "abs", Float32x4AbsJS,
+    "fromInt32x4", Int32x4ToFloat32x4JS,
+    "fromInt32x4Bits", Int32x4BitsToFloat32x4JS,
+    "neg", Float32x4NegJS,
+    "reciprocal", Float32x4ReciprocalJS,
+    "reciprocalSqrt", Float32x4ReciprocalSqrtJS,
+    "sqrt", Float32x4SqrtJS,
     // Binary
-    "add", Float32x4Add_,
-    "div", Float32x4Div_,
-    "max", Float32x4Max_,
-    "min", Float32x4Min_,
-    "mul", Float32x4Mul_,
-    "sub", Float32x4Sub_,
-    "lessThan", Float32x4LessThan_,
-    "lessThanOrEqual", Float32x4LessThanOrEqual_,
-    "equal", Float32x4Equal_,
-    "notEqual", Float32x4NotEqual_,
-    "greaterThanOrEqual", Float32x4GreaterThanOrEqual_,
-    "greaterThan", Float32x4GreaterThan_,
-    "and", Float32x4And_,
-    "or", Float32x4Or_,
-    "xor", Float32x4Xor_,
-    "not", Float32x4Not_,
-    "scale", Float32x4Scale_,
-    "withX", Float32x4WithX_,
-    "withY", Float32x4WithY_,
-    "withZ", Float32x4WithZ_,
-    "withW", Float32x4WithW_,
-    "shuffle", Float32x4Shuffle_,
+    "add", Float32x4AddJS,
+    "div", Float32x4DivJS,
+    "max", Float32x4MaxJS,
+    "min", Float32x4MinJS,
+    "mul", Float32x4MulJS,
+    "sub", Float32x4SubJS,
+    "lessThan", Float32x4LessThanJS,
+    "lessThanOrEqual", Float32x4LessThanOrEqualJS,
+    "equal", Float32x4EqualJS,
+    "notEqual", Float32x4NotEqualJS,
+    "greaterThanOrEqual", Float32x4GreaterThanOrEqualJS,
+    "greaterThan", Float32x4GreaterThanJS,
+    "and", Float32x4AndJS,
+    "or", Float32x4OrJS,
+    "xor", Float32x4XorJS,
+    "not", Float32x4NotJS,
+    "scale", Float32x4ScaleJS,
+    "withX", Float32x4WithXJS,
+    "withY", Float32x4WithYJS,
+    "withZ", Float32x4WithZJS,
+    "withW", Float32x4WithWJS,
+    "shuffle", Float32x4ShuffleJS,
     // Ternary
-    "clamp", Float32x4Clamp_,
-    "shuffleMix", Float32x4ShuffleMix_
+    "clamp", Float32x4ClampJS,
+    "shuffleMix", Float32x4ShuffleMixJS,
+    "select", Float32x4SelectJS
   ));
 
   // Set up non-enumerable properties of the SIMD float64x2 object.
   InstallFunctions($SIMD.float64x2, DONT_ENUM, $Array(
     // Float64x2 operations
-    "splat", Float64x2Splat_,
-    "zero", Float64x2Zero_,
+    "splat", Float64x2SplatJS,
+    "zero", Float64x2ZeroJS,
     // Unary
-    "abs", Float64x2Abs_,
-    "neg", Float64x2Neg_,
-    "sqrt", Float64x2Sqrt_,
+    "abs", Float64x2AbsJS,
+    "neg", Float64x2NegJS,
+    "sqrt", Float64x2SqrtJS,
     // Binary
-    "add", Float64x2Add_,
-    "div", Float64x2Div_,
-    "max", Float64x2Max_,
-    "min", Float64x2Min_,
-    "mul", Float64x2Mul_,
-    "sub", Float64x2Sub_,
-    "scale", Float64x2Scale_,
-    "withX", Float64x2WithX_,
-    "withY", Float64x2WithY_,
+    "add", Float64x2AddJS,
+    "div", Float64x2DivJS,
+    "max", Float64x2MaxJS,
+    "min", Float64x2MinJS,
+    "mul", Float64x2MulJS,
+    "sub", Float64x2SubJS,
+    "scale", Float64x2ScaleJS,
+    "withX", Float64x2WithXJS,
+    "withY", Float64x2WithYJS,
     // Ternary
-    "clamp", Float64x2Clamp_
+    "clamp", Float64x2ClampJS
   ));
 
   // Set up non-enumerable properties of the SIMD int32x4 object.
   InstallFunctions($SIMD.int32x4, DONT_ENUM, $Array(
     // Int32x4 operations
-    "zero", Int32x4Zero_,
-    "splat", Int32x4Splat_,
-    "bool", Int32x4Bool_,
+    "zero", Int32x4ZeroJS,
+    "splat", Int32x4SplatJS,
+    "bool", Int32x4BoolJS,
     // Unary
-    "bitsToFloat32x4", Int32x4BitsToFloat32x4_,
-    "neg", Int32x4Neg_,
-    "not", Int32x4Not_,
-    "toFloat32x4", Int32x4ToFloat32x4_,
+    "fromFloat32x4", Float32x4ToInt32x4JS,
+    "fromFloat32x4Bits", Float32x4BitsToInt32x4JS,
+    "neg", Int32x4NegJS,
+    "not", Int32x4NotJS,
     // Binary
-    "add", Int32x4Add_,
-    "and", Int32x4And_,
-    "mul", Int32x4Mul_,
-    "or", Int32x4Or_,
-    "sub", Int32x4Sub_,
-    "xor", Int32x4Xor_,
-    "shuffle", Int32x4Shuffle_,
-    "withX", Int32x4WithX_,
-    "withY", Int32x4WithY_,
-    "withZ", Int32x4WithZ_,
-    "withW", Int32x4WithW_,
-    "withFlagX", Int32x4WithFlagX_,
-    "withFlagY", Int32x4WithFlagY_,
-    "withFlagZ", Int32x4WithFlagZ_,
-    "withFlagW", Int32x4WithFlagW_,
-    "greaterThan", Int32x4GreaterThan_,
-    "equal", Int32x4Equal_,
-    "lessThan", Int32x4LessThan_,
-    "shiftLeft", Int32x4ShiftLeft_,
-    "shiftRight", Int32x4ShiftRight_,
-    "shiftRightArithmetic", Int32x4ShiftRightArithmetic_,
+    "add", Int32x4AddJS,
+    "and", Int32x4AndJS,
+    "mul", Int32x4MulJS,
+    "or", Int32x4OrJS,
+    "sub", Int32x4SubJS,
+    "xor", Int32x4XorJS,
+    "shuffle", Int32x4ShuffleJS,
+    "withX", Int32x4WithXJS,
+    "withY", Int32x4WithYJS,
+    "withZ", Int32x4WithZJS,
+    "withW", Int32x4WithWJS,
+    "withFlagX", Int32x4WithFlagXJS,
+    "withFlagY", Int32x4WithFlagYJS,
+    "withFlagZ", Int32x4WithFlagZJS,
+    "withFlagW", Int32x4WithFlagWJS,
+    "greaterThan", Int32x4GreaterThanJS,
+    "equal", Int32x4EqualJS,
+    "lessThan", Int32x4LessThanJS,
+    "shiftLeft", Int32x4ShiftLeftJS,
+    "shiftRight", Int32x4ShiftRightJS,
+    "shiftRightArithmetic", Int32x4ShiftRightArithmeticJS,
     // Ternary
-    "select", Int32x4Select_
+    "select", Int32x4SelectJS
   ));
 }
 

@@ -5911,6 +5911,30 @@ void LCodeGen::DoNullarySIMDOperation(LNullarySIMDOperation* instr) {
 void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
   uint8_t select = 0;
   switch (instr->op()) {
+    case kFloat32x4Coercion: {
+      XMMRegister input_reg = ToFloat32x4Register(instr->value());
+      XMMRegister result_reg = ToFloat32x4Register(instr->result());
+      if (!result_reg.is(input_reg)) {
+        __ movaps(result_reg, input_reg);
+      }
+      return;
+    }
+    case kFloat64x2Coercion: {
+      XMMRegister input_reg = ToFloat64x2Register(instr->value());
+      XMMRegister result_reg = ToFloat64x2Register(instr->result());
+      if (!result_reg.is(input_reg)) {
+        __ movaps(result_reg, input_reg);
+      }
+      return;
+    }
+    case kInt32x4Coercion: {
+      XMMRegister input_reg = ToInt32x4Register(instr->value());
+      XMMRegister result_reg = ToInt32x4Register(instr->result());
+      if (!result_reg.is(input_reg)) {
+        __ movaps(result_reg, input_reg);
+      }
+      return;
+    }
     case kSIMD128Change: {
       Comment(";;; deoptimize: can not perform representation change"
               "for float32x4 or int32x4");
@@ -6625,7 +6649,7 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
 
 void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
   switch (instr->op()) {
-    case kInt32x4Select: {
+    case kFloat32x4Select: {
       DCHECK(instr->hydrogen()->first()->representation().IsInt32x4());
       DCHECK(instr->hydrogen()->second()->representation().IsFloat32x4());
       DCHECK(instr->hydrogen()->third()->representation().IsFloat32x4());
@@ -6634,6 +6658,45 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
       XMMRegister left_reg = ToFloat32x4Register(instr->second());
       XMMRegister right_reg = ToFloat32x4Register(instr->third());
       XMMRegister result_reg = ToFloat32x4Register(instr->result());
+      XMMRegister temp_reg = xmm0;
+
+      // Copy mask.
+      __ movaps(temp_reg, mask_reg);
+      // Invert it.
+      __ notps(temp_reg);
+      // temp_reg = temp_reg & falseValue.
+      __ andps(temp_reg, right_reg);
+
+      if (!result_reg.is(mask_reg)) {
+        if (result_reg.is(left_reg)) {
+          // result_reg = result_reg & trueValue.
+          __ andps(result_reg, mask_reg);
+          // out = result_reg | temp_reg.
+          __ orps(result_reg, temp_reg);
+        } else {
+          __ movaps(result_reg, mask_reg);
+          // result_reg = result_reg & trueValue.
+          __ andps(result_reg, left_reg);
+          // out = result_reg | temp_reg.
+          __ orps(result_reg, temp_reg);
+        }
+      } else {
+        // result_reg = result_reg & trueValue.
+        __ andps(result_reg, left_reg);
+        // out = result_reg | temp_reg.
+        __ orps(result_reg, temp_reg);
+      }
+      return;
+    }
+    case kInt32x4Select: {
+      DCHECK(instr->hydrogen()->first()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->second()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->third()->representation().IsInt32x4());
+
+      XMMRegister mask_reg = ToInt32x4Register(instr->first());
+      XMMRegister left_reg = ToInt32x4Register(instr->second());
+      XMMRegister right_reg = ToInt32x4Register(instr->third());
+      XMMRegister result_reg = ToInt32x4Register(instr->result());
       XMMRegister temp_reg = xmm0;
 
       // Copy mask.

@@ -46,6 +46,27 @@ testConstructor();
 %OptimizeFunctionOnNextCall(testConstructor);
 testConstructor();
 
+function test1ArgumentConstructor() {
+  var f4 = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
+  var f4_new = SIMD.float32x4(f4);
+  assertEquals(f4_new.x, f4.x);
+  assertEquals(f4_new.y, f4.y);
+  assertEquals(f4_new.z, f4.z);
+  assertEquals(f4_new.w, f4.w);
+
+  f4 = SIMD.float32x4(1.1, 2.2, 3.3, 4.4);
+  f4_new = SIMD.float32x4(f4);
+  assertEquals(f4_new.x, f4.x);
+  assertEquals(f4_new.y, f4.y);
+  assertEquals(f4_new.z, f4.z);
+  assertEquals(f4_new.w, f4.w);
+}
+
+test1ArgumentConstructor();
+test1ArgumentConstructor();
+%OptimizeFunctionOnNextCall(test1ArgumentConstructor);
+test1ArgumentConstructor();
+
 function testZeroConstructor() {
   var z4 = SIMD.float32x4.zero();
   assertEquals(0.0, z4.x);
@@ -417,13 +438,13 @@ testSIMDSetters();
 
 function testSIMDConversion() {
   var m = SIMD.int32x4(0x3F800000, 0x40000000, 0x40400000, 0x40800000);
-  var n = SIMD.int32x4.bitsToFloat32x4(m);
+  var n = SIMD.float32x4.fromInt32x4Bits(m);
   assertEquals(1.0, n.x);
   assertEquals(2.0, n.y);
   assertEquals(3.0, n.z);
   assertEquals(4.0, n.w);
   n = SIMD.float32x4(5.0, 6.0, 7.0, 8.0);
-  m = SIMD.float32x4.bitsToInt32x4(n);
+  m = SIMD.int32x4.fromFloat32x4Bits(n);
   assertEquals(0x40A00000, m.x);
   assertEquals(0x40C00000, m.y);
   assertEquals(0x40E00000, m.z);
@@ -431,16 +452,16 @@ function testSIMDConversion() {
   // Flip sign using bit-wise operators.
   n = SIMD.float32x4(9.0, 10.0, 11.0, 12.0);
   m = SIMD.int32x4(0x80000000, 0x80000000, 0x80000000, 0x80000000);
-  var nMask = SIMD.float32x4.bitsToInt32x4(n);
+  var nMask = SIMD.int32x4.fromFloat32x4Bits(n);
   nMask = SIMD.int32x4.xor(nMask, m); // flip sign.
-  n = SIMD.int32x4.bitsToFloat32x4(nMask);
+  n = SIMD.float32x4.fromInt32x4Bits(nMask);
   assertEquals(-9.0, n.x);
   assertEquals(-10.0, n.y);
   assertEquals(-11.0, n.z);
   assertEquals(-12.0, n.w);
-  nMask = SIMD.float32x4.bitsToInt32x4(n);
+  nMask = SIMD.int32x4.fromFloat32x4Bits(n);
   nMask = SIMD.int32x4.xor(nMask, m); // flip sign.
-  n = SIMD.int32x4.bitsToFloat32x4(nMask);
+  n = SIMD.float32x4.fromInt32x4Bits(nMask);
   assertEquals(9.0, n.x);
   assertEquals(10.0, n.y);
   assertEquals(11.0, n.z);
@@ -454,13 +475,13 @@ testSIMDConversion();
 
 function testSIMDConversion2() {
   var m = SIMD.int32x4(1, 2, 3, 4);
-  var n = SIMD.int32x4.toFloat32x4(m);
+  var n = SIMD.float32x4.fromInt32x4(m);
   assertEquals(1.0, n.x);
   assertEquals(2.0, n.y);
   assertEquals(3.0, n.z);
   assertEquals(4.0, n.w);
   n = SIMD.float32x4(5.0, 6.0, 7.0, 8.0);
-  m = SIMD.float32x4.toInt32x4(n);
+  m = SIMD.int32x4.fromFloat32x4(n);
   assertEquals(5, m.x);
   assertEquals(6, m.y);
   assertEquals(7, m.z);
@@ -578,6 +599,22 @@ testSIMDNot();
 testSIMDNot();
 %OptimizeFunctionOnNextCall(testSIMDNot);
 testSIMDNot();
+
+function testSIMDSelect() {
+  var m = SIMD.int32x4.bool(true, true, false, false);
+  var t = SIMD.float32x4(1.0, 2.0, 3.0, 4.0);
+  var f = SIMD.float32x4(5.0, 6.0, 7.0, 8.0);
+  var s = SIMD.float32x4.select(m, t, f);
+  assertEquals(1.0, s.x);
+  assertEquals(2.0, s.y);
+  assertEquals(7.0, s.z);
+  assertEquals(8.0, s.w);
+}
+
+testSIMDSelect();
+testSIMDSelect();
+%OptimizeFunctionOnNextCall(testSIMDSelect);
+testSIMDSelect();
 
 
 function testFloat32x4ArrayBasic() {

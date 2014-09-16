@@ -1312,6 +1312,9 @@ LInstruction* LChunkBuilder::DoUnarySIMDOperation(HUnarySIMDOperation* instr) {
     case kInt32x4Neg:
     case kInt32x4Not:
       return DefineSameAsFirst(result);
+    case kFloat32x4Coercion:
+    case kFloat64x2Coercion:
+    case kInt32x4Coercion:
     case kFloat32x4BitsToInt32x4:
     case kFloat32x4ToInt32x4:
     case kInt32x4BitsToFloat32x4:
@@ -1479,6 +1482,7 @@ LInstruction* LChunkBuilder::DoTernarySIMDOperation(
     case kFloat32x4ShuffleMix: {
       return AssignEnvironment(DefineSameAsFirst(result));
     }
+    case kFloat32x4Select:
     case kInt32x4Select: {
       return DefineAsRegister(result);
     }
