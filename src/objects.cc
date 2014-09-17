@@ -1650,10 +1650,6 @@ void HeapObject::IterateBody(InstanceType type, int object_size,
       break;
     case FIXED_DOUBLE_ARRAY_TYPE:
       break;
-    case FLOAT32x4_TYPE:
-    case FLOAT64x2_TYPE:
-    case INT32x4_TYPE:
-      break;
     case JS_OBJECT_TYPE:
     case JS_CONTEXT_EXTENSION_OBJECT_TYPE:
     case JS_GENERATOR_OBJECT_TYPE:
@@ -1675,6 +1671,9 @@ void HeapObject::IterateBody(InstanceType type, int object_size,
     case JS_GLOBAL_OBJECT_TYPE:
     case JS_BUILTINS_OBJECT_TYPE:
     case JS_MESSAGE_OBJECT_TYPE:
+    case FLOAT32x4_TYPE:
+    case FLOAT64x2_TYPE:
+    case INT32x4_TYPE:
       JSObject::BodyDescriptor::IterateBody(this, object_size, v);
       break;
     case JS_FUNCTION_TYPE:
