@@ -8,6 +8,7 @@
 #include "src/debug/debug.h"
 #include "src/profiler/allocation-tracker.h"
 #include "src/profiler/heap-snapshot-generator-inl.h"
+#include "src/xdk-allocation.h"
 
 namespace v8 {
 namespace internal {
@@ -66,7 +67,7 @@ HeapSnapshot* HeapProfiler::TakeSnapshot(
     v8::HeapProfiler::ObjectNameResolver* resolver) {
   HeapSnapshot* result = new HeapSnapshot(this);
   {
-    HeapSnapshotGenerator generator(result, control, resolver, heap());
+    HeapSnapshotGenerator generator(this, result, control, resolver, heap());
     if (!generator.GenerateSnapshot()) {
       delete result;
       result = NULL;
@@ -112,6 +113,46 @@ void HeapProfiler::StopHeapObjectsTracking() {
 }
 
 
+void HeapProfiler::StartHeapObjectsTrackingXDK(int stackDepth,
+    bool retentions, bool strict_collection) {
+  ids_->UpdateHeapObjectsMap();
+  is_tracking_object_moves_ = true;
+  DCHECK(!is_tracking_allocations());
+  allocation_tracker_xdk_.Reset(new XDKAllocationTracker(this, ids_.get(),
+                                names_.get(), stackDepth, retentions,
+                                strict_collection));
+  heap()->DisableInlineAllocation();
+  // init pre collected objects
+  allocation_tracker_xdk_->CollectFreedObjects(false, true);
+}
+
+
+void HeapProfiler::PushHeapObjectsXDKStats(OutputStream* stream) {
+  // get the garbage here
+  if (!allocation_tracker_xdk_.is_empty()) {
+    allocation_tracker_xdk_->CollectFreedObjects();
+    OutputStream::WriteResult result =
+        allocation_tracker_xdk_->SendChunk(stream);
+    // TODO(amalyshe): it's interesting why CDT can return kAbort. Need to
+    // investigate if we need add better error generation in the
+    // allocation_tracker_xdk_->SendChunk
+    if (result == OutputStream::kAbort) return;
+    stream->EndOfStream();
+  }
+}
+
+
+v8::internal::HeapEventXDK* HeapProfiler::StopHeapObjectsTrackingXDK() {
+  HeapEventXDK* event = NULL;
+  if (!allocation_tracker_xdk_.is_empty()) {
+    event = allocation_tracker_xdk_->stopTracking();
+    allocation_tracker_xdk_.Reset(NULL);
+    heap()->EnableInlineAllocation();
+  }
+  return event;
+}
+
+
 size_t HeapProfiler::GetMemorySizeUsedByProfiler() {
   size_t size = sizeof(*this);
   size += names_->GetUsedMemorySize();
@@ -143,9 +184,13 @@ SnapshotObjectId HeapProfiler::GetSnapshotObjectId(Handle<Object> obj) {
 
 void HeapProfiler::ObjectMoveEvent(Address from, Address to, int size) {
   base::LockGuard<base::Mutex> guard(&profiler_mutex_);
-  bool known_object = ids_->MoveObject(from, to, size);
-  if (!known_object && !allocation_tracker_.is_empty()) {
-    allocation_tracker_->address_to_trace()->MoveObject(from, to, size);
+  if (allocation_tracker_xdk_.is_empty()) {
+    bool known_object = ids_->MoveObject(from, to, size);
+    if (!known_object && !allocation_tracker_.is_empty()) {
+      allocation_tracker_->address_to_trace()->MoveObject(from, to, size);
+    }
+  } else {
+    allocation_tracker_xdk_->OnMove(from, to, size);
   }
 }
 
@@ -154,6 +199,9 @@ void HeapProfiler::AllocationEvent(Address addr, int size) {
   DisallowHeapAllocation no_allocation;
   if (!allocation_tracker_.is_empty()) {
     allocation_tracker_->AllocationEvent(addr, size);
+  }
+  if (!allocation_tracker_xdk_.is_empty()) {
+    allocation_tracker_xdk_->OnAlloc(addr, size);
   }
 }
 
