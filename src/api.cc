@@ -49,7 +49,7 @@
 #include "src/v8threads.h"
 #include "src/version.h"
 #include "src/vm-state-inl.h"
-
+#include "src/xdk-allocation.h"
 
 #define LOG_API(isolate, expr) LOG(isolate, ApiEntryCall(expr))
 
@@ -7409,6 +7409,47 @@ Handle<String> HeapSnapshot::GetTitle() const {
 }
 
 
+const char* HeapEventXDK::getSymbols() {
+  const i::HeapEventXDK* eventXDK =
+    reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->symbols();
+}
+
+
+const char* HeapEventXDK::getFrames() {
+  const i::HeapEventXDK* eventXDK =
+    reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->frames();
+}
+
+
+const char* HeapEventXDK::getTypes() {
+  const i::HeapEventXDK* eventXDK =
+    reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->types();
+}
+
+
+const char* HeapEventXDK::getChunks() {
+  const i::HeapEventXDK* eventXDK =
+      reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->chunks();
+}
+
+
+const char* HeapEventXDK::getRetentions() {
+  const i::HeapEventXDK* eventXDK =
+    reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->retentions();
+}
+
+
+unsigned int HeapEventXDK::getDuration() {
+  const i::HeapEventXDK* eventXDK =
+    reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->duration();
+}
+
 const HeapGraphNode* HeapSnapshot::GetRoot() const {
   return reinterpret_cast<const HeapGraphNode*>(ToInternal(this)->root());
 }
@@ -7502,6 +7543,24 @@ void HeapProfiler::StopTrackingHeapObjects() {
 
 SnapshotObjectId HeapProfiler::GetHeapStats(OutputStream* stream) {
   return reinterpret_cast<i::HeapProfiler*>(this)->PushHeapObjectsStats(stream);
+}
+
+
+void HeapProfiler::GetHeapXDKStats(OutputStream* stream) {
+  reinterpret_cast<i::HeapProfiler*>(this)->PushHeapObjectsXDKStats(stream);
+}
+
+
+void HeapProfiler::StartTrackingHeapObjectsXDK(int stackDepth,
+    bool retentions, bool strict_collection) {
+  reinterpret_cast<i::HeapProfiler*>(this)->StartHeapObjectsTrackingXDK(
+      stackDepth, retentions, strict_collection);
+}
+
+
+HeapEventXDK* HeapProfiler::StopTrackingHeapObjectsXDK() {
+  return reinterpret_cast<HeapEventXDK*>(
+    reinterpret_cast<i::HeapProfiler*>(this)->StopHeapObjectsTrackingXDK());
 }
 
 
