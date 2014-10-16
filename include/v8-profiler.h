@@ -175,6 +175,19 @@ class V8_EXPORT CpuProfile {
 
 
 /**
+ * HeapEventXDK contains the latest chunk of heap info
+ */
+class V8_EXPORT HeapEventXDK {
+ public:
+  const char* getSymbols();
+  const char* getFrames();
+  const char* getTypes();
+  const char* getChunks();
+  const char* getRetentions();
+  unsigned int getDuration();
+};
+
+/**
  * Interface for controlling CPU profiling. Instance of the
  * profiler can be retrieved using v8::Isolate::GetCpuProfiler.
  */
@@ -331,6 +344,19 @@ class V8_EXPORT OutputStream {  // NOLINT
    * will not be called in case writing was aborted.
    */
   virtual WriteResult WriteHeapStatsChunk(HeapStatsUpdate* data, int count) {
+    return kAbort;
+  }
+
+
+  /**
+   * Writes XDK object
+   */
+  virtual WriteResult WriteHeapXDKChunk(const char* symbols, int symbolsSize,
+                                        const char* frames, int framesSize,
+                                        const char* types, int typesSize,
+                                        const char* chunks, int chunksSize,
+                                        const char* retentions,
+                                        int retentionSize) {
     return kAbort;
   }
 };
@@ -544,6 +570,14 @@ class V8_EXPORT HeapProfiler {
    * Sets a RetainedObjectInfo for an object group (see V8::SetObjectGroupId).
    */
   void SetRetainedObjectInfo(UniqueId id, RetainedObjectInfo* info);
+
+  void StartTrackingHeapObjectsXDK(int stackDepth, bool retentions,
+      bool strict_collection = false);
+  /**
+   * @author amalyshe
+   */
+  void GetHeapXDKStats(OutputStream* stream);
+  HeapEventXDK* StopTrackingHeapObjectsXDK();
 
  private:
   HeapProfiler();
