@@ -131,7 +131,6 @@ HashMap::Entry* StringsStorage::GetEntry(const char* str, int len) {
   return names_.Lookup(const_cast<char*>(str), hash, true);
 }
 
-
 const char* const CodeEntry::kEmptyNamePrefix = "";
 const char* const CodeEntry::kEmptyResourceName = "";
 const char* const CodeEntry::kEmptyBailoutReason = "";
@@ -591,14 +590,16 @@ CodeEntry* CpuProfilesCollection::NewCodeEntry(
       const char* resource_name,
       int line_number,
       int column_number,
-      JITLineInfoTable* line_info) {
+      JITLineInfoTable* line_info,
+      Address instruction_start) {
   CodeEntry* code_entry = new CodeEntry(tag,
                                         name,
                                         name_prefix,
                                         resource_name,
                                         line_number,
                                         column_number,
-                                        line_info);
+                                        line_info,
+                                        instruction_start);
   code_entries_.Add(code_entry);
   return code_entry;
 }
@@ -660,8 +661,8 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
       // frame. Check for this case and just skip such samples.
       if (pc_entry) {
         List<OffsetRange>* ranges = pc_entry->no_frame_ranges();
-        Code* code = Code::cast(HeapObject::FromAddress(start));
-        int pc_offset = static_cast<int>(sample.pc - code->instruction_start());
+        int pc_offset =
+            static_cast<int>(sample.pc - pc_entry->instruction_start());
         src_line = pc_entry->GetSourceLine(pc_offset);
         if (ranges) {
           for (int i = 0; i < ranges->length(); i++) {
@@ -687,8 +688,6 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
       }
     }
 
-    bool src_line_not_found = src_line == v8::CpuProfileNode::kNoLineNumberInfo;
-
     for (const Address* stack_pos = sample.stack,
            *stack_end = stack_pos + sample.frames_count;
          stack_pos != stack_end;
@@ -698,15 +697,13 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
 
       // Skip unresolved frames (e.g. internal frame) and get source line of
       // the JS caller.
-      if (src_line_not_found && *entry) {
-        Code* code = Code::cast(HeapObject::FromAddress(start));
+      if (src_line == v8::CpuProfileNode::kNoLineNumberInfo && *entry) {
         int pc_offset =
-            static_cast<int>(*stack_pos - code->instruction_start());
+            static_cast<int>(*stack_pos - (*entry)->instruction_start());
         src_line = (*entry)->GetSourceLine(pc_offset);
         if (src_line == v8::CpuProfileNode::kNoLineNumberInfo) {
           src_line = (*entry)->line_number();
         }
-        src_line_not_found = false;
       }
 
       entry++;

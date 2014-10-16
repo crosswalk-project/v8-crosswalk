@@ -84,7 +84,8 @@ class CodeEntry {
                    const char* resource_name = CodeEntry::kEmptyResourceName,
                    int line_number = v8::CpuProfileNode::kNoLineNumberInfo,
                    int column_number = v8::CpuProfileNode::kNoColumnNumberInfo,
-                   JITLineInfoTable* line_info = NULL);
+                   JITLineInfoTable* line_info = NULL,
+                   Address instruction_start = NULL);
   ~CodeEntry();
 
   bool is_js_function() const { return is_js_function_tag(tag_); }
@@ -118,6 +119,8 @@ class CodeEntry {
 
   int GetSourceLine(int pc_offset) const;
 
+  Address instruction_start() const { return instruction_start_; }
+
   static const char* const kEmptyNamePrefix;
   static const char* const kEmptyResourceName;
   static const char* const kEmptyBailoutReason;
@@ -135,6 +138,7 @@ class CodeEntry {
   List<OffsetRange>* no_frame_ranges_;
   const char* bailout_reason_;
   JITLineInfoTable* line_info_;
+  Address instruction_start_;
 
   DISALLOW_COPY_AND_ASSIGN(CodeEntry);
 };
@@ -329,7 +333,8 @@ class CpuProfilesCollection {
       const char* resource_name = CodeEntry::kEmptyResourceName,
       int line_number = v8::CpuProfileNode::kNoLineNumberInfo,
       int column_number = v8::CpuProfileNode::kNoColumnNumberInfo,
-      JITLineInfoTable* line_info = NULL);
+      JITLineInfoTable* line_info = NULL,
+      Address instruction_start = NULL);
 
   // Called from profile generator thread.
   void AddPathToCurrentProfiles(base::TimeTicks timestamp,

@@ -1068,6 +1068,7 @@ TEST(BoundFunctionCall) {
 TEST(TickLines) {
   CcTest::InitializeVM();
   LocalContext env;
+  i::FLAG_turbo_source_positions = true;
   i::Isolate* isolate = CcTest::i_isolate();
   i::Factory* factory = isolate->factory();
   i::HandleScope scope(isolate);
@@ -1103,7 +1104,7 @@ TEST(TickLines) {
     code = func->shared()->code();
   }
   CHECK_NE(NULL, code);
-  i::Address code_address = code->address();
+  i::Address code_address = code->instruction_start();
   CHECK_NE(NULL, code_address);
 
   CpuProfilesCollection* profiles = new CpuProfilesCollection(isolate->heap());
