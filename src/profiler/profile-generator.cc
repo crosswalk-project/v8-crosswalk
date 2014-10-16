@@ -166,19 +166,38 @@ void ProfileNode::CollectDeoptInfo(CodeEntry* entry) {
 
 
 ProfileNode* ProfileNode::FindChild(CodeEntry* entry) {
-  HashMap::Entry* map_entry = children_.Lookup(entry, CodeEntryHash(entry));
+  if (entry) {
+    StackEntry tmp_stackentry(entry, entry->line_number());
+    return ProfileNode::FindChild(&tmp_stackentry);
+  }
+  return NULL;
+}
+
+ProfileNode* ProfileNode::FindChild(StackEntry* stackentry) {
+  HashMap::Entry* map_entry =
+      children_.Lookup(stackentry->entry,
+                       CodeEntryHash(stackentry->entry) ^ stackentry->srcLine);
   return map_entry != NULL ?
       reinterpret_cast<ProfileNode*>(map_entry->value) : NULL;
 }
 
 
 ProfileNode* ProfileNode::FindOrAddChild(CodeEntry* entry) {
-  HashMap::Entry* map_entry =
-      children_.LookupOrInsert(entry, CodeEntryHash(entry));
+  if (entry) {
+    StackEntry tmp_stackentry(entry, entry->line_number());
+    return ProfileNode::FindOrAddChild(&tmp_stackentry);
+  }
+  return NULL;
+}
+
+ProfileNode* ProfileNode::FindOrAddChild(StackEntry* stackentry) {
+  HashMap::Entry* map_entry = children_.LookupOrInsert(
+      stackentry->entry,
+      CodeEntryHash(stackentry->entry) ^ stackentry->srcLine);
   ProfileNode* node = reinterpret_cast<ProfileNode*>(map_entry->value);
   if (node == NULL) {
     // New node added.
-    node = new ProfileNode(tree_, entry);
+    node = new ProfileNode(tree_, stackentry->entry, stackentry->srcLine);
     map_entry->value = node;
     children_list_.Add(node);
   }
@@ -291,13 +310,27 @@ unsigned ProfileTree::GetFunctionId(const ProfileNode* node) {
 }
 
 ProfileNode* ProfileTree::AddPathFromEnd(const std::vector<CodeEntry*>& path,
+                                         int src_line) {
+  if (path.empty()) return root_;
+  std::vector<StackEntry> stackentrys(path.size());
+  auto c = stackentrys.begin();
+  for (auto e = path.begin(); e != path.end(); e++, c++) {
+    if (*e == NULL) continue;
+    c->entry = *e;
+    c->srcLine = (*e)->line_number();
+  }
+  return ProfileTree::AddPathFromEnd(stackentrys, src_line);
+}
+
+ProfileNode* ProfileTree::AddPathFromEnd(const std::vector<StackEntry>& path,
                                          int src_line, bool update_stats) {
   ProfileNode* node = root_;
   CodeEntry* last_entry = NULL;
-  for (auto it = path.rbegin(); it != path.rend(); ++it) {
-    if (*it == NULL) continue;
-    last_entry = *it;
-    node = node->FindOrAddChild(*it);
+  for (auto stackentry = path.rbegin();
+       stackentry != path.rend(); ++stackentry) {
+    if (stackentry->entry == NULL) continue;
+    node = node->FindOrAddChild(const_cast<StackEntry*>(&(*stackentry)));
+    last_entry = node->entry();
   }
   if (last_entry && last_entry->has_deopt_info()) {
     node->CollectDeoptInfo(last_entry);
@@ -369,7 +402,7 @@ CpuProfile::CpuProfile(Isolate* isolate, const char* title, bool record_samples)
       top_down_(isolate) {}
 
 void CpuProfile::AddPath(base::TimeTicks timestamp,
-                         const std::vector<CodeEntry*>& path, int src_line,
+                         const std::vector<StackEntry>& path, int src_line,
                          bool update_stats) {
   ProfileNode* top_frame_node =
       top_down_.AddPathFromEnd(path, src_line, update_stats);
@@ -538,8 +571,8 @@ void CpuProfilesCollection::RemoveProfile(CpuProfile* profile) {
 }
 
 void CpuProfilesCollection::AddPathToCurrentProfiles(
-    base::TimeTicks timestamp, const std::vector<CodeEntry*>& path,
-    int src_line, bool update_stats) {
+    base::TimeTicks timestamp, const std::vector<StackEntry>& path, int src_line,
+    bool update_stats) {
   // As starting / stopping profiles is rare relatively to this
   // method, we don't bother minimizing the duration of lock holding,
   // e.g. copying contents of the list to a local vector.
@@ -589,10 +622,11 @@ ProfileGenerator::ProfileGenerator(CpuProfilesCollection* profiles)
 
 
 void ProfileGenerator::RecordTickSample(const TickSample& sample) {
-  std::vector<CodeEntry*> entries;
+  std::vector<StackEntry> stackentrys;
   // Conservatively reserve space for stack frames + pc + function + vm-state.
   // There could in fact be more of them because of inlined entries.
-  entries.reserve(sample.frames_count + 3);
+  stackentrys.reserve(sample.frames_count + 3);
+  auto stackentry = stackentrys.begin();
 
   // The ProfileNode knows nothing about all versions of generated code for
   // the same JS function. The line number information associated with
@@ -608,7 +642,8 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
       // Don't use PC when in external callback code, as it can point
       // inside callback's code, and we will erroneously report
       // that a callback calls itself.
-      entries.push_back(code_map_.FindEntry(sample.external_callback_entry));
+      stackentry->entry = code_map_.FindEntry(sample.external_callback_entry);
+      stackentry++;
     } else {
       CodeEntry* pc_entry = code_map_.FindEntry(sample.pc);
       // If there is no pc_entry we're likely in native code.
@@ -626,12 +661,14 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
       if (pc_entry) {
         int pc_offset =
             static_cast<int>(sample.pc - pc_entry->instruction_start());
-        src_line = pc_entry->GetSourceLine(pc_offset);
-        if (src_line == v8::CpuProfileNode::kNoLineNumberInfo) {
-          src_line = pc_entry->line_number();
+        stackentry->entry = pc_entry;
+        stackentry->srcLine = pc_entry->GetSourceLine(pc_offset);
+        if (stackentry->srcLine == v8::CpuProfileNode::kNoLineNumberInfo) {
+          stackentry->srcLine = pc_entry->line_number();
         }
+        src_line = stackentry->srcLine;
         src_line_not_found = false;
-        entries.push_back(pc_entry);
+        stackentry++;
 
         if (pc_entry->builtin_id() == Builtins::kFunctionPrototypeApply ||
             pc_entry->builtin_id() == Builtins::kFunctionPrototypeCall) {
@@ -642,7 +679,8 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
           // former case we don't so we simply replace the frame with
           // 'unresolved' entry.
           if (sample.top_frame_type == StackFrame::JAVA_SCRIPT) {
-            entries.push_back(unresolved_entry_);
+            stackentry->entry = unresolved_entry_;
+            stackentry++;
           }
         }
       }
@@ -651,47 +689,44 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
     for (const Address *stack_pos = sample.stack,
                        *stack_end = stack_pos + sample.frames_count;
          stack_pos != stack_end; ++stack_pos) {
-      CodeEntry* entry = code_map_.FindEntry(*stack_pos);
+      stackentry->entry = code_map_.FindEntry(*stack_pos);
 
-      if (entry) {
-        // Find out if the entry has an inlining stack associated.
-        int pc_offset =
-            static_cast<int>(*stack_pos - entry->instruction_start());
-        const std::vector<CodeEntry*>* inline_stack =
-            entry->GetInlineStack(pc_offset);
-        if (inline_stack) {
-          entries.insert(entries.end(), inline_stack->rbegin(),
-                         inline_stack->rend());
+      // Skip unresolved frames (e.g. internal frame) and get source lines for
+      // each entry. Save source line (src_line) of the first JS caller
+      if (stackentry->entry) {
+        int pc_offset = static_cast<int>(
+            *stack_pos - stackentry->entry->instruction_start());
+        stackentry->srcLine = stackentry->entry->GetSourceLine(pc_offset);
+        if (stackentry->srcLine == v8::CpuProfileNode::kNoLineNumberInfo) {
+          stackentry->srcLine = stackentry->entry->line_number();
         }
-        // Skip unresolved frames (e.g. internal frame) and get source line of
-        // the first JS caller.
+
         if (src_line_not_found) {
-          src_line = entry->GetSourceLine(pc_offset);
-          if (src_line == v8::CpuProfileNode::kNoLineNumberInfo) {
-            src_line = entry->line_number();
-          }
+          src_line = stackentry->srcLine;
           src_line_not_found = false;
         }
       }
-      entries.push_back(entry);
+
+      stackentry++;
     }
   }
 
   if (FLAG_prof_browser_mode) {
     bool no_symbolized_entries = true;
-    for (auto e : entries) {
-      if (e != NULL) {
+    for (auto e = stackentrys.begin(); e != stackentry; ++e) {
+      if ((*e).entry != NULL) {
         no_symbolized_entries = false;
         break;
       }
     }
     // If no frames were symbolized, put the VM state entry in.
     if (no_symbolized_entries) {
-      entries.push_back(EntryForVMState(sample.state));
+      stackentry->entry = EntryForVMState(sample.state);
+      stackentry++;
     }
   }
 
-  profiles_->AddPathToCurrentProfiles(sample.timestamp, entries, src_line,
+  profiles_->AddPathToCurrentProfiles(sample.timestamp, stackentrys, src_line,
                                       sample.update_stats);
 }
 
