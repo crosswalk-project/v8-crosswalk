@@ -273,6 +273,80 @@ TEST(ProfileTreeCalculateTotalTicks) {
 }
 
 
+TEST(StackEntrys) {
+  // This test checks inserting and searching
+  // in tree using new structure - StackEntry
+  CodeEntry entry1(i::Logger::FUNCTION_TAG, "func1");
+  CodeEntry entry2(i::Logger::FUNCTION_TAG, "func2");
+  CodeEntry entry3(i::Logger::FUNCTION_TAG, "func3");
+  i::ProfileTree tree;
+  int line1 = 134;
+  int line2 = 257;
+  int line3 = 666;
+  i::StackEntry stackentry1(&entry1, line1);
+  i::StackEntry stackentry2(&entry2, line2);
+  i::StackEntry stackentry3(&entry3, line3);
+
+  // StackEntry structure is just an envelope for
+  // delivering pair [entry, source line] to Profile tree node
+  // It checks that StackEntry does its job well
+  i::StackEntry path[] = { stackentry3, stackentry2, stackentry1 };
+  Vector<i::StackEntry> path_vec(path, sizeof(path) / sizeof(path[0]));
+  tree.AddPathFromEnd(path_vec);
+  ProfileNode* node = tree.root();
+  CHECK(!node->FindChild(&stackentry2));
+  CHECK(!node->FindChild(&stackentry3));
+  ProfileNode* node1 = node->FindChild(&stackentry1);
+  CHECK(node1);
+  CHECK_EQ(0u, node1->self_ticks());
+  CHECK_EQ(line1, node1->src_line());
+  ProfileNode* node2 = node1->FindChild(&stackentry2);
+  CHECK(node2);
+  CHECK_EQ(0u, node2->self_ticks());
+  CHECK_EQ(line2, node2->src_line());
+  ProfileNode* node3 = node2->FindChild(&stackentry3);
+  CHECK(node3);
+  CHECK_EQ(1u, node3->self_ticks());
+  CHECK_EQ(line3, node3->src_line());
+  CHECK_NE(node1, node2);
+  CHECK_NE(node1, node3);
+  CHECK_NE(node2, node3);
+
+  // The second purpose of StackEntry is to separate pairs
+  // with the same entries, but different
+  // lines to different nodes
+  int line1s = 135;
+  int line2s = 256;
+  int line3s = 667;
+  i::StackEntry stackentry1s(&entry1, line1s);
+  i::StackEntry stackentry2s(&entry2, line2s);
+  i::StackEntry stackentry3s(&entry3, line3s);
+  i::StackEntry path2[] = { stackentry3s, stackentry2s, stackentry1s };
+  Vector<i::StackEntry> path_vec2(path2, sizeof(path2) / sizeof(path2[0]));
+
+  // It must create a separate branch in Profile tree
+  tree.AddPathFromEnd(path_vec2);
+  CHECK(!node->FindChild(&stackentry2s));
+  CHECK(!node->FindChild(&stackentry3s));
+  ProfileNode* node1s = node->FindChild(&stackentry1s);
+  CHECK(node1s);
+  CHECK_EQ(line1s, node1s->src_line());
+  ProfileNode* node2s = node1s->FindChild(&stackentry2s);
+  CHECK(node2s);
+  CHECK_EQ(line2s, node2s->src_line());
+  ProfileNode* node3s = node2s->FindChild(&stackentry3s);
+  CHECK(node3s);
+  CHECK_EQ(line3s, node3s->src_line());
+  CHECK_NE(node1s, node2s);
+  CHECK_NE(node1s, node3s);
+  CHECK_NE(node2s, node3s);
+
+  CHECK_NE(node1, node1s);
+  CHECK_NE(node2, node2s);
+  CHECK_NE(node3, node3s);
+}
+
+
 static inline i::Address ToAddress(int n) {
   return reinterpret_cast<i::Address>(n);
 }

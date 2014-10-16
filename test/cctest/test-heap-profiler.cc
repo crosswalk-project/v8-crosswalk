@@ -37,6 +37,7 @@
 #include "src/profiler/allocation-tracker.h"
 #include "src/profiler/heap-profiler.h"
 #include "src/profiler/heap-snapshot-generator-inl.h"
+#include "src/xdk-utils.h"
 #include "test/cctest/cctest.h"
 
 using i::AllocationTraceNode;
@@ -2851,4 +2852,376 @@ TEST(AddressToTraceMap) {
   map.Clear();
   CHECK_EQ(0u, map.size());
   CHECK_EQ(0u, map.GetTraceNodeId(ToAddress(0x400)));
+}
+
+struct TestObjectInfo {
+  std::vector<std::string> bu_call_stack_;
+  std::string type_;
+  unsigned number_of_objects_;
+};
+
+struct TestFrameInfo {
+  unsigned frame_id_;
+  unsigned callsite_;
+  unsigned parent_;
+};
+
+struct Chunk {
+  unsigned time_begin_;
+  unsigned time_end_;
+  unsigned frame_id_;
+  unsigned type_id_;
+  unsigned size_;
+  unsigned number_of_objects_;
+};
+
+class XDKHPOutputChecker {
+ public:
+  // If info.number_of_objects_ is not eq 0, then it participates in the search
+  // and we look for the record by 3 parameters. In other case we look for the
+  // chunk by call stack and type id only
+  bool checkObjectsExists(const TestObjectInfo& info, std::string chunk) {
+    std::vector<Chunk> chunks = parseChunk(chunk);
+    // look for the frame id, which correspond to the passed stack
+    // get the type id:
+    std::vector<unsigned> frames = findFrame(info.bu_call_stack_);
+    unsigned type_id = types_[info.type_];
+    for (size_t i = 0; i < chunks.size(); i++) {
+      for (size_t j = 0; j < frames.size(); j++) {
+        if (chunks[i].frame_id_ == frames[j] && chunks[i].type_id_ == type_id &&
+            (info.number_of_objects_ ? chunks[i].number_of_objects_ ==
+            info.number_of_objects_ : true)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  void parse(const char* symbols, const char* frames, const char* types) {
+    std::string symbols_std_ = symbols;
+    std::string frames_std_ = frames;
+    std::string types_std_ = types;
+    {
+      // parse symbols, don't care of line and column
+      size_t s1_pos = 0, s2_pos = 0;
+      int sym_id;
+      std::string function_name;
+      while (s2_pos != symbols_std_.npos) {
+        // look for the \n symbol
+        // format: symId, funcId, funcName, line, column
+        s2_pos = symbols_std_.find("\n", s1_pos);
+        if (s2_pos != symbols_std_.npos) {
+          auto sym_id_e = symbols_std_.find(",", s1_pos);
+          std::string sym_id_s = symbols_std_.substr(s1_pos, sym_id_e - s1_pos);
+          sym_id = atoi(sym_id_s.c_str());
+          auto func_id_e = symbols_std_.find(",", sym_id_e + 1);
+          auto finc_name_e = symbols_std_.find(",", func_id_e + 1);
+          function_name = symbols_std_.substr(func_id_e + 1, finc_name_e -
+              func_id_e - 1);
+          symbols_[function_name] = sym_id;
+          s1_pos = s2_pos + 1;
+        }
+      }
+    }
+    {
+      // parse types
+      size_t s1_pos = 0, s2_pos = 0;
+      unsigned type_id;
+      std::string type_name;
+      while (s2_pos != types_std_.npos) {
+        // look for the \n symbol
+        // format: typeId, typeName
+        s2_pos = types_std_.find("\n", s1_pos);
+        if (s2_pos != types_std_.npos) {
+          auto type_id_e = types_std_.find(",", s1_pos);
+          std::string sym_id_s = types_std_.substr(s1_pos, type_id_e - s1_pos);
+          type_id = atoi(sym_id_s.c_str());
+          type_name = types_std_.substr(type_id_e + 1, s2_pos - type_id_e - 1);
+
+          types_[type_name] = type_id;
+          s1_pos = s2_pos + 1;
+        }
+      }
+    }
+    {
+      // parse frames
+      size_t s1_pos = 0, s2_pos = 0;
+      int frame_id, symbol_id, parent_id;
+      while (s2_pos != frames_std_.npos) {
+        // look for the \n symbol
+        // format: frameId, symbolId, parentId
+        s2_pos = frames_std_.find("\n", s1_pos);
+        if (s2_pos != frames_std_.npos) {
+          auto frame_id_e = frames_std_.find(",", s1_pos);
+          std::string frame_id_s = frames_std_.substr(s1_pos,
+                                                      frame_id_e - s1_pos);
+          frame_id = atoi(frame_id_s.c_str());
+
+          auto symb_id_e = frames_std_.find(",", frame_id_e + 1);
+          std::string symb_id_s = frames_std_.substr(frame_id_e + 1,
+                                                    symb_id_e - frame_id_e - 1);
+          symbol_id = atoi(symb_id_s.c_str());
+
+          auto parent_id_e = frames_std_.find(",", symb_id_e + 1);
+          std::string parent_id_s = frames_std_.substr(symb_id_e + 1,
+                                                      s2_pos - parent_id_e - 1);
+          parent_id = atoi(parent_id_s.c_str());
+          TestFrameInfo info;
+          info.callsite_ = symbol_id;
+          info.frame_id_ = frame_id;
+          info.parent_ = parent_id;
+          frames_.push_back(info);
+          s1_pos = s2_pos + 1;
+        }
+      }
+    }
+  }
+
+  std::vector<Chunk> parseChunk(const std::string& chunk_std) {
+    std::vector<Chunk> chunks;
+    {
+      // parse chunks
+      size_t s1_pos = 0, s2_pos = 0;
+      unsigned time_begin, time_end, frame_id, type_id, size, number_of_objects;
+
+      while (s2_pos != chunk_std.npos) {
+        // look for the \n symbol
+        // format: frameId, symbolId, parentId
+        s2_pos = chunk_std.find("\n", s1_pos);
+        if (s2_pos != chunk_std.npos) {
+          auto c1_e = chunk_std.find(",", s1_pos);
+          std::string c1_s = chunk_std.substr(s1_pos, c1_e - s1_pos);
+          time_begin = atoi(c1_s.c_str());
+
+          auto c2_e = chunk_std.find(",", c1_e + 1);
+          std::string c2_s = chunk_std.substr(c1_e + 1, c2_e - c1_e - 1);
+          time_end = atoi(c2_s.c_str());
+
+          auto c3_e = chunk_std.find(",", c2_e + 1);
+          std::string c3_s = chunk_std.substr(c2_e + 1, c3_e - c2_e - 1);
+          frame_id = atoi(c3_s.c_str());
+
+          auto c4_e = chunk_std.find(",", c3_e + 1);
+          std::string c4_s = chunk_std.substr(c3_e + 1, c4_e - c3_e - 1);
+          type_id = atoi(c4_s.c_str());
+
+          auto c5_e = chunk_std.find(",", c4_e + 1);
+          std::string c5_s = chunk_std.substr(c4_e + 1, c5_e - c4_e - 1);
+          size = atoi(c5_s.c_str());
+
+          auto c6_e = chunk_std.find(",", c5_e + 1);
+          std::string c6_s = chunk_std.substr(c5_e + 1, c6_e - c5_e - 1);
+          number_of_objects = atoi(c6_s.c_str());
+
+          Chunk chunk;
+          chunk.frame_id_ = frame_id;
+          chunk.number_of_objects_ = number_of_objects;
+          chunk.size_ = size;
+          chunk.time_begin_ = time_begin;
+          chunk.time_end_ = time_end;
+          chunk.type_id_ = type_id;
+          chunks.push_back(chunk);
+          s1_pos = s2_pos + 1;
+        }
+      }
+    }
+    return chunks;
+  }
+
+ private:
+  size_t getFrameIdx(unsigned frame_id) {
+    for (size_t i = 0; i < frames_.size(); i++) {
+      if (frames_[i].frame_id_ == frame_id) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  std::vector<unsigned> findFrame(std::vector<std::string> bu_call_stack) {
+    std::vector<unsigned> frames;
+
+    std::map<std::string, unsigned>::const_iterator cit =
+        symbols_.find(bu_call_stack[0]);
+    if (cit != symbols_.end()) {
+        // take the cit->second and look for it in the frames
+      for (size_t j = 0; j < frames_.size(); j++) {
+        if (frames_[j].callsite_ == cit->second) {
+          bool good_frame = true;
+          // check all other frames iterating by parents
+          unsigned parent_frame = frames_[j].parent_;
+          for (size_t i = 1; i < bu_call_stack.size() && good_frame; i++) {
+            size_t idx = getFrameIdx(parent_frame);
+            if (idx != (size_t)-1) {
+              TestFrameInfo& parent = frames_[idx];
+              std::map<std::string, unsigned>::const_iterator cit2 =
+                  symbols_.find(bu_call_stack[i]);
+              if (cit2 != symbols_.end()) {
+                if (cit2->second == parent.callsite_) {
+                  parent_frame = parent.parent_;
+                } else {
+                  good_frame = false;
+                }
+              } else {
+                good_frame = false;
+              }
+            } else {
+              good_frame = false;
+            }
+          }
+          if (good_frame) {
+            frames.push_back(frames_[j].frame_id_);
+          }
+        }
+      }
+    }
+    return frames;
+  }
+  std::map<std::string, unsigned> symbols_;
+  std::map<std::string, unsigned> types_;
+  // no need to have fast version, it will not be many frames
+  std::vector<TestFrameInfo> frames_;
+};
+
+class TestStatsStreamXDK : public v8::OutputStream {
+ public:
+  explicit TestStatsStreamXDK(XDKHPOutputChecker* checker) :
+    checker_(checker) {}
+  virtual ~TestStatsStreamXDK() {}
+  virtual WriteResult WriteAsciiChunk(char* buffer, int chars_written) {
+    DCHECK(false);
+    return kAbort;
+  }
+  virtual WriteResult WriteHeapStatsChunk(v8::HeapStatsUpdate* data,
+                                          int count) {
+    DCHECK(false);
+    return kAbort;
+  }
+  virtual WriteResult WriteHeapXDKChunk(const char* symbols, size_t symbolsSize,
+    const char* frames, size_t framesSize,
+    const char* types, size_t typesSize,
+    const char* chunks, size_t chunksSize,
+    const char* retentions, size_t retentionSize) {
+    checker_->parse(symbols, frames, types);
+    chunk_ = chunks;
+    return kContinue;
+  }
+  void EndOfStream() {}
+
+  std::string GetChunk() {
+    return chunk_;
+  }
+
+ private:
+  XDKHPOutputChecker* checker_;
+  std::string chunk_;
+};
+
+
+TEST(HeapProfilerXDK) {
+  XDKHPOutputChecker checker;
+  LocalContext env2;
+  v8::HandleScope scope(env2->GetIsolate());
+  v8::HeapProfiler* heap_profiler = env2->GetIsolate()->GetHeapProfiler();
+  TestStatsStreamXDK stream(&checker);
+  heap_profiler->StartTrackingHeapObjectsXDK(8, false, true);
+
+  // To have repeatable test we need to warm-up the heap and optimization v8
+  // techniques (like inlining). So, we create 100 objects, not the only one
+  CompileRun(
+    "function A1() { this.string = 'This is a string';}\n"
+    "function object2() {\n"
+    "  this.elem = [];\n"
+    "  this.third = [];\n"
+    "}"
+    "var globalA2 = [];\n"
+    "function allocFunction2() {\n"
+    "  globalA2.push(new object2());\n"
+    "}\n"
+    "for (var i=0; i<100; i++) allocFunction2();\n");
+
+  heap_profiler->GetHeapXDKStats(&stream);
+  CompileRun("allocFunction2();\n");
+  heap_profiler->GetHeapXDKStats(&stream);
+  CompileRun("delete globalA2[99];\n");
+  heap_profiler->GetHeapXDKStats(&stream);
+  std::string chunk_deleted_globalA2_0_array = stream.GetChunk();
+  v8::HeapEventXDK* event = heap_profiler->StopTrackingHeapObjectsXDK();
+
+  // adding the latest info:
+  checker.parse(event->getSymbols(), event->getFrames(), event->getTypes());
+
+  // here should be 2 arrays and 1 object2
+  TestObjectInfo info_deleted_globalA2_0_array;
+  info_deleted_globalA2_0_array.bu_call_stack_.push_back("object2");
+  info_deleted_globalA2_0_array.bu_call_stack_.push_back("allocFunction2");
+  info_deleted_globalA2_0_array.type_ = "Array";
+  info_deleted_globalA2_0_array.number_of_objects_ = 0;
+  bool idg_arr_jad = checker.checkObjectsExists(
+      info_deleted_globalA2_0_array, chunk_deleted_globalA2_0_array);
+
+  TestObjectInfo info_deleted_globalA2_0;
+  info_deleted_globalA2_0.bu_call_stack_.push_back("allocFunction2");
+  info_deleted_globalA2_0.type_ = "object2";
+  info_deleted_globalA2_0.number_of_objects_ = 1;
+  bool idg_obj_jad = checker.checkObjectsExists(
+      info_deleted_globalA2_0, chunk_deleted_globalA2_0_array);
+
+  // here should be 2 arrays and 1 object2
+  TestObjectInfo info_deleted_globalA2_1_array;
+  info_deleted_globalA2_1_array.bu_call_stack_.push_back("object2");
+  info_deleted_globalA2_1_array.bu_call_stack_.push_back("allocFunction2");
+  info_deleted_globalA2_1_array.type_ = "Array";
+  info_deleted_globalA2_1_array.number_of_objects_ = 2;
+  bool idg_arr_end = checker.checkObjectsExists(
+      info_deleted_globalA2_1_array, event->getChunks());
+
+  TestObjectInfo info_deleted_globalA2_1;
+  info_deleted_globalA2_1.bu_call_stack_.push_back("allocFunction2");
+  info_deleted_globalA2_1.type_ = "object2";
+  info_deleted_globalA2_1.number_of_objects_ = 1;
+  bool idg_obj_end = checker.checkObjectsExists(
+      info_deleted_globalA2_1, event->getChunks());
+  // find objects anywhere
+  CHECK_EQ(true, idg_obj_end || idg_obj_jad);
+  CHECK_EQ(true, idg_arr_end || idg_arr_jad);
+}
+
+
+TEST(HeapProfilerXDKRetentionStorage) {
+  v8::internal::RefId parent;
+  v8::internal::RefId rf11, rf12, rf13, rf21, rf22, rf23;
+  v8::internal::RefSet set1, set2, set3;
+  v8::internal::References refs;
+
+  parent.stackId_ = 99;
+  parent.classId_ = 99;
+
+  rf11.stackId_ = 10; rf11.classId_ = 1; rf11.field_ = "one_";
+  set1.references_.insert(rf11);
+  rf12.stackId_ = 20; rf12.classId_ = 1; rf12.field_ = "two_";
+  set1.references_.insert(rf12);
+  rf13.stackId_ = 30; rf13.classId_ = 2; rf13.field_ = "three_";
+  set1.references_.insert(rf13);
+  refs.addReference(parent, set1, 0);
+
+  rf21.stackId_ = 10; rf21.classId_ = 1; rf21.field_ = "eno_";
+  set2.references_.insert(rf21);
+  rf22.stackId_ = 15; rf22.classId_ = 1; rf22.field_ = "owt_";
+  set2.references_.insert(rf22);
+  rf23.stackId_ = 30; rf23.classId_ = 2; rf23.field_ = "eerht_";
+  set2.references_.insert(rf23);
+  refs.addReference(parent, set2, 0);
+
+  set3.references_.insert(rf11);
+  set3.references_.insert(rf12);
+  set3.references_.insert(rf13);
+  refs.addReference(parent, set3, 0);
+
+  // there should be two records by set1 and one by set2
+  std::string str = refs.serialize();
+
+  CHECK_EQ(true,
+       str.find("99,99,1,0,2,10,1,one_,20,1,two_,30,2,three_") != str.npos &&
+       str.find("99,99,1,0,1,10,1,eno_,15,1,owt_,30,2,eerht_") != str.npos);
 }

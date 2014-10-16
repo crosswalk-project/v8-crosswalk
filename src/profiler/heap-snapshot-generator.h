@@ -14,6 +14,7 @@ namespace v8 {
 namespace internal {
 
 class AllocationTracker;
+class XDKAllocationTracker;
 class AllocationTraceNode;
 class HeapEntry;
 class HeapIterator;
@@ -96,6 +97,7 @@ class HeapEntry BASE_EMBEDDED {
 
   HeapEntry() { }
   HeapEntry(HeapSnapshot* snapshot,
+            const List<HeapEntry>* entries,
             Type type,
             const char* name,
             SnapshotObjectId id,
@@ -136,6 +138,7 @@ class HeapEntry BASE_EMBEDDED {
   int children_index_;
   size_t self_size_;
   HeapSnapshot* snapshot_;
+  const List<HeapEntry>* entries_;
   const char* name_;
   SnapshotObjectId id_;
   // id of allocation stack trace top node
@@ -329,11 +332,36 @@ class SnapshottingProgressReportingInterface {
   virtual bool ProgressReport(bool force) = 0;
 };
 
+class SnapshotFiller {
+ public:
+  virtual ~SnapshotFiller() {}
+
+  virtual HeapEntry* AddEntry(HeapThing ptr,
+                              HeapEntriesAllocator* allocator) = 0;
+  virtual HeapEntry* FindEntry(HeapThing ptr) = 0;
+  virtual HeapEntry* FindOrAddEntry(HeapThing ptr,
+                                    HeapEntriesAllocator* allocator) = 0;
+  virtual void SetIndexedReference(HeapGraphEdge::Type type,
+                           int parent,
+                           int index,
+                           HeapEntry* child_entry) = 0;
+  virtual void SetIndexedAutoIndexReference(HeapGraphEdge::Type type,
+                                    int parent,
+                                    HeapEntry* child_entry) = 0;
+  virtual void SetNamedReference(HeapGraphEdge::Type type,
+                         int parent,
+                         const char* reference_name,
+                         HeapEntry* child_entry) = 0;
+  virtual void SetNamedAutoIndexReference(HeapGraphEdge::Type type,
+                                  int parent,
+                                  HeapEntry* child_entry) = 0;
+};
 
 // An implementation of V8 heap graph extractor.
 class V8HeapExplorer : public HeapEntriesAllocator {
  public:
-  V8HeapExplorer(HeapSnapshot* snapshot,
+  V8HeapExplorer(HeapProfiler* profiler,
+                 HeapSnapshot* snapshot,
                  SnapshottingProgressReportingInterface* progress,
                  v8::HeapProfiler::ObjectNameResolver* resolver);
   virtual ~V8HeapExplorer();
@@ -484,7 +512,8 @@ class NativeGroupRetainedObjectInfo;
 // An implementation of retained native objects extractor.
 class NativeObjectsExplorer {
  public:
-  NativeObjectsExplorer(HeapSnapshot* snapshot,
+  NativeObjectsExplorer(HeapProfiler* profiler,
+                        HeapSnapshot* snapshot,
                         SnapshottingProgressReportingInterface* progress);
   virtual ~NativeObjectsExplorer();
   int EstimateObjectsCount();
@@ -539,10 +568,12 @@ class NativeObjectsExplorer {
 
 class HeapSnapshotGenerator : public SnapshottingProgressReportingInterface {
  public:
-  HeapSnapshotGenerator(HeapSnapshot* snapshot,
+  HeapSnapshotGenerator(HeapProfiler* profiler,
+                        HeapSnapshot* snapshot,
                         v8::ActivityControl* control,
                         v8::HeapProfiler::ObjectNameResolver* resolver,
-                        Heap* heap);
+                        Heap* heap,
+                        SnapshotFiller* filler = NULL);
   bool GenerateSnapshot();
 
  private:
@@ -561,6 +592,7 @@ class HeapSnapshotGenerator : public SnapshottingProgressReportingInterface {
   int progress_counter_;
   int progress_total_;
   Heap* heap_;
+  SnapshotFiller* filler_;
 
   DISALLOW_COPY_AND_ASSIGN(HeapSnapshotGenerator);
 };
