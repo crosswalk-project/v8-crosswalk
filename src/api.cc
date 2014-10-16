@@ -62,7 +62,7 @@
 #include "src/v8threads.h"
 #include "src/version.h"
 #include "src/vm-state-inl.h"
-
+#include "src/xdk-allocation.h"
 
 namespace v8 {
 
@@ -7940,6 +7940,11 @@ int CpuProfileNode::GetColumnNumber() const {
       entry()->column_number();
 }
 
+int CpuProfileNode::GetSrcLine() const {
+  const i::ProfileNode* node = reinterpret_cast<const i::ProfileNode*>(this);
+  return node->src_line();
+}
+
 
 unsigned int CpuProfileNode::GetHitLineCount() const {
   const i::ProfileNode* node = reinterpret_cast<const i::ProfileNode*>(this);
@@ -8179,6 +8184,47 @@ void HeapSnapshot::Delete() {
 }
 
 
+const char* HeapEventXDK::getSymbols() {
+  const i::HeapEventXDK* eventXDK =
+    reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->symbols();
+}
+
+
+const char* HeapEventXDK::getFrames() {
+  const i::HeapEventXDK* eventXDK =
+    reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->frames();
+}
+
+
+const char* HeapEventXDK::getTypes() {
+  const i::HeapEventXDK* eventXDK =
+    reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->types();
+}
+
+
+const char* HeapEventXDK::getChunks() {
+  const i::HeapEventXDK* eventXDK =
+      reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->chunks();
+}
+
+
+const char* HeapEventXDK::getRetentions() {
+  const i::HeapEventXDK* eventXDK =
+    reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->retentions();
+}
+
+
+unsigned int HeapEventXDK::getDuration() {
+  const i::HeapEventXDK* eventXDK =
+    reinterpret_cast<const i::HeapEventXDK*>(this);
+  return eventXDK->duration();
+}
+
 const HeapGraphNode* HeapSnapshot::GetRoot() const {
   return reinterpret_cast<const HeapGraphNode*>(ToInternal(this)->root());
 }
@@ -8277,6 +8323,24 @@ SnapshotObjectId HeapProfiler::GetHeapStats(OutputStream* stream,
                                             int64_t* timestamp_us) {
   i::HeapProfiler* heap_profiler = reinterpret_cast<i::HeapProfiler*>(this);
   return heap_profiler->PushHeapObjectsStats(stream, timestamp_us);
+}
+
+
+void HeapProfiler::GetHeapXDKStats(OutputStream* stream) {
+  reinterpret_cast<i::HeapProfiler*>(this)->PushHeapObjectsXDKStats(stream);
+}
+
+
+void HeapProfiler::StartTrackingHeapObjectsXDK(int stackDepth,
+    bool retentions, bool strict_collection) {
+  reinterpret_cast<i::HeapProfiler*>(this)->StartHeapObjectsTrackingXDK(
+      stackDepth, retentions, strict_collection);
+}
+
+
+HeapEventXDK* HeapProfiler::StopTrackingHeapObjectsXDK() {
+  return reinterpret_cast<HeapEventXDK*>(
+    reinterpret_cast<i::HeapProfiler*>(this)->StopHeapObjectsTrackingXDK());
 }
 
 
