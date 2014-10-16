@@ -13,6 +13,7 @@ namespace v8 {
 namespace internal {
 
 class HeapSnapshot;
+class HeapEventXDK;
 
 class HeapProfiler {
  public:
@@ -35,6 +36,11 @@ class HeapProfiler {
 
   SnapshotObjectId PushHeapObjectsStats(OutputStream* stream,
                                         int64_t* timestamp_us);
+  void PushHeapObjectsXDKStats(OutputStream* stream);
+  void StartHeapObjectsTrackingXDK(int stackDepth, bool retentions,
+      bool strict_collection = false);
+  v8::internal::HeapEventXDK* StopHeapObjectsTrackingXDK();
+
   int GetSnapshotsCount();
   HeapSnapshot* GetSnapshot(int index);
   SnapshotObjectId GetSnapshotObjectId(Handle<Object> obj);
@@ -56,7 +62,8 @@ class HeapProfiler {
 
   bool is_tracking_object_moves() const { return is_tracking_object_moves_; }
   bool is_tracking_allocations() const {
-    return !allocation_tracker_.is_empty();
+    return (!allocation_tracker_.is_empty() ||
+        !allocation_tracker_xdk_.is_empty());
   }
 
   Handle<HeapObject> FindHeapObjectById(SnapshotObjectId id);
@@ -71,6 +78,7 @@ class HeapProfiler {
   SmartPointer<StringsStorage> names_;
   List<v8::HeapProfiler::WrapperInfoCallback> wrapper_callbacks_;
   SmartPointer<AllocationTracker> allocation_tracker_;
+  SmartPointer<XDKAllocationTracker> allocation_tracker_xdk_;
   bool is_tracking_object_moves_;
 };
 
