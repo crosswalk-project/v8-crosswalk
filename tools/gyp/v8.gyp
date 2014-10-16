@@ -934,6 +934,10 @@
         '../../src/zone.h',
         '../../src/third_party/fdlibm/fdlibm.cc',
         '../../src/third_party/fdlibm/fdlibm.h',
+        '../../src/xdk-allocation.cc',
+        '../../src/xdk-allocation.h',
+        '../../src/xdk-utils.h',
+        '../../src/xdk-utils.cc',
       ],
       'conditions': [
         ['want_separate_host_toolset==1', {
