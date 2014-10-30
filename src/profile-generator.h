@@ -49,24 +49,13 @@ class StringsStorage {
 // the source line.
 class JITLineInfoTable : public Malloced {
  public:
-  JITLineInfoTable() {}
-  ~JITLineInfoTable() {}
+  JITLineInfoTable();
+  ~JITLineInfoTable();
 
-  void SetPosition(int pc_offset, int line) {
-    DCHECK(pc_offset >= 0);
-    DCHECK(line > 0);  // The 1-based number of the source line.
-    pc_offset_map_.insert(std::make_pair(pc_offset, line));
-  }
+  void SetPosition(int pc_offset, int line);
+  int GetSourceLineNumber(int pc_offset) const;
 
-  int GetSourceLineNumber(int pc_offset) const {
-    PcOffsetMap::const_iterator it = pc_offset_map_.lower_bound(pc_offset);
-    if (it == pc_offset_map_.end()) {
-      return v8::CpuProfileNode::kNoLineNumberInfo;
-    }
-    return it->second;
-  }
-
-  bool Empty() const { return pc_offset_map_.empty(); }
+  bool empty() const { return pc_offset_map_.empty(); }
 
  private:
   // pc_offset -> source line
@@ -84,7 +73,8 @@ class CodeEntry {
                    const char* resource_name = CodeEntry::kEmptyResourceName,
                    int line_number = v8::CpuProfileNode::kNoLineNumberInfo,
                    int column_number = v8::CpuProfileNode::kNoColumnNumberInfo,
-                   JITLineInfoTable* line_info = NULL);
+                   JITLineInfoTable* line_info = NULL,
+                   Address instruction_start = NULL);
   ~CodeEntry();
 
   bool is_js_function() const { return is_js_function_tag(tag_); }
@@ -118,6 +108,8 @@ class CodeEntry {
 
   int GetSourceLine(int pc_offset) const;
 
+  Address instruction_start() const { return instruction_start_; }
+
   static const char* const kEmptyNamePrefix;
   static const char* const kEmptyResourceName;
   static const char* const kEmptyBailoutReason;
@@ -135,6 +127,7 @@ class CodeEntry {
   List<OffsetRange>* no_frame_ranges_;
   const char* bailout_reason_;
   JITLineInfoTable* line_info_;
+  Address instruction_start_;
 
   DISALLOW_COPY_AND_ASSIGN(CodeEntry);
 };
@@ -329,7 +322,8 @@ class CpuProfilesCollection {
       const char* resource_name = CodeEntry::kEmptyResourceName,
       int line_number = v8::CpuProfileNode::kNoLineNumberInfo,
       int column_number = v8::CpuProfileNode::kNoColumnNumberInfo,
-      JITLineInfoTable* line_info = NULL);
+      JITLineInfoTable* line_info = NULL,
+      Address instruction_start = NULL);
 
   // Called from profile generator thread.
   void AddPathToCurrentProfiles(base::TimeTicks timestamp,
