@@ -16,7 +16,8 @@ CodeEntry::CodeEntry(Logger::LogEventsAndTags tag,
                      const char* resource_name,
                      int line_number,
                      int column_number,
-                     JITLineInfoTable* line_info)
+                     JITLineInfoTable* line_info,
+                     Address instruction_start)
     : tag_(tag),
       builtin_id_(Builtins::builtin_count),
       name_prefix_(name_prefix),
@@ -28,7 +29,8 @@ CodeEntry::CodeEntry(Logger::LogEventsAndTags tag,
       script_id_(v8::UnboundScript::kNoScriptId),
       no_frame_ranges_(NULL),
       bailout_reason_(kEmptyBailoutReason),
-      line_info_(line_info) { }
+      line_info_(line_info),
+      instruction_start_(instruction_start) { }
 
 
 bool CodeEntry::is_js_function_tag(Logger::LogEventsAndTags tag) {
