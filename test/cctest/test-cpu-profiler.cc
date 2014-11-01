@@ -1068,6 +1068,7 @@ TEST(BoundFunctionCall) {
 TEST(TickLines) {
   CcTest::InitializeVM();
   LocalContext env;
+  i::FLAG_turbo_source_positions = true;
   i::Isolate* isolate = CcTest::i_isolate();
   i::Factory* factory = isolate->factory();
   i::HandleScope scope(isolate);
@@ -1077,13 +1078,11 @@ TEST(TickLines) {
   const char* func_name = "func";
   i::SNPrintF(script,
       "function %s() {\n"
-      "  for (var i = 0; i < 10; ++i) {\n"
-      "    var n = 0;\n"
-      "    var m = 100*100;\n"
-      "    while (m > 1) {\n"
-      "      m--;\n"
-      "      n += m * m * m;\n"
-      "    }\n"
+      "  var n = 0;\n"
+      "  var m = 100*100;\n"
+      "  while (m > 1) {\n"
+      "    m--;\n"
+      "    n += m * m * m;\n"
       "  }\n"
       "}\n"
       "%s();\n", func_name, func_name);
@@ -1103,7 +1102,7 @@ TEST(TickLines) {
     code = func->shared()->code();
   }
   CHECK_NE(NULL, code);
-  i::Address code_address = code->address();
+  i::Address code_address = code->instruction_start();
   CHECK_NE(NULL, code_address);
 
   CpuProfilesCollection* profiles = new CpuProfilesCollection(isolate->heap());
@@ -1140,7 +1139,7 @@ TEST(TickLines) {
   CHECK_EQ(func_name, func_entry->name());
   const i::JITLineInfoTable* line_info = func_entry->line_info();
   CHECK_NE(NULL, line_info);
-  CHECK_EQ(false, line_info->Empty());
+  CHECK(!line_info->empty());
 
   // Check the hit source lines using V8 Public APIs.
   const i::ProfileTree* tree = profile->top_down();
@@ -1158,7 +1157,7 @@ TEST(TickLines) {
   unsigned int line_count = func_node->GetHitLineCount();
   CHECK_EQ(2, line_count);  // Expect two hit source lines - #1 and #5.
   ScopedVector<v8::CpuProfileNode::LineTick> entries(line_count);
-  CHECK_EQ(true, func_node->GetLineTicks(&entries[0], line_count));
+  CHECK(func_node->GetLineTicks(&entries[0], line_count));
   int value = 0;
   for (int i = 0; i < entries.length(); i++)
     if (entries[i].line == hit_line) {
