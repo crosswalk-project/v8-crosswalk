@@ -5,6 +5,7 @@
 #ifndef V8_DEOPTIMIZER_H_
 #define V8_DEOPTIMIZER_H_
 
+#include <array>
 #include "src/v8.h"
 
 #include "src/allocation.h"
@@ -415,6 +416,10 @@ class Deoptimizer : public Malloced {
   void SetPlatformCompiledStubRegisters(FrameDescription* output_frame,
                                         CodeStubDescriptor* desc);
 
+  // Fill the given output frame's double registers with the original values
+  // from the input frame's double registers.
+  void CopyDoubleRegisters(FrameDescription* output_frame);
+
   // Fill the given output frame's simd128 registers with the original values
   // from the input frame's simd128 registers.
   void CopySIMD128Registers(FrameDescription* output_frame);
@@ -542,7 +547,7 @@ class FrameDescription {
     // This convoluted DCHECK is needed to work around a gcc problem that
     // improperly detects an array bounds overflow in optimized debug builds
     // when using a plain DCHECK.
-    if (n >= arraysize(registers_)) {
+    if (n >= registers_.size()) {
       DCHECK(false);
       return 0;
     }
@@ -553,19 +558,19 @@ class FrameDescription {
   double GetDoubleRegister(unsigned n) const;
 
   simd128_value_t GetSIMD128Register(unsigned n) const {
-    DCHECK(n < arraysize(simd128_registers_));
+    DCHECK(n < simd128_registers_.size());
     return simd128_registers_[n];
   }
 
   void SetRegister(unsigned n, intptr_t value) {
-    DCHECK(n < arraysize(registers_));
+    DCHECK(n < registers_.size());
     registers_[n] = value;
   }
 
   void SetDoubleRegister(unsigned n, double value);
 
   void SetSIMD128Register(unsigned n, simd128_value_t value) {
-    DCHECK(n < arraysize(simd128_registers_));
+    DCHECK(n < simd128_registers_.size());
     simd128_registers_[n] = value;
   }
 
@@ -610,6 +615,10 @@ class FrameDescription {
     return OFFSET_OF(FrameDescription, registers_);
   }
 
+  static int double_registers_offset() {
+    return OFFSET_OF(FrameDescription, double_registers_);
+  }
+
   static int simd128_registers_offset() {
     return OFFSET_OF(FrameDescription, simd128_registers_);
   }
@@ -642,8 +651,10 @@ class FrameDescription {
   // the end of the structure aligned.
   uintptr_t frame_size_;  // Number of bytes.
   JSFunction* function_;
-  intptr_t registers_[Register::kNumRegisters];
-  simd128_value_t simd128_registers_[SIMD128Register::kMaxNumRegisters];
+  std::array<intptr_t, Register::kNumRegisters> registers_;
+  std::array<double, DoubleRegister::kMaxNumRegisters> double_registers_;
+  std::array<simd128_value_t, SIMD128Register::kMaxNumRegisters>
+    simd128_registers_;
   intptr_t top_;
   intptr_t pc_;
   intptr_t fp_;
