@@ -107,6 +107,9 @@ void Deoptimizer::CopyDoubleRegisters(FrameDescription* output_frame) {
 }
 
 
+void Deoptimizer::CopySIMD128Registers(FrameDescription* output_frame) {
+}
+
 
 #define __ masm()->
 
@@ -348,6 +351,18 @@ void FrameDescription::SetCallerFp(unsigned offset, intptr_t value) {
 void FrameDescription::SetCallerConstantPool(unsigned offset, intptr_t value) {
   // No out-of-line constant pool support.
   UNREACHABLE();
+}
+
+
+double FrameDescription::GetDoubleRegister(unsigned n) const {
+  DCHECK(n < double_registers_.size());
+  return double_registers_[n];
+}
+
+
+void FrameDescription::SetDoubleRegister(unsigned n, double value) {
+  DCHECK(n < double_registers_.size());
+  double_registers_[n] = value;
 }
 
 
