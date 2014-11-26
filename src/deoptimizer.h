@@ -5,10 +5,10 @@
 #ifndef V8_DEOPTIMIZER_H_
 #define V8_DEOPTIMIZER_H_
 
-#include <array>
 #include "src/v8.h"
 
 #include "src/allocation.h"
+#include "src/base/array.h"
 #include "src/macro-assembler.h"
 #include "src/zone-inl.h"
 
@@ -651,9 +651,9 @@ class FrameDescription {
   // the end of the structure aligned.
   uintptr_t frame_size_;  // Number of bytes.
   JSFunction* function_;
-  std::array<intptr_t, Register::kNumRegisters> registers_;
-  std::array<double, DoubleRegister::kMaxNumRegisters> double_registers_;
-  std::array<simd128_value_t, SIMD128Register::kMaxNumRegisters>
+  base::array<intptr_t, Register::kNumRegisters> registers_;
+  base::array<double, DoubleRegister::kMaxNumRegisters> double_registers_;
+  base::array<simd128_value_t, SIMD128Register::kMaxNumRegisters>
     simd128_registers_;
   intptr_t top_;
   intptr_t pc_;
