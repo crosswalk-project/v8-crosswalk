@@ -5,7 +5,6 @@
 #ifndef V8_DEOPTIMIZER_H_
 #define V8_DEOPTIMIZER_H_
 
-#include <array>
 #include "src/v8.h"
 
 #include "src/allocation.h"
@@ -547,7 +546,7 @@ class FrameDescription {
     // This convoluted DCHECK is needed to work around a gcc problem that
     // improperly detects an array bounds overflow in optimized debug builds
     // when using a plain DCHECK.
-    if (n >= registers_.size()) {
+    if (n >= arraysize(registers_) {
       DCHECK(false);
       return 0;
     }
@@ -557,22 +556,16 @@ class FrameDescription {
 
   double GetDoubleRegister(unsigned n) const;
 
-  simd128_value_t GetSIMD128Register(unsigned n) const {
-    DCHECK(n < simd128_registers_.size());
-    return simd128_registers_[n];
-  }
+  simd128_value_t GetSIMD128Register(unsigned n) const;
 
   void SetRegister(unsigned n, intptr_t value) {
-    DCHECK(n < registers_.size());
+    DCHECK(n < arraysize(registers_));
     registers_[n] = value;
   }
 
   void SetDoubleRegister(unsigned n, double value);
 
-  void SetSIMD128Register(unsigned n, simd128_value_t value) {
-    DCHECK(n < simd128_registers_.size());
-    simd128_registers_[n] = value;
-  }
+  void SetSIMD128Register(unsigned n, simd128_value_t value);
 
   intptr_t GetTop() const { return top_; }
   void SetTop(intptr_t top) { top_ = top; }
@@ -615,13 +608,9 @@ class FrameDescription {
     return OFFSET_OF(FrameDescription, registers_);
   }
 
-  static int double_registers_offset() {
-    return OFFSET_OF(FrameDescription, double_registers_);
-  }
+  static int double_registers_offset();
 
-  static int simd128_registers_offset() {
-    return OFFSET_OF(FrameDescription, simd128_registers_);
-  }
+  static int simd128_registers_offset();
 
   static int frame_size_offset() {
     return OFFSET_OF(FrameDescription, frame_size_);
@@ -651,10 +640,13 @@ class FrameDescription {
   // the end of the structure aligned.
   uintptr_t frame_size_;  // Number of bytes.
   JSFunction* function_;
-  std::array<intptr_t, Register::kNumRegisters> registers_;
-  std::array<double, DoubleRegister::kMaxNumRegisters> double_registers_;
-  std::array<simd128_value_t, SIMD128Register::kMaxNumRegisters>
-    simd128_registers_;
+  intptr_t registers_[Register::kNumRegisters];
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64 || V8_TARGET_ARCH_ARM
+  // For these architectures, the simd128 registers cover the double registers.
+  simd128_value_t simd128_registers_[SIMD128Register::kMaxNumRegisters];
+#else
+  double double_registers_[DoubleRegister::kMaxNumRegisters];
+#endif
   intptr_t top_;
   intptr_t pc_;
   intptr_t fp_;
