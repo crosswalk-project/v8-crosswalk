@@ -355,14 +355,37 @@ void FrameDescription::SetCallerConstantPool(unsigned offset, intptr_t value) {
 
 
 double FrameDescription::GetDoubleRegister(unsigned n) const {
-  DCHECK(n < double_registers_.size());
+  DCHECK(n < arraysize(double_registers_));
   return double_registers_[n];
 }
 
 
 void FrameDescription::SetDoubleRegister(unsigned n, double value) {
-  DCHECK(n < double_registers_.size());
+  DCHECK(n < arraysize(double_registers_));
   double_registers_[n] = value;
+}
+
+
+simd128_value_t FrameDescription::GetSIMD128Register(unsigned n) const {
+  UNREACHABLE();
+  simd128_value_t value;
+  return value;
+}
+
+
+void FrameDescription::SetSIMD128Register(unsigned n, simd128_value_t value) {
+  UNREACHABLE();
+}
+
+
+int FrameDescription::double_registers_offset() {
+  return OFFSET_OF(FrameDescription, double_registers_);
+}
+
+
+int FrameDescription::simd128_registers_offset() {
+  UNREACHABLE();
+  return -1;
 }
 
 
