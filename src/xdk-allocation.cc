@@ -15,6 +15,14 @@
 namespace v8 {
 namespace internal {
 
+static List<InfoToResolve>* g_la_list = NULL;
+void XDKGCPrologueCallback(v8::Isolate*, GCType, GCCallbackFlags) {
+  if (g_la_list) {
+    g_la_list->Clear();
+  }
+}
+
+
 XDKAllocationTracker::XDKAllocationTracker(HeapProfiler* heap_profiler,
                                            HeapObjectsMap *ids,
                                            StringsStorage *names,
@@ -26,13 +34,15 @@ XDKAllocationTracker::XDKAllocationTracker(HeapProfiler* heap_profiler,
     names_(names),
     stackDepth_(stackDepth),
     collectRetention_(collectRetention),
-    strict_collection_(strict_collection) {
+    strict_collection_(strict_collection),
+    a_treshold_(50),
+    a_current_(0) {
   references_ = new References();
   aggregated_chunks_ = new AggregatedChunks();
   runtime_info_ = new RuntimeInfo(aggregated_chunks_);
   symbols_ = new SymbolsStorage(ids_->heap(), names_);
   collectedStacks_ = new ShadowStack();
-  classNames_ = new ClassNames(names_);
+  classNames_ = new ClassNames(names_, ids_->heap());
 
   List<unsigned> stack_ooc;
   stack_ooc.Add(symbols_->registerSymInfo(1, "OutOfContext", "NoSource",
@@ -48,6 +58,11 @@ XDKAllocationTracker::XDKAllocationTracker(HeapProfiler* heap_profiler,
 
   baseTime_ = v8::base::Time::Now();
   latest_delta_ = 0;
+
+  g_la_list = &this->latest_allocations_;
+  v8::Isolate::GCPrologueCallback e =
+      (v8::Isolate::GCPrologueCallback) &XDKGCPrologueCallback;
+  ids_->heap()->AddGCPrologueCallback(e, kGCTypeAll, false);
 }
 
 
@@ -58,6 +73,7 @@ XDKAllocationTracker::~XDKAllocationTracker() {
   delete runtime_info_;
   delete symbols_;
   delete references_;
+  g_la_list = NULL;
 }
 
 
@@ -114,6 +130,31 @@ void XDKAllocationTracker::OnAlloc(Address addr, int size) {
   info->stackId_ = sid;
   info->className_ = (unsigned int)-1;
   info->dirty_ = false;
+
+  // init the type info for previous allocated object
+  if (latest_allocations_.length() == a_treshold_) {
+    // resolve next allocation to process
+    InfoToResolve& allocation = latest_allocations_.at(a_current_);
+    InitClassName(allocation.address_, allocation.info_);
+    a_current_++;
+    if (a_current_ >= a_treshold_) {
+      a_current_ = 0;
+    }
+  }
+
+  if (latest_allocations_.length() < a_treshold_) {
+    InfoToResolve allocation;
+    allocation.address_ = addr;
+    allocation.info_ = info;
+    latest_allocations_.Add(allocation);
+  } else {
+    unsigned allocation_to_update =
+        a_current_ ? a_current_ - 1 : a_treshold_ - 1;
+    InfoToResolve& allocation =
+        latest_allocations_.at(allocation_to_update);
+    allocation.address_ = addr;
+    allocation.info_ = info;
+  }
 }
 
 
@@ -295,9 +336,16 @@ unsigned XDKAllocationTracker::FindClassName(Address address) {
 }
 
 
+unsigned XDKAllocationTracker::InitClassName(Address address,
+                                             PostCollectedInfo* info) {
+  if (info->className_ == (unsigned)-1) {
+    info->className_ = classNames_->GetConstructorName(address, runtime_info_);
+  }
+  return info->className_;
+}
+
 unsigned XDKAllocationTracker::InitClassName(Address address, unsigned ts,
                                              unsigned size) {
-  unsigned id = -2;
   PostCollectedInfo* info = runtime_info_->FindPostCollectedInfo(address);
   if (!info) {
     info = runtime_info_->AddPostCollectedInfo(address, ts);
@@ -306,16 +354,7 @@ unsigned XDKAllocationTracker::InitClassName(Address address, unsigned ts,
     info->timeStamp_ = ts;
     info->size_ = size;
   }
-  if (info->className_ == (unsigned)-1) {
-    String* str = classNames_->GetConstructorName(address);
-    if (str) {
-      // get const char*, it's safe because pointer will be retained in the
-      // name_ until it is destroyed
-      id = classNames_->registerName(names_->GetName(str));
-    }
-  }
-  info->className_ = id;
-  return id;
+  return InitClassName(address, info);
 }
 
 
