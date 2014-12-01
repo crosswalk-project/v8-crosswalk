@@ -206,7 +206,8 @@ inline bool operator < (const RefId& first, const RefId& second ) {
 typedef std::set<RefId> REFERENCESET;
 
 
-struct RefSet {
+class RefSet {
+public:
   REFERENCESET references_;
 };
 
