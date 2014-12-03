@@ -546,7 +546,7 @@ class FrameDescription {
     // This convoluted DCHECK is needed to work around a gcc problem that
     // improperly detects an array bounds overflow in optimized debug builds
     // when using a plain DCHECK.
-    if (n >= arraysize(registers_) {
+    if (n >= arraysize(registers_)) {
       DCHECK(false);
       return 0;
     }
