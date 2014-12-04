@@ -20,7 +20,8 @@ class SymbolsStorage;
 class AggregatedChunks;
 class RuntimeInfo;
 class References;
-class RefSet;
+struct RefSet;
+struct PostCollectedInfo;
 
 
 class XDKSnapshotFiller: public SnapshotFiller {
@@ -79,6 +80,12 @@ class XDKSnapshotFiller: public SnapshotFiller {
 };
 
 
+struct InfoToResolve {
+  Address address_;
+  PostCollectedInfo* info_;
+};
+
+
 class XDKAllocationTracker {
  public:
   XDKAllocationTracker(HeapProfiler* heap_profiler,
@@ -116,6 +123,7 @@ class XDKAllocationTracker {
 
   unsigned FindClassName(Address address);
   unsigned InitClassName(Address address, unsigned ts, unsigned size);
+  unsigned InitClassName(Address address, PostCollectedInfo* info);
 
   SymbolsStorage* symbols_;
   ShadowStack* collectedStacks_;
@@ -133,6 +141,21 @@ class XDKAllocationTracker {
   bool strict_collection_;
   References* references_;
   std::map<Address, RefSet> individualReteiners_;
+
+  // here is a loop container which stores the elements not more than
+  // a_treshold_ and when the capacity is reduced we start
+  // 1. resolve the a_current_ object's types
+  // 2. store new allocated object to the a_current_ position
+  // increas a_current_ until a_treshold_. At the moment when it reach the
+  // a_treshold_, a_current_ is assigned to 0
+  // It id required because some types are defined as a analysis of another
+  // object and the allocation sequence might be different. Sometimes dependent
+  // object is allocated first, sometimes parent object is allocated first.
+  // We cannot find type of latest element, all dependent objects must be
+  // created
+  List<InfoToResolve> latest_allocations_;
+  int a_treshold_;
+  int a_current_;
 };
 
 
