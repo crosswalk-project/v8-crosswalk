@@ -29,10 +29,37 @@ static uint32_t AddressHash(Address addr) {
 }
 
 
-ClassNames::ClassNames(StringsStorage* names)
+ClassNames::ClassNames(StringsStorage* names, Heap* heap)
     : counter_(0),
     char_to_idx_(AddressesMatch),
-    names_(names) {
+    names_(names),
+    heap_(heap) {
+  id_native_bind_ = registerName(names->GetCopy("native_bind"));
+  id_conc_string_ = registerName(names->GetCopy("(concatenated string)"));
+  id_sliced_string_ = registerName(names->GetCopy("(sliced string)"));
+  id_string_ = registerName(names->GetCopy("String"));
+  id_symbol_ = registerName(names->GetCopy("(symbol)"));
+  id_code_ = registerName(names->GetCopy("(compiled code)"));
+  id_system_ncontext_ =
+      registerName(names->GetCopy("(system / NativeContext)"));
+  id_system_context_ = registerName(names->GetCopy("(system / Context)"));
+  id_array_ = registerName(names->GetCopy("(array)"));
+  id_number_ = registerName(names->GetCopy("(number)"));
+  id_system_ = registerName(names->GetCopy("(system)"));
+  id_shared_fi_ = registerName(names->GetCopy("(shared function info)"));
+  id_script_ = registerName(names->GetCopy("(script)"));
+  id_regexp_ = registerName(names->GetCopy("RegExp"));
+  id_function_bindings_ =
+      registerName(names->GetCopy("(function bindings)"));
+  id_function_literals_ = registerName(names->GetCopy("(function literals)"));
+  id_objects_properties_ = registerName(names->GetCopy("(object properties)"));
+  id_objects_elements_ = registerName(names->GetCopy("(object elements)"));
+  id_shared_function_info_ =
+      registerName(names->GetCopy("(shared function info)"));
+  id_context_ = registerName(names->GetCopy("(context)"));
+  id_code_relocation_info_ =
+      registerName(names->GetCopy("(code relocation info)"));
+  id_code_deopt_data_ = registerName(names->GetCopy("(code deopt data)"));
 }
 
 
@@ -40,6 +67,10 @@ unsigned ClassNames::registerName(const char* name) {
   // since const char is retained outside and cannot be moved, we rely on this
   // and just compare the pointers. It should be enough for the strings from the
   // only one StringStorage
+  if (!name) {
+    return -2;
+  }
+
   unsigned counter;
   HashMap::Entry* entry = char_to_idx_.Lookup(const_cast<char*>(name),
       CharAddressHash(const_cast<char*>(name)),
@@ -67,18 +98,117 @@ std::string ClassNames::SerializeChunk() {
 }
 
 
-String* ClassNames::GetConstructorName(Address address) {
-  HeapObject *heap_object = HeapObject::FromAddress(address);
-  bool is_js_object = heap_object->IsJSObject();
-  if (!is_js_object) {
-    // TODO(amalyshe): look for another function for taking the class name
-    // String* constructor_name = object2->constructor_name();
-    return NULL;
+bool ClassNames::IsEssentialObject(Object* object) {
+  return object->IsHeapObject()
+      && !object->IsOddball()
+      && object != heap_->empty_byte_array()
+      && object != heap_->empty_fixed_array()
+      && object != heap_->empty_descriptor_array()
+      && object != heap_->fixed_array_map()
+      && object != heap_->cell_map()
+      && object != heap_->global_property_cell_map()
+      && object != heap_->shared_function_info_map()
+      && object != heap_->free_space_map()
+      && object != heap_->one_pointer_filler_map()
+      && object != heap_->two_pointer_filler_map();
+}
+
+
+void ClassNames::registerNameForDependent(HeapObject* object,
+                                          RuntimeInfo* runtime_info,
+                                          unsigned id) {
+  if (object && IsEssentialObject(object)) {
+    PostCollectedInfo* info =
+      runtime_info->FindPostCollectedInfo(object->address());
+    // TODO(amalyshe) here we are loosing some information because
+    // *some* of the objects are allocated without notification of explicit
+    // allocation and no XDKAllocationTracker::OnAlloc will be called for them.
+    // But these objects exist in the heap and can be achieved if we iterate
+    // through the heap. We cannot add here them explicitly because if
+    // XDKAllocationTracker::OnAlloc is called for this address, it will remove
+    // all useful information about type and even report wrong data because
+    // during removal these objects will be added to statistic and will be
+    // counted twice
+    if (info) {
+      info->className_ = id;
+    }
   }
-  JSObject* object = JSObject::cast(heap_object);
-  Heap* heap = object->GetHeap();
-  if (object->IsJSFunction()) return heap->closure_string();
-  return object->constructor_name();
+}
+
+unsigned ClassNames::GetConstructorName(Address address,
+                                           RuntimeInfo* runtime_info) {
+  unsigned id = (unsigned)-2;
+  HeapObject* heap_object = HeapObject::FromAddress(address);
+
+  // support of all type, if some are built-in, we add hard-coded values
+  if (heap_object->IsJSObject()) {
+    JSObject* object = JSObject::cast(heap_object);
+    if (object->IsJSFunction()) {
+      Heap* heap = object->GetHeap();
+      const char* name = names_->GetName(String::cast(heap->closure_string()));
+      id = registerName(name);
+      JSFunction* js_fun = JSFunction::cast(object);
+      SharedFunctionInfo* shared_info = js_fun->shared();
+      bool bound = shared_info->bound();
+      HeapObject* obj = js_fun->literals_or_bindings();
+      unsigned lob_id = bound ? id_function_bindings_ : id_function_literals_;
+      registerNameForDependent(obj, runtime_info, lob_id);
+      registerNameForDependent(shared_info, runtime_info,
+                               id_shared_function_info_);
+      registerNameForDependent(js_fun->context(), runtime_info,
+                               id_context_);
+    } else {
+      const char* name = names_->GetName(object->constructor_name());
+      id = registerName(name);
+    }
+    HeapObject* prop = reinterpret_cast<HeapObject*>(object->properties());
+    registerNameForDependent(prop, runtime_info, id_objects_properties_);
+    HeapObject* elements = reinterpret_cast<HeapObject*>(object->elements());
+    registerNameForDependent(elements, runtime_info, id_objects_elements_);
+  } else if (heap_object->IsJSFunction()) {
+    JSFunction* func = JSFunction::cast(heap_object);
+    SharedFunctionInfo* shared = func->shared();
+    id = shared->bound() ? id_native_bind_ :
+        registerName(names_->GetName(String::cast(shared->name())));
+  } else if (heap_object->IsJSRegExp()) {
+      id = id_regexp_;
+  } else if (heap_object->IsString()) {
+    String* string = String::cast(heap_object);
+    if (string->IsConsString())
+      id = id_conc_string_;
+    else if (string->IsSlicedString())
+      id = id_sliced_string_;
+    else
+      id = id_string_;
+  } else if (heap_object->IsSymbol()) {
+    id = id_symbol_;
+  } else if (heap_object->IsCode()) {
+    Code* code = Code::cast(heap_object);
+    registerNameForDependent(code->relocation_info(), runtime_info,
+                               id_code_relocation_info_);
+    registerNameForDependent(code->deoptimization_data(), runtime_info,
+                               id_code_deopt_data_);
+    id = id_code_;
+  } else if (heap_object->IsSharedFunctionInfo()) {
+      id = id_shared_fi_;
+  } else if (heap_object->IsScript()) {
+    id = id_script_;
+  } else if (heap_object->IsNativeContext()) {
+    id = id_system_ncontext_;
+  } else if (heap_object->IsContext()) {
+    id = id_system_context_;
+  } else if (heap_object->IsFixedArray() ||
+             heap_object->IsFixedDoubleArray() ||
+             heap_object->IsByteArray() ||
+             heap_object->IsExternalArray() ) {
+    id = id_array_;
+  } else if (heap_object->IsHeapNumber()) {
+    id = id_number_;
+  } else {
+    id = id_system_;
+  }
+
+  return id;
 }
 
 
