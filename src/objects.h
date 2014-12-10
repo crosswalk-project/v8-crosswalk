@@ -6839,10 +6839,12 @@ class Script: public Struct {
   V(SIMD.int32x4, greaterThan, Int32x4GreaterThan, Int32x4, Int32x4, Int32x4)  \
   V(SIMD.int32x4, equal, Int32x4Equal, Int32x4, Int32x4, Int32x4)              \
   V(SIMD.int32x4, lessThan, Int32x4LessThan, Int32x4, Int32x4, Int32x4)        \
-  V(SIMD.int32x4, shiftLeft, Int32x4ShiftLeft, Int32x4, Int32x4, Integer32)    \
-  V(SIMD.int32x4, shiftRight, Int32x4ShiftRight, Int32x4, Int32x4, Integer32)  \
-  V(SIMD.int32x4, shiftRightArithmetic, Int32x4ShiftRightArithmetic, Int32x4,  \
-    Int32x4, Integer32)
+  V(SIMD.int32x4, shiftLeftByScalar, Int32x4ShiftLeft, Int32x4, Int32x4,       \
+    Integer32)                                                                 \
+  V(SIMD.int32x4, shiftRightLogicalByScalar, Int32x4ShiftRight, Int32x4,       \
+    Int32x4, Integer32)                                                        \
+  V(SIMD.int32x4, shiftRightArithmeticByScalar, Int32x4ShiftRightArithmetic,   \
+    Int32x4, Int32x4, Integer32)
 
 #define SIMD_TERNARY_OPERATIONS(V)                                             \
   V(SIMD.float32x4, clamp, Float32x4Clamp, Float32x4, Float32x4, Float32x4,    \
