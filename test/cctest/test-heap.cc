@@ -3201,19 +3201,21 @@ TEST(ReleaseOverReservedPages) {
 
   // Prepare many pages with low live-bytes count.
   PagedSpace* old_pointer_space = heap->old_pointer_space();
-  CHECK_EQ(1, old_pointer_space->CountTotalPages());
+  int old_pointer_initial_space_pages = old_pointer_space->CountTotalPages();
   for (int i = 0; i < number_of_test_pages; i++) {
     AlwaysAllocateScope always_allocate(isolate);
     SimulateFullSpace(old_pointer_space);
     factory->NewFixedArray(1, TENURED);
   }
-  CHECK_EQ(number_of_test_pages + 1, old_pointer_space->CountTotalPages());
+  CHECK_EQ(number_of_test_pages + old_pointer_initial_space_pages,
+           old_pointer_space->CountTotalPages());
 
   // Triggering one GC will cause a lot of garbage to be discovered but
   // even spread across all allocated pages.
   heap->CollectAllGarbage(Heap::kAbortIncrementalMarkingMask,
                           "triggered for preparation");
-  CHECK_GE(number_of_test_pages + 1, old_pointer_space->CountTotalPages());
+  CHECK_GE(number_of_test_pages + old_pointer_initial_space_pages,
+           old_pointer_space->CountTotalPages());
 
   // Triggering subsequent GCs should cause at least half of the pages
   // to be released to the OS after at most two cycles.
@@ -3230,7 +3232,8 @@ TEST(ReleaseOverReservedPages) {
   // boots, but if the 20 small arrays don't fit on the first page then that's
   // an indication that it is too small.
   heap->CollectAllAvailableGarbage("triggered really hard");
-  CHECK_EQ(1, old_pointer_space->CountTotalPages());
+  CHECK_EQ(old_pointer_initial_space_pages,
+           old_pointer_space->CountTotalPages());
 }
 
 
