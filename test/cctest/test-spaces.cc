@@ -442,6 +442,7 @@ TEST(SizeOfFirstPageIsLargeEnough) {
   for (int i = FIRST_PAGED_SPACE; i <= LAST_PAGED_SPACE; i++) {
     // Debug code can be very large, so skip CODE_SPACE if we are generating it.
     if (i == CODE_SPACE && i::FLAG_debug_code) continue;
+    if (i == OLD_POINTER_SPACE) continue;
     CHECK_EQ(1, isolate->heap()->paged_space(i)->CountTotalPages());
   }
 
@@ -451,6 +452,7 @@ TEST(SizeOfFirstPageIsLargeEnough) {
   for (int i = FIRST_PAGED_SPACE; i <= LAST_PAGED_SPACE; i++) {
     // Debug code can be very large, so skip CODE_SPACE if we are generating it.
     if (i == CODE_SPACE && i::FLAG_debug_code) continue;
+    if (i == OLD_POINTER_SPACE) continue;
     CHECK_EQ(1, isolate->heap()->paged_space(i)->CountTotalPages());
   }
 
