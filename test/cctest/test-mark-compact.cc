@@ -107,6 +107,8 @@ TEST(NoPromotion) {
 
   v8::HandleScope sc(CcTest::isolate());
 
+  heap->new_space()->Grow();
+
   // Allocate a big fixed array in the new space.
   int array_length =
       (Page::kMaxRegularHeapObjectSize - FixedArray::kHeaderSize) /

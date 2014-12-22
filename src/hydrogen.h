@@ -1420,7 +1420,8 @@ class HGraphBuilder {
       ElementsKind elements_kind,
       PropertyAccessType access_type,
       LoadKeyedHoleMode load_mode,
-      KeyedAccessStoreMode store_mode);
+      KeyedAccessStoreMode store_mode,
+      BuiltinFunctionId id = kNumberOfBuiltinFunction);
 
   HInstruction* AddElementAccess(
       HValue* elements,
@@ -1429,7 +1430,8 @@ class HGraphBuilder {
       HValue* dependency,
       ElementsKind elements_kind,
       PropertyAccessType access_type,
-      LoadKeyedHoleMode load_mode = NEVER_RETURN_HOLE);
+      LoadKeyedHoleMode load_mode = NEVER_RETURN_HOLE,
+      BuiltinFunctionId id = kNumberOfBuiltinFunction);
 
   HInstruction* AddLoadStringInstanceType(HValue* string);
   HInstruction* AddLoadStringLength(HValue* string);
@@ -2427,14 +2429,16 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
     PropertyAccessInfo(HOptimizedGraphBuilder* builder,
                        PropertyAccessType access_type,
                        Type* type,
-                       Handle<String> name)
+                       Handle<String> name,
+                       InstanceType instance_type)
         : lookup_(builder->isolate()),
           builder_(builder),
           access_type_(access_type),
           type_(type),
           name_(name),
           field_type_(HType::Tagged()),
-          access_(HObjectAccess::ForMap()) { }
+          access_(HObjectAccess::ForMap()),
+          instance_type_(instance_type) { }
 
     // Checkes whether this PropertyAccessInfo can be handled as a monomorphic
     // load named. It additionally fills in the fields necessary to generate the
@@ -2495,6 +2499,24 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
 
     bool IsConfigurable() const { return lookup_.IsConfigurable(); }
     bool IsReadOnly() const { return lookup_.IsReadOnly(); }
+    bool IsSIMD128PropertyCallback() {
+      return (((instance_type_ == Float32x4::kInstanceType ||
+                instance_type_ == Int32x4::kInstanceType) &&
+               (name_->Equals(isolate()->heap()->signMask()) ||
+                name_->Equals(isolate()->heap()->x()) ||
+                name_->Equals(isolate()->heap()->y()) ||
+                name_->Equals(isolate()->heap()->z()) ||
+                name_->Equals(isolate()->heap()->w()))) ||
+              (instance_type_ == Int32x4::kInstanceType &&
+               (name_->Equals(isolate()->heap()->flagX()) ||
+                name_->Equals(isolate()->heap()->flagY()) ||
+                name_->Equals(isolate()->heap()->flagZ()) ||
+                name_->Equals(isolate()->heap()->flagW()))) ||
+              (instance_type_ == Float64x2::kInstanceType &&
+               (name_->Equals(isolate()->heap()->signMask()) ||
+                name_->Equals(isolate()->heap()->x()) ||
+                name_->Equals(isolate()->heap()->y()))));
+    }
 
    private:
     Handle<Object> GetAccessorsFromMap(Handle<Map> map) const {
@@ -2543,6 +2565,7 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
     SmallMapList field_maps_;
     HType field_type_;
     HObjectAccess access_;
+    InstanceType instance_type_;
   };
 
   HInstruction* BuildMonomorphicAccess(PropertyAccessInfo* info,
@@ -2717,6 +2740,11 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
 
   HInstruction* BuildCallConstantFunction(Handle<JSFunction> target,
                                           int argument_count);
+
+  bool TryInlineSIMDBuiltinMethodCall(Call* expr,
+                                      Handle<JSFunction> function,
+                                      Handle<Map> receiver_map,
+                                      int args_count_no_receiver);
 
   // The translation state of the currently-being-translated function.
   FunctionState* function_state_;
