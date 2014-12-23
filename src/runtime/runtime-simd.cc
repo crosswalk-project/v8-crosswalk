@@ -480,24 +480,69 @@ RUNTIME_FUNCTION(Runtime_##TYPE##FUNCTION) {    \
 SIMD128_BINARY_FUNCTIONS(DECLARE_SIMD_BINARY_FUNCTION)
 
 
+#define SIMD128_SWIZZLE_FUNCTIONS(V)                          \
+  V(Float32x4)                                                \
+  V(Int32x4)
+
+
+#define DECLARE_SIMD_SWIZZLE_FUNCTION(TYPE)                   \
+RUNTIME_FUNCTION(Runtime_##TYPE##Swizzle) {                   \
+  HandleScope scope(isolate);                                 \
+  DCHECK(args.length() == 5);                                 \
+                                                              \
+  CONVERT_ARG_CHECKED(TYPE, a, 0);                            \
+  RUNTIME_ASSERT(args[1]->IsNumber());                        \
+  uint32_t x = NumberToUint32(args[1]);                       \
+  RUNTIME_ASSERT(args[2]->IsNumber());                        \
+  uint32_t y = NumberToUint32(args[2]);                       \
+  RUNTIME_ASSERT(args[3]->IsNumber());                        \
+  uint32_t z = NumberToUint32(args[3]);                       \
+  RUNTIME_ASSERT(args[4]->IsNumber());                        \
+  uint32_t w = NumberToUint32(args[4]);                       \
+                                                              \
+  TYPE::value_t result;                                       \
+  result.storage[0] = a->getAt(x & 0x3);                      \
+  result.storage[1] = a->getAt(y & 0x3);                      \
+  result.storage[2] = a->getAt(z & 0x3);                      \
+  result.storage[3] = a->getAt(w & 0x3);                      \
+                                                              \
+  RETURN_##TYPE##_RESULT(result);                             \
+}
+
+
+SIMD128_SWIZZLE_FUNCTIONS(DECLARE_SIMD_SWIZZLE_FUNCTION)
+
+
 #define SIMD128_SHUFFLE_FUNCTIONS(V)                          \
   V(Float32x4)                                                \
   V(Int32x4)
 
 
 #define DECLARE_SIMD_SHUFFLE_FUNCTION(TYPE)                   \
-RUNTIME_FUNCTION(Runtime_##TYPE##Shuffle) {     \
+RUNTIME_FUNCTION(Runtime_##TYPE##Shuffle) {                   \
   HandleScope scope(isolate);                                 \
-  DCHECK(args.length() == 2);                                 \
+  DCHECK(args.length() == 6);                                 \
                                                               \
   CONVERT_ARG_CHECKED(TYPE, a, 0);                            \
-  RUNTIME_ASSERT(args[1]->IsNumber());                        \
-  uint32_t m = NumberToUint32(args[1]);                       \
+  CONVERT_ARG_CHECKED(TYPE, b, 1);                            \
+  RUNTIME_ASSERT(args[2]->IsNumber());                        \
+  uint32_t x = NumberToUint32(args[2]);                       \
+  RUNTIME_ASSERT(args[3]->IsNumber());                        \
+  uint32_t y = NumberToUint32(args[3]);                       \
+  RUNTIME_ASSERT(args[4]->IsNumber());                        \
+  uint32_t z = NumberToUint32(args[4]);                       \
+  RUNTIME_ASSERT(args[5]->IsNumber());                        \
+  uint32_t w = NumberToUint32(args[5]);                       \
                                                               \
   TYPE::value_t result;                                       \
-  for (int i = 0; i < TYPE::kLanes; i++) {                    \
-    result.storage[i] = a->getAt((m >> (i * 2)) & 0x3);       \
-  }                                                           \
+  result.storage[0] = x < 4 ?                                 \
+      a->getAt(x & 0x3) : b->getAt((x - 4) & 0x3);            \
+  result.storage[1] = y < 4 ?                                 \
+      a->getAt(y & 0x3) : b->getAt((y - 4) & 0x3);            \
+  result.storage[2] = z < 4 ?                                 \
+      a->getAt(z & 0x3) : b->getAt((z - 4) & 0x3);            \
+  result.storage[3] = w < 4 ?                                 \
+      a->getAt(w & 0x3) : b->getAt((w - 4) & 0x3);            \
                                                               \
   RETURN_##TYPE##_RESULT(result);                             \
 }
