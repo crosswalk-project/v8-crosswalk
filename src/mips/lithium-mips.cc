@@ -1267,6 +1267,20 @@ LInstruction* LChunkBuilder::DoQuarternarySIMDOperation(
 }
 
 
+LInstruction* LChunkBuilder::DoQuinarySIMDOperation(
+    HQuinarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+
+LInstruction* LChunkBuilder::DoSenarySIMDOperation(
+    HSenarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+
 LInstruction* LChunkBuilder::DoCallNew(HCallNew* instr) {
   LOperand* context = UseFixed(instr->context(), cp);
   LOperand* constructor = UseFixed(instr->constructor(), a1);
