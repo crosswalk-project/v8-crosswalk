@@ -128,6 +128,8 @@ class LCodeGen;
   V(BinarySIMDOperation)                     \
   V(TernarySIMDOperation)                    \
   V(QuarternarySIMDOperation)                \
+  V(QuinarySIMDOperation)                    \
+  V(SenarySIMDOperation)                     \
   V(ModI)                                    \
   V(MulI)                                    \
   V(NumberTagD)                              \
@@ -1132,6 +1134,83 @@ class LQuarternarySIMDOperation FINAL
   }
 
   DECLARE_HYDROGEN_ACCESSOR(QuarternarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
+};
+
+
+class LQuinarySIMDOperation FINAL
+  : public LTemplateInstruction<1, 5, 0> {
+ public:
+  LQuinarySIMDOperation(LOperand* a0, LOperand* a1, LOperand* a2,
+                        LOperand* a3, LOperand* a4, BuiltinFunctionId op)
+    : op_(op) {
+    inputs_[0] = a0;
+    inputs_[1] = a1;
+    inputs_[2] = a2;
+    inputs_[3] = a3;
+    inputs_[4] = a4;
+  }
+
+  LOperand* a0() { return inputs_[0]; }
+  LOperand* a1() { return inputs_[1]; }
+  LOperand* a2() { return inputs_[2]; }
+  LOperand* a3() { return inputs_[3]; }
+  LOperand* a4() { return inputs_[4]; }
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const OVERRIDE {
+    return LInstruction::kQuinarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) OVERRIDE;
+  virtual const char* Mnemonic() const OVERRIDE;
+  static LQuinarySIMDOperation* cast(LInstruction* instr) {
+    DCHECK(instr->IsQuinarySIMDOperation());
+    return reinterpret_cast<LQuinarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(QuinarySIMDOperation)
+
+ private:
+  BuiltinFunctionId op_;
+};
+
+
+class LSenarySIMDOperation FINAL
+  : public LTemplateInstruction<1, 6, 0> {
+ public:
+  LSenarySIMDOperation(LOperand* a0, LOperand* a1, LOperand* a2,
+                        LOperand* a3, LOperand* a4, LOperand* a5,
+                        BuiltinFunctionId op)
+    : op_(op) {
+    inputs_[0] = a0;
+    inputs_[1] = a1;
+    inputs_[2] = a2;
+    inputs_[3] = a3;
+    inputs_[4] = a4;
+    inputs_[5] = a5;
+  }
+
+  LOperand* a0() { return inputs_[0]; }
+  LOperand* a1() { return inputs_[1]; }
+  LOperand* a2() { return inputs_[2]; }
+  LOperand* a3() { return inputs_[3]; }
+  LOperand* a4() { return inputs_[4]; }
+  LOperand* a5() { return inputs_[5]; }
+  BuiltinFunctionId op() const { return op_; }
+
+  virtual Opcode opcode() const OVERRIDE {
+    return LInstruction::kSenarySIMDOperation;
+  }
+  virtual void CompileToNative(LCodeGen* generator) OVERRIDE;
+  virtual const char* Mnemonic() const OVERRIDE;
+  static LSenarySIMDOperation* cast(LInstruction* instr) {
+    DCHECK(instr->IsSenarySIMDOperation());
+    return reinterpret_cast<LSenarySIMDOperation*>(instr);
+  }
+
+  DECLARE_HYDROGEN_ACCESSOR(SenarySIMDOperation)
 
  private:
   BuiltinFunctionId op_;

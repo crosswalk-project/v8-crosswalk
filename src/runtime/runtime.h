@@ -215,14 +215,14 @@ namespace internal {
   F(Float32x4GreaterThan, 2, 1)                            \
   F(Float32x4LessThan, 2, 1)                               \
   F(Float32x4LessThanOrEqual, 2, 1)                        \
-  F(Float32x4Shuffle, 2, 1)                                \
+  F(Float32x4Swizzle, 5, 1)                                \
+  F(Float32x4Shuffle, 6, 1)                                \
   F(Float32x4Scale, 2, 1)                                  \
   F(Float32x4WithX, 2, 1)                                  \
   F(Float32x4WithY, 2, 1)                                  \
   F(Float32x4WithZ, 2, 1)                                  \
   F(Float32x4WithW, 2, 1)                                  \
   F(Float32x4Clamp, 3, 1)                                  \
-  F(Float32x4ShuffleMix, 3, 1)                             \
   F(Float32x4Select, 3, 1)                                 \
   F(Float64x2LoadX, 2, 1)                                  \
   F(Float64x2LoadXY, 2, 1)                                 \
@@ -259,7 +259,8 @@ namespace internal {
   F(Int32x4Add, 2, 1)                                      \
   F(Int32x4Sub, 2, 1)                                      \
   F(Int32x4Mul, 2, 1)                                      \
-  F(Int32x4Shuffle, 2, 1)                                  \
+  F(Int32x4Swizzle, 5, 1)                                  \
+  F(Int32x4Shuffle, 6, 1)                                  \
   F(Int32x4WithX, 2, 1)                                    \
   F(Int32x4WithY, 2, 1)                                    \
   F(Int32x4WithZ, 2, 1)                                    \
