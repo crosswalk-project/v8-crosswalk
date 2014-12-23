@@ -244,7 +244,7 @@ FUNCTION(Int32x4, GreaterThan)
 FUNCTION(Int32x4, LessThan)
 endmacro
 
-macro SIMD128_BINARY_SHUFFLE_FUNCTIONS(FUNCTION)
+macro SIMD128_SHUFFLE_FUNCTIONS(FUNCTION)
 FUNCTION(Float32x4)
 FUNCTION(Int32x4)
 endmacro
@@ -292,14 +292,36 @@ function TYPEFUNCTIONJS(a4, b4) {
 }
 endmacro
 
-macro DECLARE_SIMD_BINARY_SHUFFLE_FUNCTION(TYPE)
-function TYPEShuffleJS(x4, mask) {
+macro DECLARE_SIMD_SHUFFLE_FUNCTION(TYPE)
+function TYPESwizzleJS(x4, x, y, z, w) {
   CheckTYPE(x4);
-  var value = TO_INT32(mask);
-  if ((value < 0) || (value > 0xFF)) {
-    throw MakeRangeError("invalid_simd_shuffle_mask");
+  var x_ = TO_INT32(x);
+  var y_ = TO_INT32(y);
+  var z_ = TO_INT32(z);
+  var w_ = TO_INT32(w);
+  if ((x_ < 0) || (x_ > 3) ||
+      (y_ < 0) || (y_ > 3) ||
+      (z_ < 0) || (z_ > 3) ||
+      (w_ < 0) || (w_ > 3)) {
+    throw MakeRangeError("invalid_simd_shuffle_lane_index");
   }
-  return %TYPEShuffle(x4, mask);
+  return %TYPESwizzle(x4, x_, y_, z_, w_);
+}
+
+function TYPEShuffleJS(x4, y4, x, y, z, w) {
+  CheckTYPE(x4);
+  CheckTYPE(y4);
+  var x_ = TO_INT32(x);
+  var y_ = TO_INT32(y);
+  var z_ = TO_INT32(z);
+  var w_ = TO_INT32(w);
+  if ((x_ < 0) || (x_ > 7) ||
+      (y_ < 0) || (y_ > 7) ||
+      (z_ < 0) || (z_ > 7) ||
+      (w_ < 0) || (w_ > 7)) {
+    throw MakeRangeError("invalid_simd_shuffle_lane_index");
+  }
+  return %TYPEShuffle(x4, y4, x_, y_, z_, w_);
 }
 endmacro
 
@@ -337,7 +359,7 @@ endmacro
 
 SIMD128_UNARY_FUNCTIONS(DECLARE_SIMD_UNARY_FUNCTION)
 SIMD128_BINARY_FUNCTIONS(DECLARE_SIMD_BINARY_FUNCTION)
-SIMD128_BINARY_SHUFFLE_FUNCTIONS(DECLARE_SIMD_BINARY_SHUFFLE_FUNCTION)
+SIMD128_SHUFFLE_FUNCTIONS(DECLARE_SIMD_SHUFFLE_FUNCTION)
 FLOAT32x4_BINARY_FUNCTIONS_WITH_FLOAT32_PARAMETER(DECLARE_FLOAT32x4_BINARY_FUNCTION_WITH_FLOAT32_PARAMETER)
 FLOAT64x2_BINARY_FUNCTIONS_WITH_FLOAT64_PARAMETER(DECLARE_FLOAT64x2_BINARY_FUNCTION_WITH_FLOAT64_PARAMETER)
 INT32x4_BINARY_FUNCTIONS_WITH_INT32_PARAMETER(DECLARE_INT32x4_BINARY_FUNCTION_WITH_INT32_PARAMETER)
@@ -477,262 +499,6 @@ function SetUpSIMD() {
   %CheckIsBootstrapping();
 
   %OptimizeObjectForAddingMultipleProperties($SIMD, 258);
-  %AddNamedProperty($SIMD, "XXXX", 0x00, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXXY", 0x40, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXXZ", 0x80, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXXW", 0xC0, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXYX", 0x10, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXYY", 0x50, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXYZ", 0x90, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXYW", 0xD0, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXZX", 0x20, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXZY", 0x60, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXZZ", 0xA0, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXZW", 0xE0, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXWX", 0x30, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXWY", 0x70, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXWZ", 0xB0, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XXWW", 0xF0, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYXX", 0x04, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYXY", 0x44, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYXZ", 0x84, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYXW", 0xC4, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYYX", 0x14, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYYY", 0x54, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYYZ", 0x94, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYYW", 0xD4, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYZX", 0x24, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYZY", 0x64, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYZZ", 0xA4, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYZW", 0xE4, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYWX", 0x34, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYWY", 0x74, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYWZ", 0xB4, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XYWW", 0xF4, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZXX", 0x08, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZXY", 0x48, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZXZ", 0x88, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZXW", 0xC8, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZYX", 0x18, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZYY", 0x58, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZYZ", 0x98, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZYW", 0xD8, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZZX", 0x28, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZZY", 0x68, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZZZ", 0xA8, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZZW", 0xE8, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZWX", 0x38, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZWY", 0x78, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZWZ", 0xB8, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XZWW", 0xF8, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWXX", 0x0C, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWXY", 0x4C, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWXZ", 0x8C, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWXW", 0xCC, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWYX", 0x1C, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWYY", 0x5C, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWYZ", 0x9C, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWYW", 0xDC, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWZX", 0x2C, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWZY", 0x6C, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWZZ", 0xAC, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWZW", 0xEC, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWWX", 0x3C, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWWY", 0x7C, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWWZ", 0xBC, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "XWWW", 0xFC, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXXX", 0x01, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXXY", 0x41, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXXZ", 0x81, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXXW", 0xC1, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXYX", 0x11, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXYY", 0x51, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXYZ", 0x91, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXYW", 0xD1, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXZX", 0x21, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXZY", 0x61, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXZZ", 0xA1, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXZW", 0xE1, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXWX", 0x31, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXWY", 0x71, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXWZ", 0xB1, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YXWW", 0xF1, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYXX", 0x05, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYXY", 0x45, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYXZ", 0x85, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYXW", 0xC5, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYYX", 0x15, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYYY", 0x55, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYYZ", 0x95, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYYW", 0xD5, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYZX", 0x25, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYZY", 0x65, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYZZ", 0xA5, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYZW", 0xE5, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYWX", 0x35, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYWY", 0x75, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYWZ", 0xB5, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YYWW", 0xF5, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZXX", 0x09, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZXY", 0x49, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZXZ", 0x89, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZXW", 0xC9, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZYX", 0x19, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZYY", 0x59, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZYZ", 0x99, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZYW", 0xD9, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZZX", 0x29, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZZY", 0x69, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZZZ", 0xA9, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZZW", 0xE9, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZWX", 0x39, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZWY", 0x79, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZWZ", 0xB9, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YZWW", 0xF9, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWXX", 0x0D, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWXY", 0x4D, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWXZ", 0x8D, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWXW", 0xCD, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWYX", 0x1D, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWYY", 0x5D, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWYZ", 0x9D, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWYW", 0xDD, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWZX", 0x2D, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWZY", 0x6D, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWZZ", 0xAD, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWZW", 0xED, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWWX", 0x3D, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWWY", 0x7D, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWWZ", 0xBD, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "YWWW", 0xFD, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXXX", 0x02, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXXY", 0x42, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXXZ", 0x82, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXXW", 0xC2, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXYX", 0x12, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXYY", 0x52, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXYZ", 0x92, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXYW", 0xD2, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXZX", 0x22, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXZY", 0x62, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXZZ", 0xA2, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXZW", 0xE2, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXWX", 0x32, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXWY", 0x72, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXWZ", 0xB2, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZXWW", 0xF2, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYXX", 0x06, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYXY", 0x46, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYXZ", 0x86, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYXW", 0xC6, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYYX", 0x16, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYYY", 0x56, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYYZ", 0x96, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYYW", 0xD6, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYZX", 0x26, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYZY", 0x66, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYZZ", 0xA6, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYZW", 0xE6, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYWX", 0x36, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYWY", 0x76, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYWZ", 0xB6, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZYWW", 0xF6, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZXX", 0x0A, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZXY", 0x4A, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZXZ", 0x8A, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZXW", 0xCA, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZYX", 0x1A, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZYY", 0x5A, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZYZ", 0x9A, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZYW", 0xDA, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZZX", 0x2A, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZZY", 0x6A, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZZZ", 0xAA, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZZW", 0xEA, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZWX", 0x3A, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZWY", 0x7A, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZWZ", 0xBA, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZZWW", 0xFA, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWXX", 0x0E, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWXY", 0x4E, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWXZ", 0x8E, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWXW", 0xCE, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWYX", 0x1E, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWYY", 0x5E, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWYZ", 0x9E, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWYW", 0xDE, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWZX", 0x2E, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWZY", 0x6E, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWZZ", 0xAE, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWZW", 0xEE, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWWX", 0x3E, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWWY", 0x7E, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWWZ", 0xBE, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "ZWWW", 0xFE, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXXX", 0x03, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXXY", 0x43, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXXZ", 0x83, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXXW", 0xC3, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXYX", 0x13, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXYY", 0x53, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXYZ", 0x93, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXYW", 0xD3, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXZX", 0x23, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXZY", 0x63, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXZZ", 0xA3, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXZW", 0xE3, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXWX", 0x33, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXWY", 0x73, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXWZ", 0xB3, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WXWW", 0xF3, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYXX", 0x07, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYXY", 0x47, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYXZ", 0x87, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYXW", 0xC7, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYYX", 0x17, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYYY", 0x57, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYYZ", 0x97, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYYW", 0xD7, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYZX", 0x27, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYZY", 0x67, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYZZ", 0xA7, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYZW", 0xE7, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYWX", 0x37, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYWY", 0x77, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYWZ", 0xB7, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WYWW", 0xF7, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZXX", 0x0B, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZXY", 0x4B, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZXZ", 0x8B, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZXW", 0xCB, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZYX", 0x1B, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZYY", 0x5B, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZYZ", 0x9B, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZYW", 0xDB, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZZX", 0x2B, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZZY", 0x6B, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZZZ", 0xAB, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZZW", 0xEB, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZWX", 0x3B, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZWY", 0x7B, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZWZ", 0xBB, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WZWW", 0xFB, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWXX", 0x0F, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWXY", 0x4F, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWXZ", 0x8F, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWXW", 0xCF, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWYX", 0x1F, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWYY", 0x5F, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWYZ", 0x9F, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWYW", 0xDF, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWZX", 0x2F, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWZY", 0x6F, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWZZ", 0xAF, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWZW", 0xEF, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWWX", 0x3F, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWWY", 0x7F, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWWZ", 0xBF, DONT_ENUM | DONT_DELETE | READ_ONLY);
-  %AddNamedProperty($SIMD, "WWWW", 0xFF, DONT_ENUM | DONT_DELETE | READ_ONLY);
 
   %ToFastProperties($SIMD);
 
@@ -779,11 +545,13 @@ function SetUpSIMD() {
     "withY", Float32x4WithYJS,
     "withZ", Float32x4WithZJS,
     "withW", Float32x4WithWJS,
-    "shuffle", Float32x4ShuffleJS,
     // Ternary
     "clamp", Float32x4ClampJS,
-    "shuffleMix", Float32x4ShuffleMixJS,
-    "select", Float32x4SelectJS
+    "select", Float32x4SelectJS,
+     // Quinary
+    "swizzle", Float32x4SwizzleJS,
+    // Senary
+    "shuffle", Float32x4ShuffleJS
   ));
 
   // Set up non-enumerable properties of the SIMD float64x2 object.
@@ -839,7 +607,6 @@ function SetUpSIMD() {
     "or", Int32x4OrJS,
     "sub", Int32x4SubJS,
     "xor", Int32x4XorJS,
-    "shuffle", Int32x4ShuffleJS,
     "withX", Int32x4WithXJS,
     "withY", Int32x4WithYJS,
     "withZ", Int32x4WithZJS,
@@ -855,7 +622,11 @@ function SetUpSIMD() {
     "shiftRightLogicalByScalar", Int32x4ShiftRightLogicalByScalarJS,
     "shiftRightArithmeticByScalar", Int32x4ShiftRightArithmeticByScalarJS,
     // Ternary
-    "select", Int32x4SelectJS
+    "select", Int32x4SelectJS,
+    // Quinary
+    "swizzle", Int32x4SwizzleJS,
+    // Senary
+    "shuffle", Int32x4ShuffleJS
   ));
 }
 
