@@ -3011,18 +3011,13 @@ LInstruction* LChunkBuilder::DoTernarySIMDOperation(
     HTernarySIMDOperation* instr) {
   LOperand* first = UseRegisterAtStart(instr->first());
   LOperand* second = UseRegisterAtStart(instr->second());
-  LOperand* third = instr->op() == kFloat32x4ShuffleMix
-                    ? UseOrConstant(instr->third())
-                    : UseRegisterAtStart(instr->third());
+  LOperand* third = UseRegisterAtStart(instr->third());
   LTernarySIMDOperation* result =
       new(zone()) LTernarySIMDOperation(first, second, third, instr->op());
   switch (instr->op()) {
     case kInt32x4Select:
     case kFloat32x4Select: {
       return DefineAsRegister(result);
-    }
-    case kFloat32x4ShuffleMix: {
-      return AssignEnvironment(DefineSameAsFirst(result));
     }
     case kFloat32x4Clamp:
     case kFloat64x2Clamp: {
@@ -3063,6 +3058,63 @@ LInstruction* LChunkBuilder::DoQuarternarySIMDOperation(
   } else {
     return DefineAsRegister(result);
   }
+}
+
+
+const char* LQuinarySIMDOperation::Mnemonic() const {
+  switch (op()) {
+#define SIMD_QUINARY_OPERATION_CASE_ITEM(module, function, name, p4, p5,   \
+                                         p6, p7, p8, p9)                   \
+    case k##name:                                                          \
+      return #module "-" #function;
+SIMD_QUINARY_OPERATIONS(SIMD_QUINARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUINARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+LInstruction* LChunkBuilder::DoQuinarySIMDOperation(
+    HQuinarySIMDOperation* instr) {
+  LOperand* a0 = UseRegisterAtStart(instr->a0());
+  LOperand* a1 = UseOrConstant(instr->a1());
+  LOperand* a2 = UseOrConstant(instr->a2());
+  LOperand* a3 = UseOrConstant(instr->a3());
+  LOperand* a4 = UseOrConstant(instr->a4());
+  LQuinarySIMDOperation* result =
+      new(zone()) LQuinarySIMDOperation(a0, a1, a2, a3, a4, instr->op());
+  return AssignEnvironment(DefineSameAsFirst(result));
+}
+
+
+const char* LSenarySIMDOperation::Mnemonic() const {
+  switch (op()) {
+#define SIMD_SENARY_OPERATION_CASE_ITEM(module, function, name, p4, p5,   \
+                                        p6, p7, p8, p9, p10)              \
+    case k##name:                                                         \
+      return #module "-" #function;
+SIMD_SENARY_OPERATIONS(SIMD_SENARY_OPERATION_CASE_ITEM)
+#undef SIMD_SENARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+LInstruction* LChunkBuilder::DoSenarySIMDOperation(
+    HSenarySIMDOperation* instr) {
+  LOperand* a0 = UseRegisterAtStart(instr->a0());
+  LOperand* a1 = UseRegisterAtStart(instr->a1());
+  LOperand* a2 = UseOrConstant(instr->a2());
+  LOperand* a3 = UseOrConstant(instr->a3());
+  LOperand* a4 = UseOrConstant(instr->a4());
+  LOperand* a5 = UseOrConstant(instr->a5());
+  LSenarySIMDOperation* result =
+      new(zone()) LSenarySIMDOperation(a0, a1, a2, a3, a4, a5, instr->op());
+  return AssignEnvironment(DefineSameAsFirst(result));
 }
 
 
