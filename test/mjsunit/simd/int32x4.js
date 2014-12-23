@@ -519,54 +519,104 @@ testSIMDMulu32();
 %OptimizeFunctionOnNextCall(testSIMDMulu32);
 testSIMDMulu32();
 
-function testSIMDShuffleu32() {
+function testSIMDSwizzleu32() {
   var m = SIMD.int32x4(1, 2, 3, 4);
-  var xxxx = SIMD.int32x4.shuffle(m, SIMD.XXXX);
+  var xxxx = SIMD.int32x4.swizzle(m, 0, 0, 0, 0);
   assertEquals(1, xxxx.x);
   assertEquals(1, xxxx.y);
   assertEquals(1, xxxx.z);
   assertEquals(1, xxxx.w);
-  var yyyy = SIMD.int32x4.shuffle(m, SIMD.YYYY);
+  var yyyy = SIMD.int32x4.swizzle(m, 1, 1, 1, 1);
   assertEquals(2, yyyy.x);
   assertEquals(2, yyyy.y);
   assertEquals(2, yyyy.z);
   assertEquals(2, yyyy.w);
-  var zzzz = SIMD.int32x4.shuffle(m, SIMD.ZZZZ);
+  var zzzz = SIMD.int32x4.swizzle(m, 2, 2, 2, 2);
   assertEquals(3, zzzz.x);
   assertEquals(3, zzzz.y);
   assertEquals(3, zzzz.z);
   assertEquals(3, zzzz.w);
-  var wwww = SIMD.int32x4.shuffle(m, SIMD.WWWW);
+  var wwww = SIMD.int32x4.swizzle(m, 3, 3, 3, 3);
   assertEquals(4, wwww.x);
   assertEquals(4, wwww.y);
   assertEquals(4, wwww.z);
   assertEquals(4, wwww.w);
-  var wzyx = SIMD.int32x4.shuffle(m, SIMD.WZYX);
+  var wzyx = SIMD.int32x4.swizzle(m, 3, 2, 1, 0);
   assertEquals(4, wzyx.x);
   assertEquals(3, wzyx.y);
   assertEquals(2, wzyx.z);
   assertEquals(1, wzyx.w);
-  var wwzz = SIMD.int32x4.shuffle(m, SIMD.WWZZ);
+  var wwzz = SIMD.int32x4.swizzle(m, 3, 3, 2, 2);
   assertEquals(4, wwzz.x);
   assertEquals(4, wwzz.y);
   assertEquals(3, wwzz.z);
   assertEquals(3, wwzz.w);
-  var xxyy = SIMD.int32x4.shuffle(m, SIMD.XXYY);
+  var xxyy = SIMD.int32x4.swizzle(m, 0, 0, 1, 1);
   assertEquals(1, xxyy.x);
   assertEquals(1, xxyy.y);
   assertEquals(2, xxyy.z);
   assertEquals(2, xxyy.w);
-  var yyww = SIMD.int32x4.shuffle(m, SIMD.YYWW);
+  var yyww = SIMD.int32x4.swizzle(m, 1, 1, 3, 3);
   assertEquals(2, yyww.x);
   assertEquals(2, yyww.y);
   assertEquals(4, yyww.z);
   assertEquals(4, yyww.w);
 }
 
-testSIMDShuffleu32();
-testSIMDShuffleu32();
-%OptimizeFunctionOnNextCall(testSIMDShuffleu32);
-testSIMDShuffleu32();
+testSIMDSwizzleu32();
+testSIMDSwizzleu32();
+%OptimizeFunctionOnNextCall(testSIMDSwizzleu32);
+testSIMDSwizzleu32();
+
+function testSIMDShuffle() {
+  var a = SIMD.int32x4(1, 2, 3, 4);
+  var b = SIMD.int32x4(5, 6, 7, 8);
+  var xxxx = SIMD.int32x4.shuffle(a, b, 0, 0, 4, 4);
+  assertEquals(1, xxxx.x);
+  assertEquals(1, xxxx.y);
+  assertEquals(5, xxxx.z);
+  assertEquals(5, xxxx.w);
+  var yyyy = SIMD.int32x4.shuffle(a, b, 1, 1, 5, 5);
+  assertEquals(2, yyyy.x);
+  assertEquals(2, yyyy.y);
+  assertEquals(6, yyyy.z);
+  assertEquals(6, yyyy.w);
+  var zzzz = SIMD.int32x4.shuffle(a, b, 2, 2, 6, 6);
+  assertEquals(3, zzzz.x);
+  assertEquals(3, zzzz.y);
+  assertEquals(7, zzzz.z);
+  assertEquals(7, zzzz.w);
+  var wwww = SIMD.int32x4.shuffle(a, b, 3, 3, 7, 7);
+  assertEquals(4, wwww.x);
+  assertEquals(4, wwww.y);
+  assertEquals(8, wwww.z);
+  assertEquals(8, wwww.w);
+  var wzyx = SIMD.int32x4.shuffle(a, b, 3, 2, 5, 4);
+  assertEquals(4, wzyx.x);
+  assertEquals(3, wzyx.y);
+  assertEquals(6, wzyx.z);
+  assertEquals(5, wzyx.w);
+  var wwzz = SIMD.int32x4.shuffle(a, b, 3, 3, 6, 6);
+  assertEquals(4, wwzz.x);
+  assertEquals(4, wwzz.y);
+  assertEquals(7, wwzz.z);
+  assertEquals(7, wwzz.w);
+  var xxyy = SIMD.int32x4.shuffle(a, b, 0, 0, 5, 5);
+  assertEquals(1, xxyy.x);
+  assertEquals(1, xxyy.y);
+  assertEquals(6, xxyy.z);
+  assertEquals(6, xxyy.w);
+  var yyww = SIMD.int32x4.shuffle(a, b, 1, 1, 7, 7);
+  assertEquals(2, yyww.x);
+  assertEquals(2, yyww.y);
+  assertEquals(8, yyww.z);
+  assertEquals(8, yyww.w);
+}
+
+testSIMDShuffle();
+testSIMDShuffle();
+%OptimizeFunctionOnNextCall(testSIMDShuffle);
+testSIMDShuffle();
 
 function testSIMDComparisons() {
   var m = SIMD.int32x4(1, 2, 100, 1);
