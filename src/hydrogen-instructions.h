@@ -168,6 +168,8 @@ class LChunkBuilder;
   V(BinarySIMDOperation)                      \
   V(TernarySIMDOperation)                     \
   V(QuarternarySIMDOperation)                 \
+  V(QuinarySIMDOperation)                     \
+  V(SenarySIMDOperation)                      \
   V(UnknownOSRValue)                          \
   V(UseConst)                                 \
   V(WrapReceiver)
@@ -8559,6 +8561,191 @@ SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
         break;
 SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
 #undef SIMD_QUARTERNARY_OPERATION_CASE_ITEM
+      default:
+        UNREACHABLE();
+    }
+    SetFlag(kUseGVN);
+  }
+
+  virtual bool IsDeletable() const OVERRIDE { return true; }
+
+  BuiltinFunctionId op_;
+};
+
+
+class HQuinarySIMDOperation FINAL : public HTemplateInstruction<6> {
+ public:
+  static HInstruction* New(Zone* zone,
+                           HValue* context,
+                           HValue* a0,
+                           HValue* a1,
+                           HValue* a2,
+                           HValue* a3,
+                           HValue* a4,
+                           BuiltinFunctionId op);
+
+  HValue* context() { return OperandAt(0); }
+  HValue* a0() const { return OperandAt(1); }
+  HValue* a1() const { return OperandAt(2); }
+  HValue* a2() const { return OperandAt(3); }
+  HValue* a3() const { return OperandAt(4); }
+  HValue* a4() const { return OperandAt(5); }
+
+  virtual std::ostream& PrintDataTo(std::ostream& os) const OVERRIDE;
+
+  virtual Representation RequiredInputRepresentation(int index) OVERRIDE {
+    if (index == 0) {
+      return Representation::Tagged();
+    } else {
+      switch (op_) {
+#define SIMD_QUINARY_OPERATION_CASE_ITEM(p1, p2, name, p4,                 \
+            first_representation, second_representation, third_representation, \
+            fourth_representation, fifth_representation)                       \
+        case k##name:                                                          \
+          switch (index) {                                                     \
+            case 1: return Representation::first_representation();             \
+            case 2: return Representation::second_representation();            \
+            case 3: return Representation::third_representation();             \
+            case 4: return Representation::fourth_representation();            \
+            case 5: return Representation::fifth_representation();             \
+            default:                                                           \
+              UNREACHABLE();                                                   \
+              return Representation::None();                                   \
+          }
+SIMD_QUINARY_OPERATIONS(SIMD_QUINARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUINARY_OPERATION_CASE_ITEM
+        default:
+          UNREACHABLE();
+          return Representation::None();
+      }
+    }
+  }
+
+  BuiltinFunctionId op() const { return op_; }
+  const char* OpName() const;
+
+  DECLARE_CONCRETE_INSTRUCTION(QuinarySIMDOperation)
+
+ protected:
+  virtual bool DataEquals(HValue* other) OVERRIDE {
+    HQuinarySIMDOperation* b = HQuinarySIMDOperation::cast(other);
+    return op_ == b->op();
+  }
+
+ private:
+  HQuinarySIMDOperation(HValue* context, HValue* a0, HValue* a1, HValue* a2,
+                        HValue* a3, HValue* a4, BuiltinFunctionId op)
+      : HTemplateInstruction<6>(HType::None()), op_(op) {
+    SetOperandAt(0, context);
+    SetOperandAt(1, a0);
+    SetOperandAt(2, a1);
+    SetOperandAt(3, a2);
+    SetOperandAt(4, a3);
+    SetOperandAt(5, a4);
+    switch (op) {
+#define SIMD_QUINARY_OPERATION_CASE_ITEM(p1, p2, name, representation, p5, \
+                                         p6, p7, p8, p9)                   \
+      case k##name:                                                            \
+        set_representation(Representation::representation());                  \
+        set_type(HType::FromRepresentation(representation_));                  \
+        break;
+SIMD_QUINARY_OPERATIONS(SIMD_QUINARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUINARY_OPERATION_CASE_ITEM
+      default:
+        UNREACHABLE();
+    }
+    SetFlag(kUseGVN);
+  }
+
+  virtual bool IsDeletable() const OVERRIDE { return true; }
+
+  BuiltinFunctionId op_;
+};
+
+
+class HSenarySIMDOperation FINAL : public HTemplateInstruction<7> {
+ public:
+  static HInstruction* New(Zone* zone,
+                           HValue* context,
+                           HValue* a0,
+                           HValue* a1,
+                           HValue* a2,
+                           HValue* a3,
+                           HValue* a4,
+                           HValue* a5,
+                           BuiltinFunctionId op);
+
+  HValue* context() { return OperandAt(0); }
+  HValue* a0() const { return OperandAt(1); }
+  HValue* a1() const { return OperandAt(2); }
+  HValue* a2() const { return OperandAt(3); }
+  HValue* a3() const { return OperandAt(4); }
+  HValue* a4() const { return OperandAt(5); }
+  HValue* a5() const { return OperandAt(6); }
+
+  virtual std::ostream& PrintDataTo(std::ostream& os) const OVERRIDE;
+
+  virtual Representation RequiredInputRepresentation(int index) OVERRIDE {
+    if (index == 0) {
+      return Representation::Tagged();
+    } else {
+      switch (op_) {
+#define SIMD_SENARY_OPERATION_CASE_ITEM(p1, p2, name, p4,                 \
+            first_representation, second_representation, third_representation, \
+            fourth_representation, fifth_representation, sixth_representation) \
+        case k##name:                                                          \
+          switch (index) {                                                     \
+            case 1: return Representation::first_representation();             \
+            case 2: return Representation::second_representation();            \
+            case 3: return Representation::third_representation();             \
+            case 4: return Representation::fourth_representation();            \
+            case 5: return Representation::fifth_representation();             \
+            case 6: return Representation::sixth_representation();             \
+            default:                                                           \
+              UNREACHABLE();                                                   \
+              return Representation::None();                                   \
+          }
+SIMD_SENARY_OPERATIONS(SIMD_SENARY_OPERATION_CASE_ITEM)
+#undef SIMD_SENARY_OPERATION_CASE_ITEM
+        default:
+          UNREACHABLE();
+          return Representation::None();
+      }
+    }
+  }
+
+  BuiltinFunctionId op() const { return op_; }
+  const char* OpName() const;
+
+  DECLARE_CONCRETE_INSTRUCTION(SenarySIMDOperation)
+
+ protected:
+  virtual bool DataEquals(HValue* other) OVERRIDE {
+    HSenarySIMDOperation* b = HSenarySIMDOperation::cast(other);
+    return op_ == b->op();
+  }
+
+ private:
+  HSenarySIMDOperation(HValue* context, HValue* a0, HValue* a1, HValue* a2,
+                       HValue* a3, HValue* a4, HValue* a5,
+                       BuiltinFunctionId op)
+      : HTemplateInstruction<7>(HType::None()), op_(op) {
+    SetOperandAt(0, context);
+    SetOperandAt(1, a0);
+    SetOperandAt(2, a1);
+    SetOperandAt(3, a2);
+    SetOperandAt(4, a3);
+    SetOperandAt(5, a4);
+    SetOperandAt(6, a5);
+    switch (op) {
+#define SIMD_SENARY_OPERATION_CASE_ITEM(p1, p2, name, representation, p5, \
+                                        p6, p7, p8, p9, p10)              \
+      case k##name:                                                            \
+        set_representation(Representation::representation());                  \
+        set_type(HType::FromRepresentation(representation_));                  \
+        break;
+SIMD_SENARY_OPERATIONS(SIMD_SENARY_OPERATION_CASE_ITEM)
+#undef SIMD_SENARY_OPERATION_CASE_ITEM
       default:
         UNREACHABLE();
     }
