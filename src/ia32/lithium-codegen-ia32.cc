@@ -40,6 +40,16 @@ inline bool IsSIMD128LoadStoreOp(BuiltinFunctionId op) {
       op == kInt8ArrayGetInt32x4X ||
       op == kInt8ArrayGetInt32x4XY ||
       op == kInt8ArrayGetInt32x4XYZ ||
+      op == kUint8ArrayGetFloat32x4XYZW ||
+      op == kUint8ArrayGetFloat32x4X ||
+      op == kUint8ArrayGetFloat32x4XY ||
+      op == kUint8ArrayGetFloat32x4XYZ ||
+      op == kUint8ArrayGetFloat64x2XY ||
+      op == kUint8ArrayGetFloat64x2X ||
+      op == kUint8ArrayGetInt32x4XYZW ||
+      op == kUint8ArrayGetInt32x4X ||
+      op == kUint8ArrayGetInt32x4XY ||
+      op == kUint8ArrayGetInt32x4XYZ ||
       op == kFloat32ArraySetFloat32x4XYZW ||
       op == kFloat32ArraySetFloat32x4X ||
       op == kFloat32ArraySetFloat32x4XY ||
@@ -59,7 +69,17 @@ inline bool IsSIMD128LoadStoreOp(BuiltinFunctionId op) {
       op == kInt8ArraySetInt32x4XYZW ||
       op == kInt8ArraySetInt32x4X ||
       op == kInt8ArraySetInt32x4XY ||
-      op == kInt8ArraySetInt32x4XYZ);
+      op == kInt8ArraySetInt32x4XYZ ||
+      op == kUint8ArraySetFloat32x4XYZW ||
+      op == kUint8ArraySetFloat32x4X ||
+      op == kUint8ArraySetFloat32x4XY ||
+      op == kUint8ArraySetFloat32x4XYZ ||
+      op == kUint8ArraySetFloat64x2XY ||
+      op == kUint8ArraySetFloat64x2X ||
+      op == kUint8ArraySetInt32x4XYZW ||
+      op == kUint8ArraySetInt32x4X ||
+      op == kUint8ArraySetInt32x4XY ||
+      op == kUint8ArraySetInt32x4XYZ);
 }
 
 
@@ -70,21 +90,31 @@ int GetSIMD128LoadStoreBytes(BuiltinFunctionId op) {
       op == kInt8ArrayGetFloat32x4XYZW ||
       op == kInt8ArrayGetFloat64x2XY ||
       op == kInt8ArrayGetInt32x4XYZW ||
+      op == kUint8ArrayGetFloat32x4XYZW ||
+      op == kUint8ArrayGetFloat64x2XY ||
+      op == kUint8ArrayGetInt32x4XYZW ||
       op == kFloat32ArraySetFloat32x4XYZW ||
       op == kFloat64ArraySetFloat64x2XY ||
       op == kInt32ArraySetInt32x4XYZW ||
       op == kInt8ArraySetFloat32x4XYZW ||
       op == kInt8ArraySetFloat64x2XY ||
-      op == kInt8ArraySetInt32x4XYZW) {
+      op == kInt8ArraySetInt32x4XYZW ||
+      op == kUint8ArraySetFloat32x4XYZW ||
+      op == kUint8ArraySetFloat64x2XY ||
+      op == kUint8ArraySetInt32x4XYZW) {
     return 16;
   } else if (op == kFloat32ArrayGetFloat32x4X ||
       op == kInt32ArrayGetInt32x4X ||
       op == kInt8ArrayGetFloat32x4X ||
       op == kInt8ArrayGetInt32x4X ||
+      op == kUint8ArrayGetFloat32x4X ||
+      op == kUint8ArrayGetInt32x4X ||
       op == kFloat32ArraySetFloat32x4X ||
       op == kInt32ArraySetInt32x4X ||
       op == kInt8ArraySetFloat32x4X ||
-       op == kInt8ArraySetInt32x4X) {
+      op == kInt8ArraySetInt32x4X ||
+      op == kUint8ArraySetFloat32x4X ||
+      op == kUint8ArraySetInt32x4X) {
     return 4;
   } else if (op == kFloat32ArrayGetFloat32x4XY ||
       op == kFloat64ArrayGetFloat64x2X ||
@@ -92,21 +122,31 @@ int GetSIMD128LoadStoreBytes(BuiltinFunctionId op) {
       op == kInt8ArrayGetFloat32x4XY ||
       op == kInt8ArrayGetFloat64x2X ||
       op == kInt8ArrayGetInt32x4XY ||
+      op == kUint8ArrayGetFloat32x4XY ||
+      op == kUint8ArrayGetFloat64x2X ||
+      op == kUint8ArrayGetInt32x4XY ||
       op == kFloat32ArraySetFloat32x4XY ||
       op == kFloat64ArraySetFloat64x2X ||
       op == kInt32ArraySetInt32x4XY ||
       op == kInt8ArraySetFloat32x4XY ||
       op == kInt8ArraySetFloat64x2X ||
-      op == kInt8ArraySetInt32x4XY) {
+      op == kInt8ArraySetInt32x4XY ||
+      op == kUint8ArraySetFloat32x4XY ||
+      op == kUint8ArraySetFloat64x2X ||
+      op == kUint8ArraySetInt32x4XY) {
     return 8;
   } else if (op == kFloat32ArrayGetFloat32x4XYZ ||
       op == kInt32ArrayGetInt32x4XYZ ||
       op == kInt8ArrayGetFloat32x4XYZ ||
       op == kInt8ArrayGetInt32x4XYZ ||
+      op == kUint8ArrayGetFloat32x4XYZ ||
+      op == kUint8ArrayGetInt32x4XYZ ||
       op == kFloat32ArraySetFloat32x4XYZ ||
       op == kInt32ArraySetInt32x4XYZ ||
       op == kInt8ArraySetFloat32x4XYZ ||
-      op == kInt8ArraySetInt32x4XYZ) {
+      op == kInt8ArraySetInt32x4XYZ ||
+      op == kUint8ArraySetFloat32x4XYZ ||
+      op == kUint8ArraySetInt32x4XYZ) {
     return 12;
   } else {
     UNREACHABLE();
