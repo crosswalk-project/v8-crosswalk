@@ -473,6 +473,27 @@ function Int32x4ShiftRightArithmeticJS(t, s) {
   return %CreateInt32x4(x, y, z, w);
 }
 
+macro DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(TYPE, LANES)
+function TYPELoadLANESJS(tarray, index) {
+  return tarray._getTYPELANES(index);
+}
+
+function TYPEStoreLANESJS(tarray, index, value) {
+  tarray._setTYPELANES(index, value);
+}
+endmacro
+
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float32x4, XYZW)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float32x4, XYZ)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float32x4, XY)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float32x4, X)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float64x2, XY)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float64x2, X)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Int32x4, XYZW)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Int32x4, XYZ)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Int32x4, XY)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Int32x4, X)
+
 function SetUpSIMD() {
   %CheckIsBootstrapping();
 
@@ -739,14 +760,14 @@ function SetUpSIMD() {
   // Set up non-enumerable properties of the SIMD float32x4 object.
   InstallFunctions($SIMD.float32x4, DONT_ENUM, $Array(
     // Float32x4 operations
-    "load", NotImplementedJS,
-    "loadX", NotImplementedJS,
-    "loadXY", NotImplementedJS,
-    "loadXYZ", NotImplementedJS,
-    "store", NotImplementedJS,
-    "storeX", NotImplementedJS,
-    "storeXY", NotImplementedJS,
-    "storeXYZ", NotImplementedJS,
+    "load", Float32x4LoadXYZWJS,
+    "loadX", Float32x4LoadXJS,
+    "loadXY", Float32x4LoadXYJS,
+    "loadXYZ", Float32x4LoadXYZJS,
+    "store", Float32x4StoreXYZWJS,
+    "storeX", Float32x4StoreXJS,
+    "storeXY", Float32x4StoreXYJS,
+    "storeXYZ", Float32x4StoreXYZJS,
     "splat", Float32x4SplatJS,
     "zero", Float32x4ZeroJS,
     // Unary
@@ -789,10 +810,10 @@ function SetUpSIMD() {
   // Set up non-enumerable properties of the SIMD float64x2 object.
   InstallFunctions($SIMD.float64x2, DONT_ENUM, $Array(
     // Float64x2 operations
-    "load", NotImplementedJS,
-    "loadX", NotImplementedJS,
-    "store", NotImplementedJS,
-    "storeX", NotImplementedJS,
+    "load", Float64x2LoadXYJS,
+    "loadX", Float64x2LoadXJS,
+    "store", Float64x2StoreXYJS,
+    "storeX", Float64x2StoreXJS,
     "splat", Float64x2SplatJS,
     "zero", Float64x2ZeroJS,
     // Unary
@@ -816,14 +837,14 @@ function SetUpSIMD() {
   // Set up non-enumerable properties of the SIMD int32x4 object.
   InstallFunctions($SIMD.int32x4, DONT_ENUM, $Array(
     // Int32x4 operations
-    "load", NotImplementedJS,
-    "loadX", NotImplementedJS,
-    "loadXY", NotImplementedJS,
-    "loadXYZ", NotImplementedJS,
-    "store", NotImplementedJS,
-    "storeX", NotImplementedJS,
-    "storeXY", NotImplementedJS,
-    "storeXYZ", NotImplementedJS,
+    "load", Int32x4LoadXYZWJS,
+    "loadX", Int32x4LoadXJS,
+    "loadXY", Int32x4LoadXYJS,
+    "loadXYZ", Int32x4LoadXYZJS,
+    "store", Int32x4StoreXYZWJS,
+    "storeX", Int32x4StoreXJS,
+    "storeXY", Int32x4StoreXYJS,
+    "storeXYZ", Int32x4StoreXYZJS,
     "zero", Int32x4ZeroJS,
     "splat", Int32x4SplatJS,
     "bool", Int32x4BoolJS,

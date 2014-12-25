@@ -2741,10 +2741,9 @@ class HOptimizedGraphBuilder : public HGraphBuilder, public AstVisitor {
   HInstruction* BuildCallConstantFunction(Handle<JSFunction> target,
                                           int argument_count);
 
-  bool TryInlineSIMDBuiltinMethodCall(Call* expr,
-                                      Handle<JSFunction> function,
-                                      Handle<Map> receiver_map,
-                                      int args_count_no_receiver);
+  bool TryInlineSIMDBuiltinCall(Call* expr,
+                                BuiltinFunctionId id,
+                                int argument_count);
 
   // The translation state of the currently-being-translated function.
   FunctionState* function_state_;
