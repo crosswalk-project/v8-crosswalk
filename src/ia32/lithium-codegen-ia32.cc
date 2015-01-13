@@ -4377,6 +4377,8 @@ void LCodeGen::DoBoundsCheck(LBoundsCheck* instr) {
       __ mov(index_in_bytes, ToOperand(instr->index()));
     int index_shift_size =
         ElementsKindToShiftSize(instr->hydrogen()->element_kind());
+    if (instr->hydrogen()->index()->representation().IsSmi())
+      index_shift_size -= kSmiTagSize;
     DCHECK(index_shift_size >= 0);
     if (index_shift_size > 0)
       __ shl(index_in_bytes, index_shift_size);
@@ -4390,6 +4392,8 @@ void LCodeGen::DoBoundsCheck(LBoundsCheck* instr) {
       __ mov(length_in_bytes, ToOperand(instr->length()));
     int length_shift_size =
       ElementsKindToShiftSize(instr->hydrogen()->element_kind());
+    if (instr->hydrogen()->length()->representation().IsSmi())
+      length_shift_size -= kSmiTagSize;
     DCHECK(length_shift_size >= 0);
     if (length_shift_size > 0)
       __ shl(length_in_bytes, length_shift_size);
