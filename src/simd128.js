@@ -465,7 +465,7 @@ function Int32x4SelectJS(x4, trueValue, falseValue) {
   return %Int32x4Select(x4, trueValue, falseValue);
 }
 
-function Int32x4ShiftLeftJS(t, s) {
+function Int32x4ShiftLeftByScalarJS(t, s) {
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x << s;
@@ -475,7 +475,7 @@ function Int32x4ShiftLeftJS(t, s) {
   return %CreateInt32x4(x, y, z, w);
 }
 
-function Int32x4ShiftRightJS(t, s) {
+function Int32x4ShiftRightLogicalByScalarJS(t, s) {
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x >>> s;
@@ -485,7 +485,7 @@ function Int32x4ShiftRightJS(t, s) {
   return %CreateInt32x4(x, y, z, w);
 }
 
-function Int32x4ShiftRightArithmeticJS(t, s) {
+function Int32x4ShiftRightArithmeticByScalarJS(t, s) {
   CheckInt32x4(t);
   s = TO_NUMBER_INLINE(s);
   var x = t.x >> s;
@@ -618,9 +618,9 @@ function SetUpSIMD() {
     "greaterThan", Int32x4GreaterThanJS,
     "equal", Int32x4EqualJS,
     "lessThan", Int32x4LessThanJS,
-    "shiftLeft", Int32x4ShiftLeftJS,
-    "shiftRight", Int32x4ShiftRightJS,
-    "shiftRightArithmetic", Int32x4ShiftRightArithmeticJS,
+    "shiftLeftByScalar", Int32x4ShiftLeftByScalarJS,
+    "shiftRightLogicalByScalar", Int32x4ShiftRightLogicalByScalarJS,
+    "shiftRightArithmeticByScalar", Int32x4ShiftRightArithmeticByScalarJS,
     // Ternary
     "select", Int32x4SelectJS,
     // Quinary
