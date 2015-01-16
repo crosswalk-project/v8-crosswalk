@@ -4820,25 +4820,6 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
       }
       return;
     }
-    case kFloat32x4ShuffleMix: {
-      DCHECK(instr->first()->Equals(instr->result()));
-      DCHECK(instr->hydrogen()->first()->representation().IsFloat32x4());
-      DCHECK(instr->hydrogen()->second()->representation().IsFloat32x4());
-      DCHECK(instr->hydrogen()->third()->representation().IsInteger32());
-      if (instr->hydrogen()->third()->IsConstant() &&
-          HConstant::cast(instr->hydrogen()->third())->HasInteger32Value()) {
-        int32_t value = ToInteger32(LConstantOperand::cast(instr->third()));
-        uint8_t select = static_cast<uint8_t>(value & 0xFF);
-        XMMRegister first_reg = ToFloat32x4Register(instr->first());
-        XMMRegister second_reg = ToFloat32x4Register(instr->second());
-        __ shufps(first_reg, second_reg, select);
-        return;
-      } else {
-        Comment(";;; deoptimize: non-constant selector for shuffle");
-        DeoptimizeIf(no_condition, instr, "non-constant selector for shuffle");
-        return;
-      }
-    }
     case kFloat32x4Clamp: {
       DCHECK(instr->first()->Equals(instr->result()));
       DCHECK(instr->hydrogen()->first()->representation().IsFloat32x4());
@@ -4980,6 +4961,228 @@ void LCodeGen::DoQuarternarySIMDOperation(LQuarternarySIMDOperation* instr) {
       __ addq(rsp, Immediate(kInt32x4Size));
       return;
     }
+    default:
+      UNREACHABLE();
+      return;
+  }
+}
+
+
+static uint8_t ComputeShuffleSelect(uint32_t x, uint32_t y,
+                                  uint32_t z, uint32_t w) {
+  DCHECK(x < 4 && y < 4 && z < 4 && w < 4);
+  uint32_t r = static_cast<uint8_t>(
+      ((w << 6) | (z << 4) | (y << 2) | (x << 0)) & 0xFF);
+  return r;
+}
+
+
+void LCodeGen::DoQuinarySIMDOperation(LQuinarySIMDOperation* instr) {
+  switch (instr->op()) {
+    case kFloat32x4Swizzle: {
+      DCHECK(instr->a0()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->a0()->representation().IsFloat32x4());
+      if ((instr->hydrogen()->a1()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a1())->HasInteger32Value()) &&
+          (instr->hydrogen()->a2()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a2())->HasInteger32Value()) &&
+          (instr->hydrogen()->a3()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a3())->HasInteger32Value()) &&
+          (instr->hydrogen()->a4()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a4())->HasInteger32Value())) {
+        int32_t x = ToInteger32(LConstantOperand::cast(instr->a1()));
+        int32_t y = ToInteger32(LConstantOperand::cast(instr->a2()));
+        int32_t z = ToInteger32(LConstantOperand::cast(instr->a3()));
+        int32_t w = ToInteger32(LConstantOperand::cast(instr->a4()));
+        uint8_t select = ComputeShuffleSelect(x, y, z, w);
+        XMMRegister left_reg = ToFloat32x4Register(instr->a0());
+        __ shufps(left_reg, left_reg, select);
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for swizzle");
+        DeoptimizeIf(no_condition, instr, "non-constant selector for swizzle");
+        return;
+      }
+    }
+    case kInt32x4Swizzle: {
+      DCHECK(instr->a0()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->a0()->representation().IsInt32x4());
+      if ((instr->hydrogen()->a1()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a1())->HasInteger32Value()) &&
+          (instr->hydrogen()->a2()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a2())->HasInteger32Value()) &&
+          (instr->hydrogen()->a3()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a3())->HasInteger32Value()) &&
+          (instr->hydrogen()->a4()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a4())->HasInteger32Value())) {
+        int32_t x = ToInteger32(LConstantOperand::cast(instr->a1()));
+        int32_t y = ToInteger32(LConstantOperand::cast(instr->a2()));
+        int32_t z = ToInteger32(LConstantOperand::cast(instr->a3()));
+        int32_t w = ToInteger32(LConstantOperand::cast(instr->a4()));
+        uint8_t select = ComputeShuffleSelect(x, y, z, w);
+        XMMRegister left_reg = ToInt32x4Register(instr->a0());
+        __ pshufd(left_reg, left_reg, select);
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for shuffle");
+        DeoptimizeIf(no_condition, instr, "non-constant selector for shuffle");
+        return;
+      }
+    }
+    default:
+      UNREACHABLE();
+      return;
+  }
+}
+
+
+void LCodeGen::DoSenarySIMDOperation(LSenarySIMDOperation* instr) {
+  switch (instr->op()) {
+    case kFloat32x4Shuffle:
+    case kInt32x4Shuffle: {
+      DCHECK(instr->a0()->Equals(instr->result()));
+      if (instr->op() == kFloat32x4Shuffle) {
+        DCHECK(instr->hydrogen()->a0()->representation().IsFloat32x4());
+        DCHECK(instr->hydrogen()->a1()->representation().IsFloat32x4());
+      } else {
+        DCHECK(instr->hydrogen()->a0()->representation().IsInt32x4());
+        DCHECK(instr->hydrogen()->a1()->representation().IsInt32x4());
+      }
+
+      if ((instr->hydrogen()->a2()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a2())->HasInteger32Value()) &&
+          (instr->hydrogen()->a3()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a3())->HasInteger32Value()) &&
+          (instr->hydrogen()->a4()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a4())->HasInteger32Value()) &&
+          (instr->hydrogen()->a5()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->a5())->HasInteger32Value())) {
+        int32_t x = ToInteger32(LConstantOperand::cast(instr->a2()));
+        int32_t y = ToInteger32(LConstantOperand::cast(instr->a3()));
+        int32_t z = ToInteger32(LConstantOperand::cast(instr->a4()));
+        int32_t w = ToInteger32(LConstantOperand::cast(instr->a5()));
+         XMMRegister lhs, rhs;
+        if (instr->op() == kFloat32x4Shuffle) {
+          lhs = ToFloat32x4Register(instr->a0());
+          rhs = ToFloat32x4Register(instr->a1());
+        } else {
+          lhs = ToInt32x4Register(instr->a0());
+          rhs = ToInt32x4Register(instr->a1());
+        }
+        XMMRegister temp = xmm0;
+
+        uint32_t num_lanes_from_lhs = (x < 4) + (y < 4) + (z < 4) + (w < 4);
+        if (num_lanes_from_lhs == 4) {
+          uint8_t select = ComputeShuffleSelect(x, y, z, w);
+          __ shufps(lhs, lhs, select);
+          return;
+        } else if (num_lanes_from_lhs == 0) {
+          x -= 4;
+          y -= 4;
+          z -= 4;
+          w -= 4;
+          uint8_t select = ComputeShuffleSelect(x, y, z, w);
+          __ movaps(lhs, rhs);
+          __ shufps(lhs, lhs, select);
+          return;
+        } else if (num_lanes_from_lhs == 3) {
+          uint8_t first_select = 0xFF;
+          uint8_t second_select = 0xFF;
+          if (x < 4 && y < 4) {
+            if (w >= 4) {
+                w -= 4;
+                // T = (Rw Rw Lz Lz) = shufps(firstMask, lhs, rhs)
+                first_select = ComputeShuffleSelect(w, w, z, z);
+                // (Lx Ly Lz Rw) = (Lx Ly Tz Tx) = shufps(secondMask, T, lhs)
+                second_select = ComputeShuffleSelect(x, y, 2, 0);
+            } else {
+                DCHECK(z >= 4);
+                z -= 4;
+                // T = (Rz Rz Lw Lw) = shufps(firstMask, lhs, rhs)
+                first_select = ComputeShuffleSelect(z, z, w, w);
+                // (Lx Ly Rz Lw) = (Lx Ly Tx Tz) = shufps(secondMask, T, lhs)
+                second_select = ComputeShuffleSelect(x, y, 0, 2);
+            }
+
+            __ movaps(temp, rhs);
+            __ shufps(temp, lhs, first_select);
+            __ shufps(lhs, temp, second_select);
+            return;
+          }
+
+          DCHECK(z < 4 && w < 4);
+
+          if (y >= 4) {
+              y -= 4;
+              // T = (Ry Ry Lx Lx) = shufps(firstMask, lhs, rhs)
+              first_select = ComputeShuffleSelect(y, y, x, x);
+              // (Lx Ry Lz Lw) = (Tz Tx Lz Lw) = shufps(secondMask, lhs, T)
+              second_select = ComputeShuffleSelect(2, 0, z, w);
+          } else {
+              DCHECK(x >= 4);
+              x -= 4;
+              // T = (Rx Rx Ly Ly) = shufps(firstMask, lhs, rhs)
+              first_select = ComputeShuffleSelect(x, x, y, y);
+              // (Rx Ly Lz Lw) = (Tx Tz Lz Lw) = shufps(secondMask, lhs, T)
+              second_select = ComputeShuffleSelect(0, 2, z, w);
+          }
+
+          __ movaps(temp, rhs);
+          __ shufps(temp, lhs, first_select);
+          __ shufps(temp, lhs, second_select);
+          __ movaps(lhs, temp);
+          return;
+        } else if (num_lanes_from_lhs == 2) {
+          if (x < 4 && y < 4) {
+            uint8_t select = ComputeShuffleSelect(x, y, z % 4, w % 4);
+            __ shufps(lhs, rhs, select);
+            return;
+          } else if (z < 4 && w < 4) {
+            uint8_t select = ComputeShuffleSelect(x % 4, y % 4, z, w);
+            __ movaps(temp, rhs);
+            __ shufps(temp, lhs, select);
+            __ movaps(lhs, temp);
+            return;
+          }
+
+          // In two shufps, for the most generic case:
+          uint8_t first_select[4], second_select[4];
+          uint32_t i = 0, j = 2, k = 0;
+
+#define COMPUTE_SELECT(lane)            \
+          if (lane >= 4) {              \
+            first_select[j] = lane % 4; \
+            second_select[k++] = j++;   \
+          } else {                      \
+            first_select[i] = lane;     \
+            second_select[k++] = i++;   \
+          }
+
+          COMPUTE_SELECT(x)
+          COMPUTE_SELECT(y)
+          COMPUTE_SELECT(z)
+          COMPUTE_SELECT(w)
+#undef COMPUTE_SELECT
+
+          DCHECK(i == 2 && j == 4 && k == 4);
+
+          int8_t select;
+          select = ComputeShuffleSelect(first_select[0], first_select[1],
+                                        first_select[2], first_select[3]);
+          __ shufps(lhs, rhs, select);
+
+          select = ComputeShuffleSelect(second_select[0], second_select[1],
+                                        second_select[2], second_select[3]);
+          __ shufps(lhs, lhs, select);
+        }
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for shuffle");
+        DeoptimizeIf(no_condition, instr, "non-constant selector for shuffle");
+        return;
+      }
+    }
+
     default:
       UNREACHABLE();
       return;

@@ -6804,8 +6804,6 @@ class Script: public Struct {
     Float32x4)                                                                 \
   V(SIMD.float32x4, lessThanOrEqual, Float32x4LessThanOrEqual, Int32x4,        \
     Float32x4, Float32x4)                                                      \
-  V(SIMD.float32x4, shuffle, Float32x4Shuffle, Float32x4, Float32x4,           \
-    Integer32)                                                                 \
   V(SIMD.float32x4, scale, Float32x4Scale, Float32x4, Float32x4, Double)       \
   V(SIMD.float32x4, withX, Float32x4WithX, Float32x4, Float32x4, Double)       \
   V(SIMD.float32x4, withY, Float32x4WithY, Float32x4, Float32x4, Double)       \
@@ -6827,7 +6825,6 @@ class Script: public Struct {
   V(SIMD.int32x4, or, Int32x4Or, Int32x4, Int32x4, Int32x4)                    \
   V(SIMD.int32x4, sub, Int32x4Sub, Int32x4, Int32x4, Int32x4)                  \
   V(SIMD.int32x4, xor, Int32x4Xor, Int32x4, Int32x4, Int32x4)                  \
-  V(SIMD.int32x4, shuffle, Int32x4Shuffle, Int32x4, Int32x4, Integer32)        \
   V(SIMD.int32x4, withX, Int32x4WithX, Int32x4, Int32x4, Integer32)            \
   V(SIMD.int32x4, withY, Int32x4WithY, Int32x4, Int32x4, Integer32)            \
   V(SIMD.int32x4, withZ, Int32x4WithZ, Int32x4, Int32x4, Integer32)            \
@@ -6847,8 +6844,6 @@ class Script: public Struct {
 #define SIMD_TERNARY_OPERATIONS(V)                                             \
   V(SIMD.float32x4, clamp, Float32x4Clamp, Float32x4, Float32x4, Float32x4,    \
     Float32x4)                                                                 \
-  V(SIMD.float32x4, shuffleMix, Float32x4ShuffleMix, Float32x4, Float32x4,     \
-    Float32x4, Integer32)                                                      \
   V(SIMD.float32x4, select, Float32x4Select, Float32x4, Int32x4, Float32x4,    \
     Float32x4)                                                                 \
   V(SIMD.float64x2, clamp, Float64x2Clamp, Float64x2, Float64x2, Float64x2,    \
@@ -6861,6 +6856,18 @@ class Script: public Struct {
   V(SIMD, int32x4, Int32x4Constructor, Int32x4, Integer32, Integer32,          \
     Integer32, Integer32)                                                      \
   V(SIMD.int32x4, bool, Int32x4Bool, Int32x4, Tagged, Tagged, Tagged, Tagged)
+
+#define SIMD_QUINARY_OPERATIONS(V)                                             \
+  V(SIMD.float32x4, swizzle, Float32x4Swizzle, Float32x4, Float32x4,           \
+    Integer32, Integer32, Integer32, Integer32)                                \
+  V(SIMD.int32x4, swizzle, Int32x4Swizzle, Int32x4, Int32x4,                   \
+    Integer32, Integer32, Integer32, Integer32)
+
+#define SIMD_SENARY_OPERATIONS(V)                                              \
+  V(SIMD.float32x4, shuffle, Float32x4Shuffle, Float32x4, Float32x4,           \
+    Float32x4, Integer32, Integer32, Integer32, Integer32)                     \
+  V(SIMD.int32x4, shuffle, Int32x4Shuffle, Int32x4, Int32x4, Int32x4,          \
+    Integer32, Integer32, Integer32, Integer32)
 
 #define SIMD_ARRAY_OPERATIONS(V)                                               \
   V(Float32x4Array.prototype, getAt, Float32x4ArrayGetAt)                      \
@@ -6953,6 +6960,15 @@ enum BuiltinFunctionId {
   k##name,
   SIMD_QUARTERNARY_OPERATIONS(DECLARE_SIMD_QUARTERNARY_FUNCTION_ID)
 #undef DECLARE_SIMD_QUARTERNARY_FUNCTION_ID
+#define DECLARE_SIMD_QUINARY_FUNCTION_ID(i1, i2, name, i3, i4, i5, i6, i7, i8) \
+  k##name,
+  SIMD_QUINARY_OPERATIONS(DECLARE_SIMD_QUINARY_FUNCTION_ID)
+#undef DECLARE_SIMD_QUINARY_FUNCTION_ID
+#define DECLARE_SIMD_SENARY_FUNCTION_ID(                                       \
+    i1, i2, name, i3, i4, i5, i6, i7, i8, i9)                                  \
+  k##name,
+  SIMD_SENARY_OPERATIONS(DECLARE_SIMD_SENARY_FUNCTION_ID)
+#undef DECLARE_SIMD_SENARY_FUNCTION_ID
   kNumberOfBuiltinFunction
 };
 

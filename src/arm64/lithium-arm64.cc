@@ -2785,4 +2785,18 @@ LInstruction* LChunkBuilder::DoQuarternarySIMDOperation(
 }
 
 
+LInstruction* LChunkBuilder::DoQuinarySIMDOperation(
+    HQuinarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+
+LInstruction* LChunkBuilder::DoSenarySIMDOperation(
+    HSenarySIMDOperation* instr) {
+  UNIMPLEMENTED();
+  return NULL;
+}
+
+
 } }  // namespace v8::internal
