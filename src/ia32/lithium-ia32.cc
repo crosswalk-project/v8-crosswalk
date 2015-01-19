@@ -2320,7 +2320,17 @@ LOperand* LChunkBuilder::GetStoreKeyedValueOperand(HStoreKeyed* instr) {
       op != kInt8ArraySetInt32x4XY &&
       op != kInt8ArraySetInt32x4XYZ &&
       op != kInt8ArraySetFloat64x2XY &&
-      op != kInt8ArraySetFloat64x2X);
+      op != kInt8ArraySetFloat64x2X &&
+      op != kUint8ArraySetFloat32x4XYZW &&
+      op != kUint8ArraySetFloat32x4X &&
+      op != kUint8ArraySetFloat32x4XY &&
+      op != kUint8ArraySetFloat32x4XYZ &&
+      op != kUint8ArraySetInt32x4XYZW &&
+      op != kUint8ArraySetInt32x4X &&
+      op != kUint8ArraySetInt32x4XY &&
+      op != kUint8ArraySetInt32x4XYZ &&
+      op != kUint8ArraySetFloat64x2XY &&
+      op != kUint8ArraySetFloat64x2X);
   if (val_is_fixed_register) {
     return UseFixed(instr->value(), eax);
   }
