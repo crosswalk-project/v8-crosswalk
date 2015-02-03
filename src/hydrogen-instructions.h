@@ -3378,6 +3378,15 @@ class HPhi FINAL : public HValue {
   int double_non_phi_uses() const {
     return non_phi_uses_[Representation::kDouble];
   }
+  int float32x4_non_phi_uses() const {
+    return non_phi_uses_[Representation::kFloat32x4];
+  }
+  int float64x2_non_phi_uses() const {
+    return non_phi_uses_[Representation::kFloat64x2];
+  }
+  int int32x4_non_phi_uses() const {
+    return non_phi_uses_[Representation::kInt32x4];
+  }
   int tagged_indirect_uses() const {
     return indirect_uses_[Representation::kTagged];
   }
@@ -3389,6 +3398,15 @@ class HPhi FINAL : public HValue {
   }
   int double_indirect_uses() const {
     return indirect_uses_[Representation::kDouble];
+  }
+  int float32x4_indirect_uses() const {
+    return indirect_uses_[Representation::kFloat32x4];
+  }
+  int int32x4_indirect_uses() const {
+    return indirect_uses_[Representation::kInt32x4];
+  }
+  int float64x2_indirect_uses() const {
+    return indirect_uses_[Representation::kFloat64x2];
   }
   int phi_id() { return phi_id_; }
 
@@ -8232,6 +8250,9 @@ class HNullarySIMDOperation FINAL : public HTemplateInstruction<1> {
 
   virtual std::ostream& PrintDataTo(std::ostream& os) const OVERRIDE;
 
+  Representation observed_input_representation(int index) OVERRIDE {
+    return RequiredInputRepresentation(index);
+  }
   virtual Representation RequiredInputRepresentation(int index) OVERRIDE {
     return Representation::Tagged();
   }
@@ -8284,6 +8305,9 @@ class HUnarySIMDOperation FINAL : public HTemplateInstruction<2> {
 
   virtual std::ostream& PrintDataTo(std::ostream& os) const OVERRIDE;
 
+  Representation observed_input_representation(int index) OVERRIDE {
+    return RequiredInputRepresentation(index);
+  }
   virtual Representation RequiredInputRepresentation(int index) OVERRIDE {
     if (index == 0) {
       return Representation::Tagged();
@@ -8363,6 +8387,9 @@ class HBinarySIMDOperation FINAL : public HTemplateInstruction<3> {
 
   virtual std::ostream& PrintDataTo(std::ostream& os) const OVERRIDE;
 
+  Representation observed_input_representation(int index) OVERRIDE {
+    return RequiredInputRepresentation(index);
+  }
   virtual Representation RequiredInputRepresentation(int index) OVERRIDE {
     if (index == 0) {
       return Representation::Tagged();
@@ -8441,6 +8468,9 @@ class HTernarySIMDOperation FINAL : public HTemplateInstruction<4> {
 
   virtual std::ostream& PrintDataTo(std::ostream& os) const OVERRIDE;
 
+  Representation observed_input_representation(int index) OVERRIDE {
+    return RequiredInputRepresentation(index);
+  }
   virtual Representation RequiredInputRepresentation(int index) OVERRIDE {
     if (index == 0) {
       return Representation::Tagged();
@@ -8529,6 +8559,9 @@ class HQuarternarySIMDOperation FINAL : public HTemplateInstruction<5> {
 
   virtual std::ostream& PrintDataTo(std::ostream& os) const OVERRIDE;
 
+  Representation observed_input_representation(int index) OVERRIDE {
+    return RequiredInputRepresentation(index);
+  }
   virtual Representation RequiredInputRepresentation(int index) OVERRIDE {
     if (index == 0) {
       return Representation::Tagged();
@@ -8623,6 +8656,9 @@ class HQuinarySIMDOperation FINAL : public HTemplateInstruction<6> {
 
   virtual std::ostream& PrintDataTo(std::ostream& os) const OVERRIDE;
 
+  Representation observed_input_representation(int index) OVERRIDE {
+    return RequiredInputRepresentation(index);
+  }
   virtual Representation RequiredInputRepresentation(int index) OVERRIDE {
     if (index == 0) {
       return Representation::Tagged();
@@ -8715,6 +8751,9 @@ class HSenarySIMDOperation FINAL : public HTemplateInstruction<7> {
 
   virtual std::ostream& PrintDataTo(std::ostream& os) const OVERRIDE;
 
+  Representation observed_input_representation(int index) OVERRIDE {
+    return RequiredInputRepresentation(index);
+  }
   virtual Representation RequiredInputRepresentation(int index) OVERRIDE {
     if (index == 0) {
       return Representation::Tagged();
