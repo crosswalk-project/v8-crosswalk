@@ -1095,6 +1095,8 @@ class Isolate {
 
   std::string GetTurboCfgFileName();
 
+  bool IsSimdEnabled();
+
 #if TRACE_MAPS
   int GetNextUniqueSharedFunctionInfoId() { return next_unique_sfi_id_++; }
 #endif

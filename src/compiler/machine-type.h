@@ -26,16 +26,20 @@ enum MachineType {
   kRepWord64 = 1 << 4,
   kRepFloat32 = 1 << 5,
   kRepFloat64 = 1 << 6,
-  kRepTagged = 1 << 7,
+  kRepFloat32x4 = 1 << 7,
+  kRepInt32x4 = 1 << 8,
+  kRepFloat64x2 = 1 << 9,
+  kRepTagged = 1 << 10,
 
   // Types.
-  kTypeBool = 1 << 8,
-  kTypeInt32 = 1 << 9,
-  kTypeUint32 = 1 << 10,
-  kTypeInt64 = 1 << 11,
-  kTypeUint64 = 1 << 12,
-  kTypeNumber = 1 << 13,
-  kTypeAny = 1 << 14,
+  kTypeBool = 1 << 11,
+  kTypeInt32 = 1 << 12,
+  kTypeUint32 = 1 << 13,
+  kTypeInt64 = 1 << 14,
+  kTypeUint64 = 1 << 15,
+  kTypeNumber = 1 << 16,
+  kTypeVector = 1 << 17,
+  kTypeAny = 1 << 18,
 
   // Machine types.
   kMachNone = 0,
@@ -50,6 +54,9 @@ enum MachineType {
   kMachUint32 = kRepWord32 | kTypeUint32,
   kMachInt64 = kRepWord64 | kTypeInt64,
   kMachUint64 = kRepWord64 | kTypeUint64,
+  kMachFloat32x4 = kRepFloat32x4 | kTypeVector,
+  kMachInt32x4 = kRepInt32x4 | kTypeVector,
+  kMachFloat64x2 = kRepFloat64x2 | kTypeVector,
   kMachIntPtr = (kPointerSize == 4) ? kMachInt32 : kMachInt64,
   kMachUintPtr = (kPointerSize == 4) ? kMachUint32 : kMachUint64,
   kMachPtr = (kPointerSize == 4) ? kRepWord32 : kRepWord64,
@@ -58,15 +65,15 @@ enum MachineType {
 
 std::ostream& operator<<(std::ostream& os, const MachineType& type);
 
-typedef uint16_t MachineTypeUnion;
+typedef uint32_t MachineTypeUnion;
 
 // Globally useful machine types and constants.
-const MachineTypeUnion kRepMask = kRepBit | kRepWord8 | kRepWord16 |
-                                  kRepWord32 | kRepWord64 | kRepFloat32 |
-                                  kRepFloat64 | kRepTagged;
+const MachineTypeUnion kRepMask =
+    kRepBit | kRepWord8 | kRepWord16 | kRepWord32 | kRepWord64 | kRepFloat32 |
+    kRepFloat64 | kRepFloat32x4 | kRepInt32x4 | kRepFloat64x2 | kRepTagged;
 const MachineTypeUnion kTypeMask = kTypeBool | kTypeInt32 | kTypeUint32 |
                                    kTypeInt64 | kTypeUint64 | kTypeNumber |
-                                   kTypeAny;
+                                   kTypeVector | kTypeAny;
 
 // Gets only the type of the given type.
 inline MachineType TypeOf(MachineType machine_type) {
@@ -95,6 +102,10 @@ inline int ElementSizeLog2Of(MachineType machine_type) {
     case kRepWord64:
     case kRepFloat64:
       return 3;
+    case kRepFloat32x4:
+    case kRepInt32x4:
+    case kRepFloat64x2:
+      return 4;
     case kRepTagged:
       return kPointerSizeLog2;
     default:

@@ -33,8 +33,14 @@ const InstructionCode kSourcePositionInstruction = -2;
   V(Immediate, IMMEDIATE)               \
   V(StackSlot, STACK_SLOT)              \
   V(DoubleStackSlot, DOUBLE_STACK_SLOT) \
+  V(Float32x4StackSlot, FLOAT32x4_STACK_SLOT)   \
+  V(Int32x4StackSlot, INT32x4_STACK_SLOT)       \
+  V(Float64x2StackSlot, FLOAT64x2_STACK_SLOT)   \
   V(Register, REGISTER)                 \
-  V(DoubleRegister, DOUBLE_REGISTER)
+  V(DoubleRegister, DOUBLE_REGISTER)    \
+  V(Float32x4Register, FLOAT32x4_REGISTER)      \
+  V(Int32x4Register, INT32x4_REGISTER)          \
+  V(Float64x2Register, FLOAT64x2_REGISTER)
 
 class InstructionOperand {
  public:
@@ -47,8 +53,14 @@ class InstructionOperand {
     IMMEDIATE,
     STACK_SLOT,
     DOUBLE_STACK_SLOT,
+    FLOAT32x4_STACK_SLOT,
+    INT32x4_STACK_SLOT,
+    FLOAT64x2_STACK_SLOT,
     REGISTER,
-    DOUBLE_REGISTER
+    DOUBLE_REGISTER,
+    FLOAT32x4_REGISTER,
+    INT32x4_REGISTER,
+    FLOAT64x2_REGISTER
   };
 
   InstructionOperand() { ConvertTo(INVALID, 0, kInvalidVirtualRegister); }
@@ -74,11 +86,27 @@ class InstructionOperand {
   INSTRUCTION_OPERAND_PREDICATE(Unallocated, UNALLOCATED)
   INSTRUCTION_OPERAND_PREDICATE(Invalid, INVALID)
 #undef INSTRUCTION_OPERAND_PREDICATE
+  bool IsSIMD128Register() const {
+    return kind() == FLOAT32x4_REGISTER || kind() == INT32x4_REGISTER ||
+           kind() == FLOAT64x2_REGISTER;
+  }
+  bool IsSIMD128StackSlot() const {
+    return kind() == FLOAT32x4_STACK_SLOT || kind() == INT32x4_STACK_SLOT ||
+           kind() == FLOAT64x2_STACK_SLOT;
+  }
   bool Equals(const InstructionOperand* other) const {
-    return value_ == other->value_;
+    return value_ == other->value_ ||
+           (index() == other->index() &&
+            ((IsSIMD128Register() && other->IsSIMD128Register()) ||
+             (IsSIMD128StackSlot() && other->IsSIMD128StackSlot())));
+    ;
   }
 
   void ConvertTo(Kind kind, int index) {
+    if (kind == REGISTER || kind == DOUBLE_REGISTER ||
+        kind == FLOAT32x4_REGISTER || kind == INT32x4_REGISTER ||
+        kind == FLOAT64x2_REGISTER)
+      DCHECK(index >= 0);
     DCHECK(kind != UNALLOCATED && kind != INVALID);
     ConvertTo(kind, index, kInvalidVirtualRegister);
   }
@@ -112,9 +140,9 @@ class InstructionOperand {
            this->index() == index);
   }
 
-  typedef BitField64<Kind, 0, 3> KindField;
-  typedef BitField64<uint32_t, 3, 32> VirtualRegisterField;
-  typedef BitField64<int32_t, 35, 29> IndexField;
+  typedef BitField64<Kind, 0, 4> KindField;
+  typedef BitField64<uint32_t, 4, 32> VirtualRegisterField;
+  typedef BitField64<int32_t, 36, 29> IndexField;
 
   uint64_t value_;
 };
@@ -215,12 +243,12 @@ class UnallocatedOperand : public InstructionOperand {
   //
   // For FIXED_SLOT policy:
   //     +------------------------------------------------+
-  //     |      slot_index   | 0 | virtual_register | 001 |
+  //     |      slot_index   | 0 | virtual_register | 0001 |
   //     +------------------------------------------------+
   //
   // For all other (extended) policies:
   //     +-----------------------------------------------------+
-  //     |  reg_index  | L | PPP |  1 | virtual_register | 001 |
+  //     |  reg_index  | L | PPP |  1 | virtual_register | 0001 |
   //     +-----------------------------------------------------+
   //     L ... Lifetime
   //     P ... Policy
@@ -229,18 +257,18 @@ class UnallocatedOperand : public InstructionOperand {
   // instead of using the BitField utility class.
 
   // All bits fit into the index field.
-  STATIC_ASSERT(IndexField::kShift == 35);
+  STATIC_ASSERT(IndexField::kShift == 36);
 
   // BitFields for all unallocated operands.
-  class BasicPolicyField : public BitField64<BasicPolicy, 35, 1> {};
+  class BasicPolicyField : public BitField64<BasicPolicy, 36, 1> {};
 
   // BitFields specific to BasicPolicy::FIXED_SLOT.
-  class FixedSlotIndexField : public BitField64<int, 36, 28> {};
+  class FixedSlotIndexField : public BitField64<int, 37, 28> {};
 
   // BitFields specific to BasicPolicy::EXTENDED_POLICY.
-  class ExtendedPolicyField : public BitField64<ExtendedPolicy, 36, 3> {};
-  class LifetimeField : public BitField64<Lifetime, 39, 1> {};
-  class FixedRegisterField : public BitField64<int, 40, 6> {};
+  class ExtendedPolicyField : public BitField64<ExtendedPolicy, 37, 3> {};
+  class LifetimeField : public BitField64<Lifetime, 40, 1> {};
+  class FixedRegisterField : public BitField64<int, 41, 6> {};
 
   // Predicates for the operand policy.
   bool HasAnyPolicy() const {
@@ -978,9 +1006,15 @@ class InstructionSequence FINAL : public ZoneObject {
 
   bool IsReference(int virtual_register) const;
   bool IsDouble(int virtual_register) const;
+  bool IsFloat32x4(int virtual_register) const;
+  bool IsInt32x4(int virtual_register) const;
+  bool IsFloat64x2(int virtual_register) const;
 
   void MarkAsReference(int virtual_register);
   void MarkAsDouble(int virtual_register);
+  void MarkAsFloat32x4(int virtual_register);
+  void MarkAsInt32x4(int virtual_register);
+  void MarkAsFloat64x2(int virtual_register);
 
   void AddGapMove(int index, InstructionOperand* from, InstructionOperand* to);
 
@@ -1076,6 +1110,9 @@ class InstructionSequence FINAL : public ZoneObject {
   int next_virtual_register_;
   PointerMapDeque pointer_maps_;
   VirtualRegisterSet doubles_;
+  VirtualRegisterSet float32x4_;
+  VirtualRegisterSet int32x4_;
+  VirtualRegisterSet float64x2_;
   VirtualRegisterSet references_;
   DeoptimizationVector deoptimization_entries_;
 

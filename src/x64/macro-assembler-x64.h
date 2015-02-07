@@ -813,6 +813,15 @@ class MacroAssembler: public Assembler {
   void Cvtlsi2sd(XMMRegister dst, Register src);
   void Cvtlsi2sd(XMMRegister dst, const Operand& src);
 
+  // SIMD macro instructions using either avx or legacy based on AVX flag
+  void Addps(XMMRegister dst, XMMRegister s1, XMMRegister s2);
+  void Addps(XMMRegister dst, XMMRegister s1, const Operand& s2);
+  void Mulps(XMMRegister dst, XMMRegister s1, XMMRegister s2);
+  void Mulps(XMMRegister dst, XMMRegister s1, const Operand& s2);
+  void Subps(XMMRegister dst, XMMRegister s1, XMMRegister s2);
+  void Subps(XMMRegister dst, XMMRegister s1, const Operand& s2);
+  void Divps(XMMRegister dst, XMMRegister s1, XMMRegister s2);
+  void Divps(XMMRegister dst, XMMRegister s1, const Operand& s2);
   // Move if the registers are not identical.
   void Move(Register target, Register source);
 
