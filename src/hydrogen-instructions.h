@@ -6003,6 +6003,11 @@ class HObjectAccess FINAL {
                          Representation::Integer32());
   }
 
+  static HObjectAccess ForSIMD128Value() {
+    return HObjectAccess(kInobject, Float32x4::kValueOffset,
+                         Representation::Tagged());
+  }
+
   static HObjectAccess ForSIMD128Double0() {
     return HObjectAccess(
         kDouble, Float32x4::kValueOffset, Representation::Double());

@@ -82,7 +82,9 @@ void CodeStub::RecordCodeGeneration(Handle<Code> code) {
   Counters* counters = isolate()->counters();
   counters->total_stubs_code_size()->Increment(code->instruction_size());
 #ifdef DEBUG
-  code->VerifyEmbeddedObjects();
+  // TODO(weiliang): turn on below check after eliminating the use of context
+  // variable (float32x4_prototype_map) in AllocateFloat32x4Stub.
+  // code->VerifyEmbeddedObjects();
 #endif
 }
 
@@ -679,6 +681,26 @@ void AllocateHeapNumberStub::InitializeDescriptor(
     CodeStubDescriptor* descriptor) {
   descriptor->Initialize(
       Runtime::FunctionForId(Runtime::kAllocateHeapNumber)->entry);
+}
+
+
+void AllocateFloat32x4Stub::InitializeDescriptor(
+    CodeStubDescriptor* descriptor) {
+  descriptor->Initialize(
+      Runtime::FunctionForId(Runtime::kAllocateFloat32x4)->entry);
+}
+
+
+void AllocateInt32x4Stub::InitializeDescriptor(
+    CodeStubDescriptor* descriptor) {
+  descriptor->Initialize(
+      Runtime::FunctionForId(Runtime::kAllocateInt32x4)->entry);
+}
+
+void AllocateFloat64x2Stub::InitializeDescriptor(
+    CodeStubDescriptor* descriptor) {
+  descriptor->Initialize(
+      Runtime::FunctionForId(Runtime::kAllocateFloat64x2)->entry);
 }
 
 

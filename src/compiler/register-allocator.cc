@@ -278,6 +278,12 @@ InstructionOperand* LiveRange::GetAssignedOperand(
         return cache->RegisterOperand(assigned_register());
       case DOUBLE_REGISTERS:
         return cache->DoubleRegisterOperand(assigned_register());
+      case FLOAT32x4_REGISTERS:
+        return cache->Float32x4RegisterOperand(assigned_register());
+      case INT32x4_REGISTERS:
+        return cache->Int32x4RegisterOperand(assigned_register());
+      case FLOAT64x2_REGISTERS:
+        return cache->Float64x2RegisterOperand(assigned_register());
       default:
         UNREACHABLE();
     }
@@ -298,6 +304,12 @@ InstructionOperand LiveRange::GetAssignedOperand() const {
         return RegisterOperand(assigned_register());
       case DOUBLE_REGISTERS:
         return DoubleRegisterOperand(assigned_register());
+      case FLOAT32x4_REGISTERS:
+        return Float32x4RegisterOperand(assigned_register());
+      case INT32x4_REGISTERS:
+        return Int32x4RegisterOperand(assigned_register());
+      case FLOAT64x2_REGISTERS:
+        return Float64x2RegisterOperand(assigned_register());
       default:
         UNREACHABLE();
     }
@@ -542,7 +554,8 @@ void LiveRange::ConvertUsesToOperand(InstructionOperand* op,
         }
         break;
       case UsePositionType::kRequiresRegister:
-        DCHECK(op->IsRegister() || op->IsDoubleRegister());
+        DCHECK(op->IsRegister() || op->IsDoubleRegister() ||
+               op->IsSIMD128Register());
       // Fall through.
       case UsePositionType::kAny:
         pos->operand()->ConvertTo(op->kind(), op->index());
@@ -606,6 +619,18 @@ InstructionOperandCache::InstructionOperandCache() {
   for (size_t i = 0; i < arraysize(double_register_operands_); ++i) {
     double_register_operands_[i] =
         i::compiler::DoubleRegisterOperand(static_cast<int>(i));
+  }
+  for (size_t i = 0; i < arraysize(float32x4_register_operands_); ++i) {
+    float32x4_register_operands_[i] =
+        i::compiler::Float32x4RegisterOperand(static_cast<int>(i));
+  }
+  for (size_t i = 0; i < arraysize(int32x4_register_operands_); ++i) {
+    int32x4_register_operands_[i] =
+        i::compiler::Int32x4RegisterOperand(static_cast<int>(i));
+  }
+  for (size_t i = 0; i < arraysize(float64x2_register_operands_); ++i) {
+    float64x2_register_operands_[i] =
+        i::compiler::Float64x2RegisterOperand(static_cast<int>(i));
   }
 }
 
@@ -956,6 +981,25 @@ void SpillRange::MergeDisjointIntervals(UseInterval* other) {
 }
 
 
+auto GetSpillSlotKind(RegisterKind kind) -> InstructionOperand::Kind {
+  switch (kind) {
+    case GENERAL_REGISTERS:
+      return InstructionOperand::STACK_SLOT;
+    case DOUBLE_REGISTERS:
+      return InstructionOperand::DOUBLE_STACK_SLOT;
+    case FLOAT32x4_REGISTERS:
+      return InstructionOperand::FLOAT32x4_STACK_SLOT;
+    case INT32x4_REGISTERS:
+      return InstructionOperand::INT32x4_STACK_SLOT;
+    case FLOAT64x2_REGISTERS:
+      return InstructionOperand::FLOAT64x2_STACK_SLOT;
+    default:
+      UNREACHABLE();
+      return InstructionOperand::UNALLOCATED;
+  }
+}
+
+
 void RegisterAllocator::AssignSpillSlots() {
   // Merge disjoint spill ranges
   for (size_t i = 0; i < spill_ranges().size(); i++) {
@@ -974,10 +1018,12 @@ void RegisterAllocator::AssignSpillSlots() {
     if (range->IsEmpty()) continue;
     // Allocate a new operand referring to the spill slot.
     auto kind = range->Kind();
-    int index = frame()->AllocateSpillSlot(kind == DOUBLE_REGISTERS);
-    auto op_kind = kind == DOUBLE_REGISTERS
-                       ? InstructionOperand::DOUBLE_STACK_SLOT
-                       : InstructionOperand::STACK_SLOT;
+    bool is_double = kind == DOUBLE_REGISTERS;
+    bool is_simd128 = kind == INT32x4_REGISTERS ||
+                      kind == FLOAT32x4_REGISTERS ||
+                      kind == FLOAT64x2_REGISTERS;
+    int index = frame()->AllocateSpillSlot(is_double, is_simd128);
+    auto op_kind = GetSpillSlotKind(kind);
     auto op = InstructionOperand::New(code_zone(), op_kind, index);
     range->SetOperand(op);
   }
@@ -1976,6 +2022,9 @@ void RegisterAllocator::AllocateRegisters() {
     if (range == nullptr) continue;
     if (range->Kind() == mode_) {
       AddToUnhandledUnsorted(range);
+    } else if (mode_ == DOUBLE_REGISTERS &&
+               IsSIMD128RegisterKind(range->Kind())) {
+      AddToUnhandledUnsorted(range);
     }
   }
   SortUnhandled();
@@ -2087,8 +2136,12 @@ bool RegisterAllocator::HasTaggedValue(int virtual_register) const {
 
 RegisterKind RegisterAllocator::RequiredRegisterKind(
     int virtual_register) const {
-  return (code()->IsDouble(virtual_register)) ? DOUBLE_REGISTERS
-                                              : GENERAL_REGISTERS;
+  if (code()->IsDouble(virtual_register)) return DOUBLE_REGISTERS;
+  if (code()->IsFloat32x4(virtual_register)) return FLOAT32x4_REGISTERS;
+  if (code()->IsInt32x4(virtual_register)) return INT32x4_REGISTERS;
+  if (code()->IsFloat64x2(virtual_register)) return FLOAT64x2_REGISTERS;
+
+  return GENERAL_REGISTERS;
 }
 
 
@@ -2208,7 +2261,8 @@ bool RegisterAllocator::TryAllocateFreeReg(LiveRange* current) {
   }
 
   auto hint = current->FirstHint();
-  if (hint != nullptr && (hint->IsRegister() || hint->IsDoubleRegister())) {
+  if (hint != nullptr && (hint->IsRegister() || hint->IsDoubleRegister() ||
+                          hint->IsSIMD128Register())) {
     int register_index = hint->index();
     TRACE("Found reg hint %s (free until [%d) for live range %d (end %d[).\n",
           RegisterName(register_index), free_until_pos[register_index].Value(),
@@ -2574,7 +2628,8 @@ void RegisterAllocator::Verify() const {
 
 void RegisterAllocator::SetLiveRangeAssignedRegister(LiveRange* range,
                                                      int reg) {
-  if (range->Kind() == DOUBLE_REGISTERS) {
+  if (range->Kind() == DOUBLE_REGISTERS ||
+      IsSIMD128RegisterKind(range->Kind())) {
     assigned_double_registers_->Add(reg);
   } else {
     DCHECK(range->Kind() == GENERAL_REGISTERS);

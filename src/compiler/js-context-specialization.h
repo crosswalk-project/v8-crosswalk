@@ -5,6 +5,7 @@
 #ifndef V8_COMPILER_JS_CONTEXT_SPECIALIZATION_H_
 #define V8_COMPILER_JS_CONTEXT_SPECIALIZATION_H_
 
+#include "src/compiler.h"
 #include "src/compiler/graph-reducer.h"
 #include "src/compiler/js-graph.h"
 #include "src/contexts.h"
@@ -24,6 +25,8 @@ class JSContextSpecializer : public Reducer {
   // Visible for unit testing.
   Reduction ReduceJSLoadContext(Node* node);
   Reduction ReduceJSStoreContext(Node* node);
+  static bool ContextVarIsInitialized(Node* node, Node* fcontext,
+                                      CompilationInfo* info);
 
  private:
   JSGraph* jsgraph_;

@@ -24,6 +24,9 @@ class PlatformInterfaceDescriptor;
   V(FastNewClosure)                           \
   V(FastNewContext)                           \
   V(ToNumber)                                 \
+  V(ToFloat32x4)                              \
+  V(ToInt32x4)                                \
+  V(ToFloat64x2)                              \
   V(NumberToString)                           \
   V(FastCloneShallowArray)                    \
   V(FastCloneShallowObject)                   \
@@ -36,6 +39,9 @@ class PlatformInterfaceDescriptor;
   V(RegExpConstructResult)                    \
   V(TransitionElementsKind)                   \
   V(AllocateHeapNumber)                       \
+  V(AllocateFloat32x4)                        \
+  V(AllocateInt32x4)                          \
+  V(AllocateFloat64x2)                        \
   V(ArrayConstructorConstantArgCount)         \
   V(ArrayConstructor)                         \
   V(InternalArrayConstructorConstantArgCount) \
@@ -296,6 +302,24 @@ class ToNumberDescriptor : public CallInterfaceDescriptor {
 };
 
 
+class ToFloat32x4Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(ToFloat32x4Descriptor, CallInterfaceDescriptor)
+};
+
+
+class ToInt32x4Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(ToInt32x4Descriptor, CallInterfaceDescriptor)
+};
+
+
+class ToFloat64x2Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(ToFloat64x2Descriptor, CallInterfaceDescriptor)
+};
+
+
 class NumberToStringDescriptor : public CallInterfaceDescriptor {
  public:
   DECLARE_DESCRIPTOR(NumberToStringDescriptor, CallInterfaceDescriptor)
@@ -375,6 +399,24 @@ class TransitionElementsKindDescriptor : public CallInterfaceDescriptor {
 class AllocateHeapNumberDescriptor : public CallInterfaceDescriptor {
  public:
   DECLARE_DESCRIPTOR(AllocateHeapNumberDescriptor, CallInterfaceDescriptor)
+};
+
+
+class AllocateFloat32x4Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(AllocateFloat32x4Descriptor, CallInterfaceDescriptor)
+};
+
+
+class AllocateInt32x4Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(AllocateInt32x4Descriptor, CallInterfaceDescriptor)
+};
+
+
+class AllocateFloat64x2Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(AllocateFloat64x2Descriptor, CallInterfaceDescriptor)
 };
 
 
