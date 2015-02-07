@@ -712,6 +712,45 @@ Reduction JSTypedLowering::ReduceJSToNumber(Node* node) {
 }
 
 
+Reduction JSTypedLowering::ReduceJSToFloat32x4Obj(Node* node) {
+  Node* const input = node->InputAt(0);
+  if (input->opcode() == IrOpcode::kJSToFloat32x4Obj) {
+    // Recursively try to reduce the input first.
+    Reduction result = ReduceJSToFloat32x4Obj(input);
+    if (!result.Changed()) result = Changed(input);
+    NodeProperties::ReplaceWithValue(node, result.replacement());
+    return result;
+  }
+  return NoChange();
+}
+
+
+Reduction JSTypedLowering::ReduceJSToInt32x4Obj(Node* node) {
+  Node* const input = node->InputAt(0);
+  if (input->opcode() == IrOpcode::kJSToInt32x4Obj) {
+    // Recursively try to reduce the input first.
+    Reduction result = ReduceJSToInt32x4Obj(input);
+    if (!result.Changed()) result = Changed(input);
+    NodeProperties::ReplaceWithValue(node, result.replacement());
+    return result;
+  }
+  return NoChange();
+}
+
+
+Reduction JSTypedLowering::ReduceJSToFloat64x2Obj(Node* node) {
+  Node* const input = node->InputAt(0);
+  if (input->opcode() == IrOpcode::kJSToFloat64x2Obj) {
+    // Recursively try to reduce the input first.
+    Reduction result = ReduceJSToFloat64x2Obj(input);
+    if (!result.Changed()) result = Changed(input);
+    NodeProperties::ReplaceWithValue(node, result.replacement());
+    return result;
+  }
+  return NoChange();
+}
+
+
 Reduction JSTypedLowering::ReduceJSToStringInput(Node* input) {
   if (input->opcode() == IrOpcode::kJSToString) {
     // Recursively try to reduce the input first.
@@ -784,6 +823,146 @@ Reduction JSTypedLowering::ReduceJSLoadProperty(Node* node) {
       Node* load = graph()->NewNode(simplified()->LoadBuffer(access), buffer,
                                     offset, length, effect, control);
       return ReplaceEagerly(node, load);
+    }
+  }
+  return NoChange();
+}
+
+
+Type* JSTypedLowering::GetFloat32x4() {
+  DCHECK(jsgraph()->isolate()->IsSimdEnabled());
+  if (!float32x4_.is_set()) {
+    Isolate* isolate = jsgraph()->isolate();
+    Handle<Map> float32x4_map =
+        handle(isolate->native_context()->float32x4_function()->initial_map(),
+               isolate);
+    Type* float32x4_type = Type::Class(float32x4_map, jsgraph()->zone());
+    float32x4_.set(float32x4_type);
+  }
+
+  return float32x4_.get();
+}
+
+
+Type* JSTypedLowering::GetInt32x4() {
+  DCHECK(jsgraph()->isolate()->IsSimdEnabled());
+  if (!int32x4_.is_set()) {
+    Isolate* isolate = jsgraph()->isolate();
+    Handle<Map> int32x4_map = handle(
+        isolate->native_context()->int32x4_function()->initial_map(), isolate);
+    Type* int32x4_type = Type::Class(int32x4_map, jsgraph()->zone());
+    int32x4_.set(int32x4_type);
+  }
+
+  return int32x4_.get();
+}
+
+
+Type* JSTypedLowering::GetFloat64x2() {
+  DCHECK(jsgraph()->isolate()->IsSimdEnabled());
+  if (!float64x2_.is_set()) {
+    Isolate* isolate = jsgraph()->isolate();
+    Handle<Map> float64x2_map =
+        handle(isolate->native_context()->float64x2_function()->initial_map(),
+               isolate);
+    Type* float64x2_type = Type::Class(float64x2_map, jsgraph()->zone());
+    float64x2_.set(float64x2_type);
+  }
+
+  return float64x2_.get();
+}
+
+
+Reduction JSTypedLowering::ReduceJSLoadNamed(Node* node) {
+  Isolate* isolate = jsgraph_->isolate();
+  // During boostrapping, simd mobule might not be ready.
+  if (isolate->IsSimdEnabled()) {
+    Node* obj = NodeProperties::GetValueInput(node, 0);
+    const LoadNamedParameters& p = LoadNamedParametersOf(node->op());
+    if (NodeProperties::GetBounds(obj).upper->Is(GetFloat32x4())) {
+      Node* value = NULL;
+      Handle<Name> name = p.name().handle();
+      if (name->Equals(isolate->heap()->x())) {
+        value = graph()->NewNode(machine()->Float32x4GetX(), obj);
+      } else if (name->Equals(isolate->heap()->y())) {
+        value = graph()->NewNode(machine()->Float32x4GetY(), obj);
+      } else if (name->Equals(isolate->heap()->z())) {
+        value = graph()->NewNode(machine()->Float32x4GetZ(), obj);
+      } else if (name->Equals(isolate->heap()->w())) {
+        value = graph()->NewNode(machine()->Float32x4GetW(), obj);
+      } else if (name->Equals(isolate->heap()->signMask())) {
+        value = graph()->NewNode(machine()->Float32x4GetSignMask(), obj);
+      }
+
+      if (value != NULL) {
+        NodeProperties::ReplaceWithValue(node, value);
+        return Replace(value);
+      } else if (FLAG_simd_warning) {
+        fprintf(stderr, "Warning: Float32x4 property access is not inlined!\n");
+      }
+    } else if (NodeProperties::GetBounds(obj).upper->Is(GetInt32x4())) {
+      Node* value = NULL;
+      Handle<Name> name = p.name().handle();
+      if (name->Equals(isolate->heap()->x())) {
+        value = graph()->NewNode(machine()->Int32x4GetX(), obj);
+      } else if (name->Equals(isolate->heap()->y())) {
+        value = graph()->NewNode(machine()->Int32x4GetY(), obj);
+      } else if (name->Equals(isolate->heap()->z())) {
+        value = graph()->NewNode(machine()->Int32x4GetZ(), obj);
+      } else if (name->Equals(isolate->heap()->w())) {
+        value = graph()->NewNode(machine()->Int32x4GetW(), obj);
+      } else if (name->Equals(isolate->heap()->flagX())) {
+        value = graph()->NewNode(machine()->Int32x4GetFlagX(), obj);
+      } else if (name->Equals(isolate->heap()->flagY())) {
+        value = graph()->NewNode(machine()->Int32x4GetFlagY(), obj);
+      } else if (name->Equals(isolate->heap()->flagZ())) {
+        value = graph()->NewNode(machine()->Int32x4GetFlagZ(), obj);
+      } else if (name->Equals(isolate->heap()->flagW())) {
+        value = graph()->NewNode(machine()->Int32x4GetFlagW(), obj);
+      } else if (name->Equals(isolate->heap()->signMask())) {
+        value = graph()->NewNode(machine()->Int32x4GetSignMask(), obj);
+      }
+
+      if (value != NULL) {
+        NodeProperties::ReplaceWithValue(node, value);
+        return Replace(value);
+      } else if (FLAG_simd_warning) {
+        fprintf(stderr, "Warning: Int32x4 property access is not inlined!\n");
+      }
+    } else if (NodeProperties::GetBounds(obj).upper->Is(GetFloat64x2())) {
+      Node* value = NULL;
+      Handle<Name> name = p.name().handle();
+      if (name->Equals(isolate->heap()->x())) {
+        value = graph()->NewNode(machine()->Float64x2GetX(), obj);
+      } else if (name->Equals(isolate->heap()->y())) {
+        value = graph()->NewNode(machine()->Float64x2GetY(), obj);
+      } else if (name->Equals(isolate->heap()->signMask())) {
+        value = graph()->NewNode(machine()->Float64x2GetSignMask(), obj);
+      }
+
+      if (value != NULL) {
+        NodeProperties::ReplaceWithValue(node, value);
+        return Replace(value);
+      } else if (FLAG_simd_warning) {
+        fprintf(stderr, "Warning: Float64x2 property access is not inlined!\n");
+      }
+    }
+
+    if (FLAG_simd_warning) {
+      Handle<Name> name = p.name().handle();
+      if (name->Equals(isolate->heap()->x()) ||
+          name->Equals(isolate->heap()->y()) ||
+          name->Equals(isolate->heap()->z()) ||
+          name->Equals(isolate->heap()->signMask())) {
+        fprintf(stderr,
+                "Warning: Float64x2 property access may be not inlined!\n");
+#ifdef OBJECT_PRINT
+        OFStream os(stderr);
+        os << "  ";
+        name->NamePrint(os);
+        os << "\n";
+#endif
+      }
     }
   }
   return NoChange();
@@ -994,10 +1173,14 @@ Reduction JSTypedLowering::Reduce(Node* node) {
       return ReduceJSToBoolean(node);
     case IrOpcode::kJSToNumber:
       return ReduceJSToNumber(node);
+    case IrOpcode::kJSToFloat32x4Obj:
+      return ReduceJSToFloat32x4Obj(node);
     case IrOpcode::kJSToString:
       return ReduceJSToString(node);
     case IrOpcode::kJSLoadProperty:
       return ReduceJSLoadProperty(node);
+    case IrOpcode::kJSLoadNamed:
+      return ReduceJSLoadNamed(node);
     case IrOpcode::kJSStoreProperty:
       return ReduceJSStoreProperty(node);
     case IrOpcode::kJSLoadContext:

@@ -108,6 +108,7 @@ void InstructionSelector::VisitLoad(Node* node) {
   X64OperandGenerator g(this);
 
   ArchOpcode opcode;
+  Node* loaded_bytes = NULL;
   switch (rep) {
     case kRepFloat32:
       opcode = kX64Movss;
@@ -129,18 +130,29 @@ void InstructionSelector::VisitLoad(Node* node) {
     case kRepWord64:
       opcode = kX64Movq;
       break;
+    case kRepFloat32x4:
+    case kRepInt32x4:
+    case kRepFloat64x2:
+      opcode = kLoadSIMD128;
+      loaded_bytes = node->InputAt(2);
+      break;
     default:
       UNREACHABLE();
       return;
   }
+  DCHECK(loaded_bytes == NULL || g.CanBeImmediate(loaded_bytes));
 
   InstructionOperand outputs[1];
   outputs[0] = g.DefineAsRegister(node);
-  InstructionOperand inputs[3];
+  InstructionOperand inputs[4];
+
   size_t input_count = 0;
   AddressingMode mode =
       g.GetEffectiveAddressMemoryOperand(node, inputs, &input_count);
   InstructionCode code = opcode | AddressingModeField::encode(mode);
+  if (loaded_bytes != NULL) {
+    inputs[input_count++] = g.UseImmediate(loaded_bytes);
+  }
   Emit(code, 1, outputs, input_count, inputs);
 }
 
@@ -165,6 +177,7 @@ void InstructionSelector::VisitStore(Node* node) {
     return;
   }
   DCHECK_EQ(kNoWriteBarrier, store_rep.write_barrier_kind());
+  Node* stored_bytes = NULL;
   ArchOpcode opcode;
   switch (rep) {
     case kRepFloat32:
@@ -187,11 +200,19 @@ void InstructionSelector::VisitStore(Node* node) {
     case kRepWord64:
       opcode = kX64Movq;
       break;
+    case kRepFloat32x4:
+    case kRepInt32x4:
+    case kRepFloat64x2:
+      opcode = kStoreSIMD128;
+      stored_bytes = node->InputAt(3);
+      break;
     default:
       UNREACHABLE();
       return;
   }
-  InstructionOperand inputs[4];
+  DCHECK(stored_bytes == NULL || g.CanBeImmediate(stored_bytes));
+  InstructionOperand inputs[5];
+
   size_t input_count = 0;
   AddressingMode mode =
       g.GetEffectiveAddressMemoryOperand(node, inputs, &input_count);
@@ -199,6 +220,10 @@ void InstructionSelector::VisitStore(Node* node) {
   InstructionOperand value_operand =
       g.CanBeImmediate(value) ? g.UseImmediate(value) : g.UseRegister(value);
   inputs[input_count++] = value_operand;
+  if (stored_bytes != NULL) {
+    DCHECK(g.CanBeImmediate(stored_bytes));
+    inputs[input_count++] = g.UseImmediate(stored_bytes);
+  }
   Emit(code, 0, static_cast<InstructionOperand*>(NULL), input_count, inputs);
 }
 
@@ -211,6 +236,8 @@ void InstructionSelector::VisitCheckedLoad(Node* node) {
   Node* const offset = node->InputAt(1);
   Node* const length = node->InputAt(2);
   ArchOpcode opcode;
+  // To support simd.js partial load.
+  Node* loaded_bytes = NULL;
   switch (rep) {
     case kRepWord8:
       opcode = typ == kTypeInt32 ? kCheckedLoadInt8 : kCheckedLoadUint8;
@@ -227,26 +254,48 @@ void InstructionSelector::VisitCheckedLoad(Node* node) {
     case kRepFloat64:
       opcode = kCheckedLoadFloat64;
       break;
+    case kRepFloat32x4:
+    case kRepInt32x4:
+    case kRepFloat64x2:
+      opcode = kCheckedLoadSIMD128;
+      loaded_bytes = node->InputAt(3);
+      break;
     default:
       UNREACHABLE();
       return;
   }
+  DCHECK(loaded_bytes == NULL || g.CanBeImmediate(loaded_bytes));
+
   if (offset->opcode() == IrOpcode::kInt32Add && CanCover(node, offset)) {
     Int32Matcher mlength(length);
     Int32BinopMatcher moffset(offset);
     if (mlength.HasValue() && moffset.right().HasValue() &&
         moffset.right().Value() >= 0 &&
         mlength.Value() >= moffset.right().Value()) {
-      Emit(opcode, g.DefineAsRegister(node), g.UseRegister(buffer),
-           g.UseRegister(moffset.left().node()),
-           g.UseImmediate(moffset.right().node()), g.UseImmediate(length));
+      if (loaded_bytes != NULL) {
+        Emit(opcode, g.DefineAsRegister(node), g.UseRegister(buffer),
+             g.UseRegister(moffset.left().node()),
+             g.UseImmediate(moffset.right().node()), g.UseImmediate(length),
+             g.UseImmediate(loaded_bytes));
+
+      } else {
+        Emit(opcode, g.DefineAsRegister(node), g.UseRegister(buffer),
+             g.UseRegister(moffset.left().node()),
+             g.UseImmediate(moffset.right().node()), g.UseImmediate(length));
+      }
       return;
     }
   }
   InstructionOperand length_operand =
       g.CanBeImmediate(length) ? g.UseImmediate(length) : g.UseRegister(length);
-  Emit(opcode, g.DefineAsRegister(node), g.UseRegister(buffer),
-       g.UseRegister(offset), g.TempImmediate(0), length_operand);
+  if (loaded_bytes != NULL) {
+    Emit(opcode, g.DefineAsRegister(node), g.UseRegister(buffer),
+         g.UseRegister(offset), g.TempImmediate(0), length_operand,
+         g.UseImmediate(loaded_bytes));
+  } else {
+    Emit(opcode, g.DefineAsRegister(node), g.UseRegister(buffer),
+         g.UseRegister(offset), g.TempImmediate(0), length_operand);
+  }
 }
 
 
@@ -258,6 +307,7 @@ void InstructionSelector::VisitCheckedStore(Node* node) {
   Node* const length = node->InputAt(2);
   Node* const value = node->InputAt(3);
   ArchOpcode opcode;
+  Node* stored_bytes = NULL;
   switch (rep) {
     case kRepWord8:
       opcode = kCheckedStoreWord8;
@@ -274,29 +324,51 @@ void InstructionSelector::VisitCheckedStore(Node* node) {
     case kRepFloat64:
       opcode = kCheckedStoreFloat64;
       break;
+    case kRepFloat32x4:
+    case kRepInt32x4:
+    case kRepFloat64x2:
+      opcode = kCheckedStoreSIMD128;
+      stored_bytes = node->InputAt(4);
+      break;
     default:
       UNREACHABLE();
       return;
   }
+  DCHECK(stored_bytes == NULL || g.CanBeImmediate(stored_bytes));
+
   InstructionOperand value_operand =
       g.CanBeImmediate(value) ? g.UseImmediate(value) : g.UseRegister(value);
+
   if (offset->opcode() == IrOpcode::kInt32Add && CanCover(node, offset)) {
     Int32Matcher mlength(length);
     Int32BinopMatcher moffset(offset);
     if (mlength.HasValue() && moffset.right().HasValue() &&
         moffset.right().Value() >= 0 &&
         mlength.Value() >= moffset.right().Value()) {
-      Emit(opcode, g.NoOutput(), g.UseRegister(buffer),
+      if (stored_bytes != NULL) {
+        Emit(opcode, g.NoOutput(), g.UseRegister(buffer),
+           g.UseRegister(moffset.left().node()),
+           g.UseImmediate(moffset.right().node()), g.UseImmediate(length),
+           value_operand, g.UseImmediate(stored_bytes));
+      } else {
+        Emit(opcode, g.NoOutput(), g.UseRegister(buffer),
            g.UseRegister(moffset.left().node()),
            g.UseImmediate(moffset.right().node()), g.UseImmediate(length),
            value_operand);
+      }
       return;
     }
   }
   InstructionOperand length_operand =
       g.CanBeImmediate(length) ? g.UseImmediate(length) : g.UseRegister(length);
-  Emit(opcode, g.NoOutput(), g.UseRegister(buffer), g.UseRegister(offset),
-       g.TempImmediate(0), length_operand, value_operand);
+  if (stored_bytes != NULL) {
+    Emit(opcode, g.NoOutput(), g.UseRegister(buffer), g.UseRegister(offset),
+         g.TempImmediate(0), length_operand, value_operand,
+         g.UseImmediate(stored_bytes));
+  } else {
+    Emit(opcode, g.NoOutput(), g.UseRegister(buffer), g.UseRegister(offset),
+         g.TempImmediate(0), length_operand, value_operand);
+  }
 }
 
 
@@ -1400,6 +1472,294 @@ void InstructionSelector::VisitFloat64LessThan(Node* node) {
 void InstructionSelector::VisitFloat64LessThanOrEqual(Node* node) {
   FlagsContinuation cont(kUnsignedGreaterThanOrEqual, node);
   VisitFloat64Compare(this, node, &cont);
+}
+
+#define BINARY_SIMD_OPERATION_LIST1(V) \
+  V(Float32x4Add)                      \
+  V(Float32x4Sub)                      \
+  V(Float32x4Mul)                      \
+  V(Float32x4Div)
+
+#define DECLARE_VISIT_BINARY_SIMD_OPERATION1(type)                            \
+  void InstructionSelector::Visit##type(Node* node) {                         \
+    X64OperandGenerator g(this);                                              \
+    InstructionOperand output = IsSupported(AVX) ? g.DefineAsRegister(node)   \
+                                                 : g.DefineSameAsFirst(node); \
+    InstructionOperand src2 = IsSupported(AVX)                                \
+                                  ? g.Use(node->InputAt(1))                   \
+                                  : g.UseRegister(node->InputAt(1));          \
+    Emit(k##type, output, g.UseRegister(node->InputAt(0)), src2);             \
+  }
+
+
+BINARY_SIMD_OPERATION_LIST1(DECLARE_VISIT_BINARY_SIMD_OPERATION1)
+
+
+void InstructionSelector::VisitFloat32x4Constructor(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kFloat32x4Constructor, g.DefineAsRegister(node),
+       g.UseRegister(node->InputAt(0)), g.UseRegister(node->InputAt(1)),
+       g.UseRegister(node->InputAt(2)), g.UseRegister(node->InputAt(3)));
+}
+
+
+// TODO(chunyang): current code generation for int32x4 requires register for
+// both input parameters. We can optimize it later.
+void InstructionSelector::VisitInt32x4Mul(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kInt32x4Mul, g.DefineSameAsFirst(node), g.UseRegister(node->InputAt(0)),
+       g.UseRegister(node->InputAt(1)));
+}
+
+
+void InstructionSelector::VisitInt32x4Constructor(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kInt32x4Constructor, g.DefineAsRegister(node),
+       g.UseRegister(node->InputAt(0)), g.UseRegister(node->InputAt(1)),
+       g.UseRegister(node->InputAt(2)), g.UseRegister(node->InputAt(3)));
+}
+
+
+void InstructionSelector::VisitInt32x4Bool(Node* node) {
+  X64OperandGenerator g(this);
+  InstructionOperand temps[] = {g.TempRegister(rbx)};
+  Emit(kInt32x4Bool, g.DefineAsRegister(node), g.UseRegister(node->InputAt(0)),
+       g.UseRegister(node->InputAt(1)), g.UseRegister(node->InputAt(2)),
+       g.UseRegister(node->InputAt(3)), 1, temps);
+}
+
+
+void InstructionSelector::VisitFloat64x2Constructor(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kFloat64x2Constructor, g.DefineAsRegister(node),
+       g.UseRegister(node->InputAt(0)), g.UseRegister(node->InputAt(1)));
+}
+
+
+#define UNARY_SIMD_OPERATION_LIST1(V) \
+  V(Float32x4GetX)                    \
+  V(Float32x4GetY)                    \
+  V(Float32x4GetZ)                    \
+  V(Float32x4GetW)                    \
+  V(Float32x4GetSignMask)             \
+  V(Float32x4Splat)                   \
+  V(Int32x4GetX)                      \
+  V(Int32x4GetY)                      \
+  V(Int32x4GetZ)                      \
+  V(Int32x4GetW)                      \
+  V(Int32x4GetFlagX)                  \
+  V(Int32x4GetFlagY)                  \
+  V(Int32x4GetFlagZ)                  \
+  V(Int32x4GetFlagW)                  \
+  V(Int32x4GetSignMask)               \
+  V(Int32x4Splat)                     \
+  V(Int32x4BitsToFloat32x4)           \
+  V(Int32x4ToFloat32x4)               \
+  V(Float32x4BitsToInt32x4)           \
+  V(Float32x4ToInt32x4)               \
+  V(Float64x2GetX)                    \
+  V(Float64x2GetY)                    \
+  V(Float64x2GetSignMask)
+
+#define DECLARE_VISIT_UARY_SIMD_OPERATION1(opcode)      \
+  void InstructionSelector::Visit##opcode(Node* node) { \
+    X64OperandGenerator g(this);                        \
+    Emit(k##opcode, g.DefineAsRegister(node),           \
+         g.UseRegister(node->InputAt(0)));              \
+  }
+
+
+UNARY_SIMD_OPERATION_LIST1(DECLARE_VISIT_UARY_SIMD_OPERATION1)
+
+
+#define UNARY_SIMD_OPERATION_LIST2(V) \
+  V(Float32x4Abs)                     \
+  V(Float32x4Neg)                     \
+  V(Float32x4Reciprocal)              \
+  V(Float32x4ReciprocalSqrt)          \
+  V(Float32x4Sqrt)                    \
+  V(Int32x4Neg)                       \
+  V(Int32x4Not)                       \
+  V(Float64x2Abs)                     \
+  V(Float64x2Neg)                     \
+  V(Float64x2Sqrt)
+
+// TODO(weiliang): free Sqrt SameAsFirst constraint.
+#define DECLARE_VISIT_UARY_SIMD_OPERATION2(opcode)      \
+  void InstructionSelector::Visit##opcode(Node* node) { \
+    X64OperandGenerator g(this);                        \
+    Emit(k##opcode, g.DefineSameAsFirst(node),          \
+         g.UseRegister(node->InputAt(0)));              \
+  }
+
+
+UNARY_SIMD_OPERATION_LIST2(DECLARE_VISIT_UARY_SIMD_OPERATION2)
+
+
+#define BINARY_SIMD_OPERATION_LIST2(V) \
+  V(Float32x4Min)                      \
+  V(Float32x4Max)                      \
+  V(Int32x4Add)                        \
+  V(Int32x4And)                        \
+  V(Int32x4Sub)                        \
+  V(Int32x4Or)                         \
+  V(Int32x4Xor)                        \
+  V(Int32x4Equal)                      \
+  V(Int32x4GreaterThan)                \
+  V(Int32x4LessThan)                   \
+  V(Float64x2Add)                      \
+  V(Float64x2Sub)                      \
+  V(Float64x2Mul)                      \
+  V(Float64x2Div)                      \
+  V(Float64x2Min)                      \
+  V(Float64x2Max)                      \
+  V(Float32x4Scale)                    \
+  V(Float32x4WithX)                    \
+  V(Float32x4WithY)                    \
+  V(Float32x4WithZ)                    \
+  V(Float32x4WithW)                    \
+  V(Int32x4WithX)                      \
+  V(Int32x4WithY)                      \
+  V(Int32x4WithZ)                      \
+  V(Int32x4WithW)                      \
+  V(Float64x2Scale)                    \
+  V(Float64x2WithX)                    \
+  V(Float64x2WithY)
+
+#define DECLARE_VISIT_BINARY_SIMD_OPERATION2(type)                            \
+  void InstructionSelector::Visit##type(Node* node) {                         \
+    X64OperandGenerator g(this);                                              \
+    Emit(k##type, g.DefineSameAsFirst(node), g.UseRegister(node->InputAt(0)), \
+         g.UseRegister(node->InputAt(1)));                                    \
+  }
+
+
+BINARY_SIMD_OPERATION_LIST2(DECLARE_VISIT_BINARY_SIMD_OPERATION2)
+
+
+#define BINARY_SIMD_OPERATION_LIST3(V) \
+  V(Float32x4Equal)                    \
+  V(Float32x4NotEqual)                 \
+  V(Float32x4GreaterThan)              \
+  V(Float32x4GreaterThanOrEqual)       \
+  V(Float32x4LessThan)                 \
+  V(Float32x4LessThanOrEqual)
+
+#define DECLARE_VISIT_BINARY_SIMD_OPERATION3(type)                           \
+  void InstructionSelector::Visit##type(Node* node) {                        \
+    X64OperandGenerator g(this);                                             \
+    Emit(k##type, g.DefineAsRegister(node), g.UseRegister(node->InputAt(0)), \
+         g.UseRegister(node->InputAt(1)));                                   \
+  }
+
+
+BINARY_SIMD_OPERATION_LIST3(DECLARE_VISIT_BINARY_SIMD_OPERATION3)
+
+
+void InstructionSelector::VisitFloat32x4Clamp(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kFloat32x4Clamp, g.DefineSameAsFirst(node),
+       g.UseRegister(node->InputAt(0)), g.UseRegister(node->InputAt(1)),
+       g.UseRegister(node->InputAt(2)));
+}
+
+
+void InstructionSelector::VisitFloat64x2Clamp(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kFloat64x2Clamp, g.DefineSameAsFirst(node),
+       g.UseRegister(node->InputAt(0)), g.UseRegister(node->InputAt(1)),
+       g.UseRegister(node->InputAt(2)));
+}
+
+
+void InstructionSelector::VisitFloat32x4Select(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kFloat32x4Select, g.DefineAsRegister(node),
+       g.UseRegister(node->InputAt(0)), g.UseRegister(node->InputAt(1)),
+       g.UseRegister(node->InputAt(2)));
+}
+
+
+void InstructionSelector::VisitInt32x4Select(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kInt32x4Select, g.DefineAsRegister(node),
+       g.UseRegister(node->InputAt(0)), g.UseRegister(node->InputAt(1)),
+       g.UseRegister(node->InputAt(2)));
+}
+
+
+void InstructionSelector::VisitFloat32x4Swizzle(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kFloat32x4Swizzle, g.DefineSameAsFirst(node),
+       g.UseRegister(node->InputAt(0)), g.UseImmediate(node->InputAt(1)),
+       g.UseImmediate(node->InputAt(2)), g.UseImmediate(node->InputAt(3)),
+       g.UseImmediate(node->InputAt(4)));
+}
+
+
+void InstructionSelector::VisitFloat32x4Shuffle(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kFloat32x4Shuffle, g.DefineSameAsFirst(node),
+       g.UseRegister(node->InputAt(0)), g.UseRegister(node->InputAt(1)),
+       g.UseImmediate(node->InputAt(2)), g.UseImmediate(node->InputAt(3)),
+       g.UseImmediate(node->InputAt(4)), g.UseImmediate(node->InputAt(5)));
+}
+
+
+void InstructionSelector::VisitInt32x4Shuffle(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kInt32x4Shuffle, g.DefineSameAsFirst(node),
+       g.UseRegister(node->InputAt(0)), g.UseRegister(node->InputAt(1)),
+       g.UseImmediate(node->InputAt(2)), g.UseImmediate(node->InputAt(3)),
+       g.UseImmediate(node->InputAt(4)), g.UseImmediate(node->InputAt(5)));
+}
+
+
+void InstructionSelector::VisitInt32x4Swizzle(Node* node) {
+  X64OperandGenerator g(this);
+  Emit(kInt32x4Swizzle, g.DefineSameAsFirst(node),
+       g.UseRegister(node->InputAt(0)), g.UseImmediate(node->InputAt(1)),
+       g.UseImmediate(node->InputAt(2)), g.UseImmediate(node->InputAt(3)),
+       g.UseImmediate(node->InputAt(4)));
+}
+
+
+void InstructionSelector::VisitInt32x4ShiftLeft(Node* node) {
+  X64OperandGenerator g(this);
+  Node* shift = node->InputAt(1);
+  if (g.CanBeImmediate(shift)) {
+    Emit(kInt32x4ShiftLeft, g.DefineSameAsFirst(node),
+         g.UseRegister(node->InputAt(0)), g.UseImmediate(shift));
+  } else {
+    Emit(kInt32x4ShiftLeft, g.DefineSameAsFirst(node),
+         g.UseRegister(node->InputAt(0)), g.Use(shift));
+  }
+}
+
+
+void InstructionSelector::VisitInt32x4ShiftRight(Node* node) {
+  X64OperandGenerator g(this);
+  Node* shift = node->InputAt(1);
+  if (g.CanBeImmediate(shift)) {
+    Emit(kInt32x4ShiftRight, g.DefineSameAsFirst(node),
+         g.UseRegister(node->InputAt(0)), g.UseImmediate(shift));
+  } else {
+    Emit(kInt32x4ShiftRight, g.DefineSameAsFirst(node),
+         g.UseRegister(node->InputAt(0)), g.Use(shift));
+  }
+}
+
+
+void InstructionSelector::VisitInt32x4ShiftRightArithmetic(Node* node) {
+  X64OperandGenerator g(this);
+  Node* shift = node->InputAt(1);
+  if (g.CanBeImmediate(shift)) {
+    Emit(kInt32x4ShiftRightArithmetic, g.DefineSameAsFirst(node),
+         g.UseRegister(node->InputAt(0)), g.UseImmediate(shift));
+  } else {
+    Emit(kInt32x4ShiftRightArithmetic, g.DefineSameAsFirst(node),
+         g.UseRegister(node->InputAt(0)), g.Use(shift));
+  }
 }
 
 
