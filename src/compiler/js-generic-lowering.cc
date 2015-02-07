@@ -307,6 +307,24 @@ void JSGenericLowering::LowerJSToObject(Node* node) {
 }
 
 
+void JSGenericLowering::LowerJSToFloat32x4Obj(Node* node) {
+  Callable callable = CodeFactory::ToFloat32x4Obj(isolate());
+  ReplaceWithStubCall(node, callable, FlagsForNode(node));
+}
+
+
+void JSGenericLowering::LowerJSToInt32x4Obj(Node* node) {
+  Callable callable = CodeFactory::ToInt32x4Obj(isolate());
+  ReplaceWithStubCall(node, callable, FlagsForNode(node));
+}
+
+
+void JSGenericLowering::LowerJSToFloat64x2Obj(Node* node) {
+  Callable callable = CodeFactory::ToFloat64x2Obj(isolate());
+  ReplaceWithStubCall(node, callable, FlagsForNode(node));
+}
+
+
 void JSGenericLowering::LowerJSLoadProperty(Node* node) {
   const LoadPropertyParameters& p = LoadPropertyParametersOf(node->op());
   Callable callable =

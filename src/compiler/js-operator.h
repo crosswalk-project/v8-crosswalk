@@ -225,6 +225,9 @@ class JSOperatorBuilder FINAL : public ZoneObject {
   const Operator* ToString();
   const Operator* ToName();
   const Operator* ToObject();
+  const Operator* ToFloat32x4Obj();
+  const Operator* ToInt32x4Obj();
+  const Operator* ToFloat64x2Obj();
   const Operator* Yield();
 
   const Operator* Create();

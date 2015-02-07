@@ -2799,13 +2799,16 @@ Node* AstGraphBuilder::BuildVariableLoad(Variable* variable,
       // TODO(titzer): initialization checks are redundant for already
       // initialized immutable context loads, but only specialization knows.
       // Maybe specializer should be a parameter to the graph builder?
-      if (mode == CONST_LEGACY) {
-        // Perform check for uninitialized legacy const variables.
-        Node* undefined = jsgraph()->UndefinedConstant();
-        value = BuildHoleCheckSilent(value, undefined, value);
-      } else if (mode == LET || mode == CONST) {
-        // Perform check for uninitialized let/const variables.
-        value = BuildHoleCheckThrow(value, variable, value, bailout_id);
+      if (!JSContextSpecializer::ContextVarIsInitialized(
+              value, function_context_.get(), info())) {
+        if (mode == CONST_LEGACY) {
+          // Perform check for uninitialized legacy const variables.
+          Node* undefined = jsgraph()->UndefinedConstant();
+          value = BuildHoleCheckSilent(value, undefined, value);
+        } else if (mode == LET || mode == CONST) {
+          // Perform check for uninitialized let/const variables.
+          value = BuildHoleCheckThrow(value, variable, value, bailout_id);
+        }
       }
       return value;
     }

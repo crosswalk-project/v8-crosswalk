@@ -2648,6 +2648,12 @@ void Isolate::CheckDetachedContextsAfterGC() {
 }
 
 
+bool Isolate::IsSimdEnabled() {
+  // Disable simd.js during bootstrappering.
+  return FLAG_simd_object && !bootstrapper()->IsActive();
+}
+
+
 bool StackLimitCheck::JsHasOverflowed() const {
   StackGuard* stack_guard = isolate_->stack_guard();
 #ifdef USE_SIMULATOR

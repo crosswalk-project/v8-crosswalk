@@ -234,6 +234,9 @@ const StoreNamedParameters& StoreNamedParametersOf(const Operator* op) {
   V(ToString, Operator::kNoProperties, 1, 1)              \
   V(ToName, Operator::kNoProperties, 1, 1)                \
   V(ToObject, Operator::kNoProperties, 1, 1)              \
+  V(ToFloat32x4Obj, Operator::kNoProperties, 1, 1)        \
+  V(ToInt32x4Obj, Operator::kNoProperties, 1, 1)          \
+  V(ToFloat64x2Obj, Operator::kNoProperties, 1, 1)        \
   V(Yield, Operator::kNoProperties, 1, 1)                 \
   V(Create, Operator::kEliminatable, 0, 1)                \
   V(HasProperty, Operator::kNoProperties, 2, 1)           \
