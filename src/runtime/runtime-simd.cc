@@ -15,6 +15,33 @@ namespace v8 {
 namespace internal {
 
 
+RUNTIME_FUNCTION(Runtime_ThrowNotFloat32x4Error) {
+  HandleScope scope(isolate);
+  DCHECK(args.length() == 0);
+  THROW_NEW_ERROR_RETURN_FAILURE(
+      isolate,
+      NewTypeError("not_float32x4_object", HandleVector<Object>(NULL, 0)));
+}
+
+
+RUNTIME_FUNCTION(Runtime_ThrowNotInt32x4Error) {
+  HandleScope scope(isolate);
+  DCHECK(args.length() == 0);
+  THROW_NEW_ERROR_RETURN_FAILURE(
+      isolate,
+      NewTypeError("not_int32x4_object", HandleVector<Object>(NULL, 0)));
+}
+
+
+RUNTIME_FUNCTION(Runtime_ThrowNotFloat64x2Error) {
+  HandleScope scope(isolate);
+  DCHECK(args.length() == 0);
+  THROW_NEW_ERROR_RETURN_FAILURE(
+      isolate,
+      NewTypeError("not_float64x2_object", HandleVector<Object>(NULL, 0)));
+}
+
+
 RUNTIME_FUNCTION(Runtime_AllocateFloat32x4) {
   HandleScope scope(isolate);
   DCHECK(args.length() == 0);

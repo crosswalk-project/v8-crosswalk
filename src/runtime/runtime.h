@@ -598,6 +598,9 @@ namespace internal {
   F(ReThrow, 1, 1)                                           \
   F(ThrowReferenceError, 1, 1)                               \
   F(ThrowNotDateError, 0, 1)                                 \
+  F(ThrowNotFloat32x4Error, 0, 1)                            \
+  F(ThrowNotFloat64x2Error, 0, 1)                            \
+  F(ThrowNotInt32x4Error, 0, 1)                              \
   F(ThrowConstAssignError, 0, 1)                             \
   F(StackGuard, 0, 1)                                        \
   F(Interrupt, 0, 1)                                         \
