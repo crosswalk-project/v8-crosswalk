@@ -1682,7 +1682,7 @@ int DisassemblerIA32::InstructionDecode(v8::internal::Vector<char> out_buffer,
             data += PrintRightXMMOperand(data);
           } else if (*data == 0xD6) {
             AppendToBuffer("movq ");
-            data += 3;
+            data += 1;
             int mod, regop, rm;
             get_modrm(*data, &mod, &regop, &rm);
             data += PrintRightXMMOperand(data);

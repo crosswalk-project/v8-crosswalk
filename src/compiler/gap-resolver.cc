@@ -114,7 +114,8 @@ void GapResolver::PerformMove(ZoneList<MoveOperands>* moves,
 
   DCHECK(blocker->IsPending());
   // Ensure source is a register or both are stack slots, to limit swap cases.
-  if (source->IsStackSlot() || source->IsDoubleStackSlot()) {
+  if (source->IsStackSlot() || source->IsDoubleStackSlot() ||
+      source->IsSIMD128StackSlot()) {
     std::swap(source, destination);
   }
   assembler_->AssembleSwap(source, destination);

@@ -5213,7 +5213,39 @@ void MacroAssembler::TruncatingDiv(Register dividend, int32_t divisor) {
   addl(rdx, rax);
 }
 
+#define BINARY_SIMD_OPERATION_LIST(V) \
+  V(Addps, addps)                     \
+  V(Subps, subps)                     \
+  V(Mulps, mulps)                     \
+  V(Divps, divps)
 
+#define DECLARE_BINARY_SIMD_FUNCTION_RR(OP, op)                              \
+  void MacroAssembler::OP(XMMRegister dst, XMMRegister s1, XMMRegister s2) { \
+    if (CpuFeatures::IsSupported(AVX)) {                                     \
+      CpuFeatureScope scope(this, AVX);                                      \
+      v##op(dst, s1, s2);                                                    \
+    } else {                                                                 \
+      DCHECK(dst.is(s1));                                                    \
+      op(dst, s2);                                                           \
+    }                                                                        \
+  }
+
+
+#define DECLARE_BINARY_SIMD_FUNCTION_RM(OP, op)            \
+  void MacroAssembler::OP(XMMRegister dst, XMMRegister s1, \
+                          const Operand& s2) {             \
+    if (CpuFeatures::IsSupported(AVX)) {                   \
+      CpuFeatureScope scope(this, AVX);                    \
+      v##op(dst, s1, s2);                                  \
+    } else {                                               \
+      DCHECK(dst.is(s1));                                  \
+      op(dst, s2);                                         \
+    }                                                      \
+  }
+
+
+BINARY_SIMD_OPERATION_LIST(DECLARE_BINARY_SIMD_FUNCTION_RR)
+BINARY_SIMD_OPERATION_LIST(DECLARE_BINARY_SIMD_FUNCTION_RM)
 } }  // namespace v8::internal
 
 #endif  // V8_TARGET_ARCH_X64

@@ -411,6 +411,30 @@ class TypeImpl : public Config::Base {
     return function;
   }
 
+  static TypeHandle Function(TypeHandle result, TypeHandle param0,
+                             TypeHandle param1, TypeHandle param2,
+                             TypeHandle param3, Region* region) {
+    FunctionHandle function = Function(result, Any(region), 4, region);
+    function->InitParameter(0, param0);
+    function->InitParameter(1, param1);
+    function->InitParameter(2, param2);
+    function->InitParameter(3, param3);
+    return function;
+  }
+
+  static TypeHandle Function(TypeHandle result, TypeHandle param0,
+                             TypeHandle param1, TypeHandle param2,
+                             TypeHandle param3, TypeHandle param4,
+                             Region* region) {
+    FunctionHandle function = Function(result, Any(region), 5, region);
+    function->InitParameter(0, param0);
+    function->InitParameter(1, param1);
+    function->InitParameter(2, param2);
+    function->InitParameter(3, param3);
+    function->InitParameter(4, param4);
+    return function;
+  }
+
   static TypeHandle Union(TypeHandle type1, TypeHandle type2, Region* reg);
   static TypeHandle Intersect(TypeHandle type1, TypeHandle type2, Region* reg);
   static TypeImpl* Union(TypeImpl* type1, TypeImpl* type2) {

@@ -2638,6 +2638,16 @@ void Assembler::movd(Register dst, XMMRegister src) {
 }
 
 
+void Assembler::movd(const Operand& dst, XMMRegister src) {
+  EnsureSpace ensure_space(this);
+  emit(0x66);
+  emit_optional_rex_32(src, dst);
+  emit(0x0F);
+  emit(0x7E);
+  emit_sse_operand(src, dst);
+}
+
+
 void Assembler::movq(XMMRegister dst, Register src) {
   EnsureSpace ensure_space(this);
   emit(0x66);
@@ -2648,7 +2658,27 @@ void Assembler::movq(XMMRegister dst, Register src) {
 }
 
 
+void Assembler::movq(XMMRegister dst, const Operand& src) {
+  EnsureSpace ensure_space(this);
+  emit(0x66);
+  emit_rex_64(dst, src);
+  emit(0x0F);
+  emit(0x6E);
+  emit_sse_operand(dst, src);
+}
+
+
 void Assembler::movq(Register dst, XMMRegister src) {
+  EnsureSpace ensure_space(this);
+  emit(0x66);
+  emit_rex_64(src, dst);
+  emit(0x0F);
+  emit(0x7E);
+  emit_sse_operand(src, dst);
+}
+
+
+void Assembler::movq(const Operand& dst, XMMRegister src) {
   EnsureSpace ensure_space(this);
   emit(0x66);
   emit_rex_64(src, dst);
@@ -2846,6 +2876,24 @@ void Assembler::movups(const Operand& dst, XMMRegister src) {
   emit(0x0F);
   emit(0x11);
   emit_sse_operand(src, dst);
+}
+
+
+void Assembler::movlhps(XMMRegister dst, XMMRegister src) {
+  EnsureSpace ensure_space(this);
+  emit_optional_rex_32(dst, src);
+  emit(0x0F);
+  emit(0x16);
+  emit_sse_operand(dst, src);
+}
+
+
+void Assembler::movhlps(XMMRegister dst, XMMRegister src) {
+  EnsureSpace ensure_space(this);
+  emit_optional_rex_32(dst, src);
+  emit(0x0F);
+  emit(0x12);
+  emit_sse_operand(dst, src);
 }
 
 
@@ -3654,6 +3702,26 @@ void Assembler::vsd(byte op, XMMRegister dst, XMMRegister src1,
   DCHECK(IsEnabled(AVX));
   EnsureSpace ensure_space(this);
   emit_vex_prefix(dst, src1, src2, kLIG, kF2, k0F, kWIG);
+  emit(op);
+  emit_sse_operand(dst, src2);
+}
+
+
+void Assembler::v128ps(byte op, XMMRegister dst, XMMRegister src1,
+                       XMMRegister src2) {
+  DCHECK(IsEnabled(AVX));
+  EnsureSpace ensure_space(this);
+  emit_vex_prefix(dst, src1, src2, kL128, kNone, k0F, kWIG);
+  emit(op);
+  emit_sse_operand(dst, src2);
+}
+
+
+void Assembler::v128ps(byte op, XMMRegister dst, XMMRegister src1,
+                       const Operand& src2) {
+  DCHECK(IsEnabled(AVX));
+  EnsureSpace ensure_space(this);
+  emit_vex_prefix(dst, src1, src2, kL128, kNone, k0F, kWIG);
   emit(op);
   emit_sse_operand(dst, src2);
 }

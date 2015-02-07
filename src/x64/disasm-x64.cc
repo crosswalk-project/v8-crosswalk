@@ -1196,10 +1196,8 @@ int DisassemblerX64::TwoByteOpcodeInstruction(byte* data) {
       } else if (third_byte == 0x21) {
         get_modrm(*current, &mod, &regop, &rm);
         // insertps xmm, xmm, imm8
-        AppendToBuffer("insertps %s,%s,%d",
-                       NameOfXMMRegister(regop),
-                       NameOfXMMRegister(rm),
-                       (*(current + 1)) & 3);
+        AppendToBuffer("insertps %s,%s,0x%x", NameOfXMMRegister(regop),
+                       NameOfXMMRegister(rm), *(current + 1));
         current += 2;
       } else if (third_byte == 0x22) {
         get_modrm(*current, &mod, &regop, &rm);
@@ -1559,6 +1557,22 @@ int DisassemblerX64::TwoByteOpcodeInstruction(byte* data) {
     current += PrintRightXMMOperand(current);
     AppendToBuffer(", %s", NameOfXMMRegister(regop));
 
+  } else if (opcode == 0x12) {
+    // movups xmm/m128, xmm
+    int mod, regop, rm;
+    get_modrm(*current, &mod, &regop, &rm);
+    AppendToBuffer("movhlps ");
+    current += PrintRightXMMOperand(current);
+    AppendToBuffer(", %s", NameOfXMMRegister(regop));
+
+  } else if (opcode == 0x16) {
+    // movlhps xmm, xmm
+    int mod, regop, rm;
+    get_modrm(*current, &mod, &regop, &rm);
+    AppendToBuffer("movlhps ");
+    current += PrintRightXMMOperand(current);
+    AppendToBuffer(", %s", NameOfXMMRegister(regop));
+
   } else if (opcode == 0xA2) {
     // CPUID
     AppendToBuffer("%s", mnemonic);
@@ -1599,16 +1613,7 @@ int DisassemblerX64::TwoByteOpcodeInstruction(byte* data) {
     get_modrm(*current, &mod, &regop, &rm);
     AppendToBuffer("shufps %s, ", NameOfXMMRegister(regop));
     current += PrintRightXMMOperand(current);
-    AppendToBuffer(", %d", (*current) & 3);
-    current += 1;
-
-  } else if (opcode == 0xC6) {
-    // shufps xmm, xmm/m128, imm8
-    int mod, regop, rm;
-    get_modrm(*current, &mod, &regop, &rm);
-    AppendToBuffer("shufps %s, ", NameOfXMMRegister(regop));
-    current += PrintRightXMMOperand(current);
-    AppendToBuffer(", %d", (*current) & 3);
+    AppendToBuffer(", 0x%x", *current);
     current += 1;
 
   } else if (opcode == 0x54) {
