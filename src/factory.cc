@@ -1338,7 +1338,8 @@ Handle<JSFunction> Factory::NewFunction(Handle<String> name, Handle<Code> code,
   ElementsKind elements_kind =
       type == JS_ARRAY_TYPE ? FAST_SMI_ELEMENTS : FAST_HOLEY_SMI_ELEMENTS;
   Handle<Map> initial_map = NewMap(type, instance_size, elements_kind);
-  if (type == FLOAT32x4_TYPE) {
+  if (type == FLOAT32x4_TYPE || type == FLOAT64x2_TYPE ||
+      type == INT32x4_TYPE) {
     initial_map->set_is_extensible(false);
   }
   if (!function->shared()->is_generator()) {

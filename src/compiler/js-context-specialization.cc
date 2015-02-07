@@ -75,6 +75,31 @@ Reduction JSContextSpecializer::ReduceJSLoadContext(Node* node) {
 }
 
 
+bool JSContextSpecializer::ContextVarIsInitialized(Node* node, Node* fcontext,
+                                                   CompilationInfo* info) {
+  DCHECK_EQ(node->opcode(), IrOpcode::kJSLoadContext);
+
+  if (NodeProperties::GetValueInput(node, 0) != fcontext) {
+    return false;
+  }
+
+  Context* context = *(info->context());
+  const ContextAccess& access = ContextAccessOf(node->op());
+  for (size_t i = access.depth(); i > 0; --i) {
+    context = context->previous();
+  }
+
+  Handle<Object> value = Handle<Object>(
+      context->get(static_cast<int>(access.index())), info->isolate());
+
+  if (value->IsUndefined() || value->IsTheHole()) {
+    return false;
+  }
+
+  return true;
+}
+
+
 Reduction JSContextSpecializer::ReduceJSStoreContext(Node* node) {
   DCHECK_EQ(IrOpcode::kJSStoreContext, node->opcode());
 

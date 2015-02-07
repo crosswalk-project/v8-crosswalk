@@ -29,6 +29,9 @@ class Typer {
   Isolate* isolate() { return isolate_; }
 
  private:
+  Type* GetFloat32x4();
+  Type* GetInt32x4();
+  Type* GetFloat64x2();
   class Visitor;
   class Decorator;
 
@@ -60,6 +63,9 @@ class Typer {
   Type* number_fun2_;
   Type* weakint_fun1_;
   Type* random_fun_;
+  SetOncePointer<Type> float32x4_;
+  SetOncePointer<Type> int32x4_;
+  SetOncePointer<Type> float64x2_;
   LazyTypeCache* cache_;
 
   DISALLOW_COPY_AND_ASSIGN(Typer);
