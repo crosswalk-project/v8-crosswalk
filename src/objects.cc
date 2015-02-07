@@ -1892,7 +1892,7 @@ const char* Representation::Mnemonic() const {
     case kDouble: return "d";
     case kFloat32x4: return "float32x4";
     case kFloat64x2: return "float64x2";
-    case kInt32x4: return "int32x44";
+    case kInt32x4: return "int32x4";
     case kInteger32: return "i";
     case kHeapObject: return "h";
     case kExternal: return "x";

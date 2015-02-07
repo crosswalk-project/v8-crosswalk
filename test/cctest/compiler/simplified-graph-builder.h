@@ -114,6 +114,9 @@ class SimplifiedGraphBuilder : public GraphBuilder {
   Node* ChangeFloat64ToTagged(Node* a) {
     return NewNode(simplified()->ChangeFloat64ToTagged(), a);
   }
+  Node* ChangeFloat32x4ToTagged(Node* a) {
+    return NewNode(simplified()->ChangeFloat32x4ToTagged(), a);
+  }
   Node* ChangeBoolToBit(Node* a) {
     return NewNode(simplified()->ChangeBoolToBit(), a);
   }

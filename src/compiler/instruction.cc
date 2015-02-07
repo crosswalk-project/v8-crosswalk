@@ -49,9 +49,18 @@ std::ostream& operator<<(std::ostream& os,
       return os << "[stack:" << op.index() << "]";
     case InstructionOperand::DOUBLE_STACK_SLOT:
       return os << "[double_stack:" << op.index() << "]";
+    case InstructionOperand::FLOAT32x4_STACK_SLOT:
+      return os << "[float32x4_stack:" << op.index() << "]";
+    case InstructionOperand::INT32x4_STACK_SLOT:
+      return os << "[int32x4_stack:" << op.index() << "]";
+    case InstructionOperand::FLOAT64x2_STACK_SLOT:
+      return os << "[float64x2_stack:" << op.index() << "]";
     case InstructionOperand::REGISTER:
       return os << "[" << conf->general_register_name(op.index()) << "|R]";
     case InstructionOperand::DOUBLE_REGISTER:
+    case InstructionOperand::FLOAT32x4_REGISTER:
+    case InstructionOperand::INT32x4_REGISTER:
+    case InstructionOperand::FLOAT64x2_REGISTER:
       return os << "[" << conf->double_register_name(op.index()) << "|R]";
     case InstructionOperand::INVALID:
       return os << "(x)";
@@ -481,6 +490,9 @@ InstructionSequence::InstructionSequence(Isolate* isolate,
       next_virtual_register_(0),
       pointer_maps_(zone()),
       doubles_(std::less<int>(), VirtualRegisterSet::allocator_type(zone())),
+      float32x4_(std::less<int>(), VirtualRegisterSet::allocator_type(zone())),
+      int32x4_(std::less<int>(), VirtualRegisterSet::allocator_type(zone())),
+      float64x2_(std::less<int>(), VirtualRegisterSet::allocator_type(zone())),
       references_(std::less<int>(), VirtualRegisterSet::allocator_type(zone())),
       deoptimization_entries_(zone()) {
   block_starts_.reserve(instruction_blocks_->size());
@@ -561,6 +573,21 @@ bool InstructionSequence::IsDouble(int virtual_register) const {
 }
 
 
+bool InstructionSequence::IsFloat32x4(int virtual_register) const {
+  return float32x4_.find(virtual_register) != float32x4_.end();
+}
+
+
+bool InstructionSequence::IsInt32x4(int virtual_register) const {
+  return int32x4_.find(virtual_register) != int32x4_.end();
+}
+
+
+bool InstructionSequence::IsFloat64x2(int virtual_register) const {
+  return float64x2_.find(virtual_register) != float64x2_.end();
+}
+
+
 void InstructionSequence::MarkAsReference(int virtual_register) {
   references_.insert(virtual_register);
 }
@@ -568,6 +595,21 @@ void InstructionSequence::MarkAsReference(int virtual_register) {
 
 void InstructionSequence::MarkAsDouble(int virtual_register) {
   doubles_.insert(virtual_register);
+}
+
+
+void InstructionSequence::MarkAsFloat32x4(int virtual_register) {
+  float32x4_.insert(virtual_register);
+}
+
+
+void InstructionSequence::MarkAsInt32x4(int virtual_register) {
+  int32x4_.insert(virtual_register);
+}
+
+
+void InstructionSequence::MarkAsFloat64x2(int virtual_register) {
+  float64x2_.insert(virtual_register);
 }
 
 

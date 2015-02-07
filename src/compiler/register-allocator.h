@@ -15,7 +15,10 @@ namespace compiler {
 enum RegisterKind {
   UNALLOCATED_REGISTERS,
   GENERAL_REGISTERS,
-  DOUBLE_REGISTERS
+  DOUBLE_REGISTERS,
+  FLOAT32x4_REGISTERS,
+  INT32x4_REGISTERS,
+  FLOAT64x2_REGISTERS,
 };
 
 
@@ -99,6 +102,12 @@ class LifetimePosition FINAL {
 
   int value_;
 };
+
+
+inline bool IsSIMD128RegisterKind(RegisterKind kind) {
+  return kind == FLOAT32x4_REGISTERS || kind == INT32x4_REGISTERS ||
+         kind == FLOAT64x2_REGISTERS;
+}
 
 
 // Representation of the non-empty interval [start,end[.
@@ -197,12 +206,33 @@ class InstructionOperandCache FINAL : public ZoneObject {
            index < static_cast<int>(arraysize(double_register_operands_)));
     return &double_register_operands_[index];
   }
+  InstructionOperand* Float32x4RegisterOperand(int index) {
+    DCHECK(index >= 0 &&
+           index < static_cast<int>(arraysize(float32x4_register_operands_)));
+    return &float32x4_register_operands_[index];
+  }
+  InstructionOperand* Int32x4RegisterOperand(int index) {
+    DCHECK(index >= 0 &&
+           index < static_cast<int>(arraysize(int32x4_register_operands_)));
+    return &int32x4_register_operands_[index];
+  }
+  InstructionOperand* Float64x2RegisterOperand(int index) {
+    DCHECK(index >= 0 &&
+           index < static_cast<int>(arraysize(float64x2_register_operands_)));
+    return &float64x2_register_operands_[index];
+  }
 
  private:
   InstructionOperand
       general_register_operands_[RegisterConfiguration::kMaxGeneralRegisters];
   InstructionOperand
       double_register_operands_[RegisterConfiguration::kMaxDoubleRegisters];
+  InstructionOperand
+      float32x4_register_operands_[RegisterConfiguration::kMaxDoubleRegisters];
+  InstructionOperand
+      int32x4_register_operands_[RegisterConfiguration::kMaxDoubleRegisters];
+  InstructionOperand
+      float64x2_register_operands_[RegisterConfiguration::kMaxDoubleRegisters];
 
   DISALLOW_COPY_AND_ASSIGN(InstructionOperandCache);
 };

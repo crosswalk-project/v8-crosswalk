@@ -2861,43 +2861,43 @@ AllocationResult Heap::AllocateHeapNumber(double value, MutableMode mode,
   V(Int32x4, int32x4)
 
 
-#define DECLARE_SIMD_HEAP_ALLOCATE_FUNCTION(TYPE, type)               \
-AllocationResult Heap::Allocate##TYPE(type##_value_t value,           \
-                                      PretenureFlag pretenure) {      \
-  STATIC_ASSERT(TYPE::kSize <= Page::kMaxRegularHeapObjectSize);      \
-                                                                      \
-  AllocationSpace space =                                             \
-      SelectSpace(TYPE::kSize, OLD_POINTER_SPACE, pretenure);         \
-                                                                      \
-  HeapObject* result;                                                 \
-  { AllocationResult allocation =                                     \
-        AllocateRaw(TYPE::kSize, space, OLD_POINTER_SPACE);           \
-    if (!allocation.To(&result)) return allocation;                   \
-  }                                                                   \
-                                                                      \
-  result->set_map_no_write_barrier(                                   \
-  isolate()->native_context()->type##_function()->initial_map());     \
-  JSObject::cast(result)->set_properties(empty_fixed_array());        \
-  JSObject::cast(result)->set_elements(empty_fixed_array());          \
-                                                                      \
-  HeapObject* storage;                                                \
-  int storage_size =                                                  \
-      FixedTypedArrayBase::kDataOffset + k##TYPE##Size;               \
-  space = SelectSpace(storage_size, OLD_DATA_SPACE, pretenure);       \
-  { AllocationResult allocation =                                     \
-       AllocateRaw(storage_size, space, OLD_DATA_SPACE);              \
-    if (!allocation.To(&storage)) return allocation;                  \
-  }                                                                   \
-                                                                      \
-  storage->set_map(                                                   \
-      *isolate()->factory()->fixed_##type##_array_map());             \
-  FixedTypedArrayBase* elements = FixedTypedArrayBase::cast(storage); \
-  elements->set_length(static_cast<int>(1));                          \
-  memset(elements->DataPtr(), 0, elements->DataSize());               \
-  Fixed##TYPE##Array::cast(storage)->set(0, value);                   \
-  TYPE::cast(result)->set_value(storage);                             \
-  return result;                                                      \
-}
+#define DECLARE_SIMD_HEAP_ALLOCATE_FUNCTION(TYPE, type)                  \
+  AllocationResult Heap::Allocate##TYPE(type##_value_t value,            \
+                                        PretenureFlag pretenure) {       \
+    STATIC_ASSERT(TYPE::kSize <= Page::kMaxRegularHeapObjectSize);       \
+                                                                         \
+    AllocationSpace space =                                              \
+        SelectSpace(TYPE::kSize, OLD_POINTER_SPACE, pretenure);          \
+                                                                         \
+    HeapObject* result;                                                  \
+    {                                                                    \
+      AllocationResult allocation =                                      \
+          AllocateRaw(TYPE::kSize, space, OLD_POINTER_SPACE);            \
+      if (!allocation.To(&result)) return allocation;                    \
+    }                                                                    \
+                                                                         \
+    result->set_map_no_write_barrier(                                    \
+        isolate()->native_context()->type##_function()->initial_map());  \
+    JSObject::cast(result)->set_properties(empty_fixed_array());         \
+    JSObject::cast(result)->set_elements(empty_fixed_array());           \
+                                                                         \
+    HeapObject* storage;                                                 \
+    int storage_size = FixedTypedArrayBase::kDataOffset + k##TYPE##Size; \
+    space = SelectSpace(storage_size, OLD_DATA_SPACE, pretenure);        \
+    {                                                                    \
+      AllocationResult allocation =                                      \
+          AllocateRaw(storage_size, space, OLD_DATA_SPACE);              \
+      if (!allocation.To(&storage)) return allocation;                   \
+    }                                                                    \
+                                                                         \
+    storage->set_map(*isolate()->factory()->fixed_##type##_array_map()); \
+    FixedTypedArrayBase* elements = FixedTypedArrayBase::cast(storage);  \
+    elements->set_length(static_cast<int>(1));                           \
+    memset(elements->DataPtr(), 0, elements->DataSize());                \
+    Fixed##TYPE##Array::cast(storage)->set(0, value);                    \
+    TYPE::cast(result)->set_value(storage);                              \
+    return result;                                                       \
+  }
 
 
 SIMD128_HEAP_ALLOCATE_FUNCTIONS(DECLARE_SIMD_HEAP_ALLOCATE_FUNCTION)
