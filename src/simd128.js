@@ -901,8 +901,8 @@ function VIEWGetTYPELANESJS(index) {
   if (!IS_NUMBER(index)) {
     throw MakeTypeError('The 2nd argument must be a Number.');
   }
-  var offset = TO_INTEGER(index) * tarray.BYTES_PER_ELEMENT;
-  if (offset < 0 || (offset + NBYTES) > tarray.byteLength)
+  var offset = TO_INTEGER(index) * tarray.BYTES_PER_ELEMENT + tarray.byteOffset;
+  if (offset < tarray.byteOffset || (offset + NBYTES) > tarray.byteLength + tarray.byteOffset)
     throw MakeRangeError('The value of index is invalid.');
   var arraybuffer = tarray.buffer;
   return %TYPELoadLANES(arraybuffer, offset);
