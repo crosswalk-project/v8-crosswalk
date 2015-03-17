@@ -927,8 +927,8 @@ function VIEWSetTYPELANESJS(index, value) {
     throw MakeTypeError('The 2nd argument must be a Number.');
   }
   CheckTYPE(value);
-  var offset = TO_INTEGER(index) * tarray.BYTES_PER_ELEMENT;
-  if (offset < 0 || (offset + NBYTES) > tarray.byteLength)
+  var offset = TO_INTEGER(index) * tarray.BYTES_PER_ELEMENT + tarray.byteOffset;
+  if (offset < tarray.byteOffset || (offset + NBYTES) > (tarray.byteLength + tarray.byteOffset))
     throw MakeRangeError('The value of index is invalid.');
   var arraybuffer = tarray.buffer;
   %TYPEStoreLANES(arraybuffer, offset, value);
