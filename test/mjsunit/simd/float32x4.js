@@ -943,6 +943,7 @@ function testArrayOfFloat32x4() {
 
 testArrayOfFloat32x4();
 
+
 function testFloat32x4ArrayIndex() {
   var a = new Float32x4Array(4);
   var b = a.getAt(2);
@@ -951,3 +952,24 @@ function testFloat32x4ArrayIndex() {
 }
 
 testFloat32x4ArrayIndex();
+
+function testFloat32ArrayByteOffset() {
+  var b = new ArrayBuffer(40);
+  var a = new Float32Array(b, 8);
+  for (var i = 0; i < a.length; i++) {
+    a[i] = i;
+  }
+
+  for (var i = 0; i < a.length - 3; i++) {
+    var v = SIMD.float32x4.load(a, i);
+    assertEquals(i, v.x);
+    assertEquals(i+1, v.y);
+    assertEquals(i+2, v.z);
+    assertEquals(i+3, v.w);
+  }
+}
+
+testFloat32ArrayByteOffset();
+testFloat32ArrayByteOffset();
+%OptimizeFunctionOnNextCall(testFloat32ArrayByteOffset);
+testFloat32ArrayByteOffset();
