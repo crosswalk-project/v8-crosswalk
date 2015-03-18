@@ -961,3 +961,12 @@ function testFloat32x4OveralignedLoad() {
 }
 
 testFloat32x4OveralignedLoad();
+
+function testFloat32x4ArrayIndex() {
+  var a = new Float32x4Array(4);
+  var b = a.getAt(2);
+  assertThrows(function() { var c = a.getAt(-1); }, RangeError);
+  assertThrows(function() { var d = a.getAt(4); }, RangeError);
+}
+
+testFloat32x4ArrayIndex();
