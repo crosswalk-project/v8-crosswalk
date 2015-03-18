@@ -943,7 +943,7 @@ function testArrayOfFloat32x4() {
 
 testArrayOfFloat32x4();
 
-function testFLoat32x4OveralignedLoad() {
+function testFloat32x4OveralignedLoad() {
   var b = new ArrayBuffer(40);
   var a = new Float32Array(b, 8);
   var af = new Float64Array(b, 8);
@@ -960,4 +960,14 @@ function testFLoat32x4OveralignedLoad() {
   }
 }
 
-testFLoat32x4OveralignedLoad();
+testFloat32x4OveralignedLoad();
+
+function testFloat32x4ArrayIndex() {
+  var a = new Float32x4Array(4);
+  var b = a.getAt(2);
+  assertThrows(function() { var c = a.getAt(-1); }, RangeError);
+  assertThrows(function() { var d = a.getAt(4); }, RangeError);
+}
+
+testFloat32x4ArrayIndex();
+
