@@ -854,6 +854,9 @@ SetupSIMD128TypedArrays();
 
 macro DECLARE_TYPED_ARRAY_FUNCTION(NAME)
 function NAMEArrayGet(i) {
+  if((i < 0) || (i + 1 > this.length)) {
+    throw MakeRangeError('the index of value:' + i + ' ' + 'is invalid');
+  }
   return this[i];
 }
 
