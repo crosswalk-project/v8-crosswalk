@@ -81,6 +81,11 @@ class V8_EXPORT CpuProfileNode {
   int GetColumnNumber() const;
 
   /**
+   * Returns source line connected with current ProfileNode
+  */
+  int GetSrcLine() const;
+
+  /**
    * Returns the number of the function's source lines that collect the samples.
    */
   unsigned int GetHitLineCount() const;
