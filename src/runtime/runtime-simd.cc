@@ -328,12 +328,6 @@ SIMD128_UNARY_FUNCTIONS(DECLARE_SIMD_UNARY_FUNCTION)
 
 
 template<typename T1, typename T2>
-inline void BitsTo(T1 s, T2* t) {
-  memcpy(t, &s, sizeof(T2));
-}
-
-
-template<typename T1, typename T2>
 inline void To(T1 s, T2* t) {
 }
 
@@ -350,16 +344,41 @@ inline void To<float, int32_t>(float s, int32_t* t) {
 }
 
 
-#define SIMD128_CONVERSION_FUNCTIONS(V)                       \
-  V(Float32x4, BitsTo, Int32x4)                               \
+template<>
+inline void To<double, float>(double s, float *t) {
+  *t = DoubleToFloat32(s);
+}
+
+
+template<>
+inline void To<float, double>(float s, double *t) {
+  *t = static_cast<double>(s);
+}
+
+
+template<>
+inline void To<int32_t, double>(int32_t s, double *t) {
+  *t = static_cast<double>(s);
+}
+
+template<>
+inline void To<double, int32_t>(double s, int32_t *t) {
+  *t = DoubleToInt32(s);
+}
+
+
+#define SIMD128_CONVERSION_TO_FUNCTIONS(V)                    \
   V(Float32x4, To, Int32x4)                                   \
-  V(Int32x4, BitsTo, Float32x4)                               \
-  V(Int32x4, To, Float32x4)
+  V(Float32x4, To, Float64x2)                                 \
+  V(Int32x4, To, Float32x4)                                   \
+  V(Int32x4, To, Float64x2)                                   \
+  V(Float64x2, To, Int32x4)                                   \
+  V(Float64x2, To, Float32x4)
 
 
-#define DECLARE_SIMD_CONVERSION_FUNCTION(                     \
+#define DECLARE_SIMD_CONVERSION_TO_FUNCTION(                  \
     SOURCE_TYPE, FUNCTION, TARGET_TYPE)                       \
-RUNTIME_FUNCTION(                               \
+RUNTIME_FUNCTION(                                             \
     Runtime_##SOURCE_TYPE##FUNCTION##TARGET_TYPE) {           \
   HandleScope scope(isolate);                                 \
   DCHECK(args.length() == 1);                                 \
@@ -367,15 +386,62 @@ RUNTIME_FUNCTION(                               \
   CONVERT_ARG_CHECKED(SOURCE_TYPE, a, 0);                     \
                                                               \
   TARGET_TYPE::value_t result;                                \
-  for (int i = 0; i < SOURCE_TYPE::kLanes; i++) {             \
-    FUNCTION(a->getAt(i), &result.storage[i]);                \
+  if (SOURCE_TYPE::kLanes > TARGET_TYPE::kLanes) {            \
+    for (int i = 0; i < TARGET_TYPE::kLanes; i++) {           \
+      FUNCTION(a->getAt(i), &result.storage[i]);              \
+    }                                                         \
+  } else {                                                    \
+    for (int i = 0; i < SOURCE_TYPE::kLanes; i++) {           \
+      FUNCTION(a->getAt(i), &result.storage[i]);              \
+    }                                                         \
+    int j = TARGET_TYPE::kLanes - SOURCE_TYPE::kLanes;        \
+    if (j > 0) {                                              \
+       for (int i = 0; i < j; i++) {                          \
+         result.storage[j + i] = 0;                           \
+       }                                                      \
+    }                                                         \
   }                                                           \
-                                                              \
   RETURN_##TARGET_TYPE##_RESULT(result);                      \
 }
 
 
-SIMD128_CONVERSION_FUNCTIONS(DECLARE_SIMD_CONVERSION_FUNCTION)
+SIMD128_CONVERSION_TO_FUNCTIONS(DECLARE_SIMD_CONVERSION_TO_FUNCTION);
+
+
+template<int n>
+inline void CopyBytes(uint8_t* target, uint8_t* source);
+
+
+#define SIMD128_CONVERSION_BITSTO_FUNCTIONS(V)                \
+  V(Float32x4, BitsTo, Int32x4)                               \
+  V(Float32x4, BitsTo, Float64x2)                             \
+  V(Int32x4, BitsTo, Float32x4)                               \
+  V(Int32x4, BitsTo, Float64x2)                               \
+  V(Float64x2, BitsTo, Int32x4)                               \
+  V(Float64x2, BitsTo, Float32x4)
+
+
+#define DECLARE_SIMD_CONVERSION_BITSTO_FUNCTION(              \
+    SOURCE_TYPE, FUNCTION, TARGET_TYPE)                       \
+RUNTIME_FUNCTION(                                             \
+    Runtime_##SOURCE_TYPE##FUNCTION##TARGET_TYPE) {           \
+  HandleScope scope(isolate);                                 \
+  DCHECK(args.length() == 1);                                 \
+  DCHECK(SOURCE_TYPE::value_t == TARGET_TYPE::value_t);       \
+                                                              \
+  CONVERT_ARG_CHECKED(SOURCE_TYPE, a, 0);                     \
+                                                              \
+  TARGET_TYPE::value_t result;                                \
+  uint8_t *t1 =                                               \
+      reinterpret_cast<uint8_t*>(&(a->get().storage[0]));     \
+  uint8_t *t2 =                                               \
+      reinterpret_cast<uint8_t*>(&result.storage[0]);         \
+  CopyBytes<sizeof(SOURCE_TYPE::value_t)>(t2, t1);            \
+  RETURN_##TARGET_TYPE##_RESULT(result);                      \
+}
+
+
+SIMD128_CONVERSION_BITSTO_FUNCTIONS(DECLARE_SIMD_CONVERSION_BITSTO_FUNCTION);
 
 
 template<typename T>

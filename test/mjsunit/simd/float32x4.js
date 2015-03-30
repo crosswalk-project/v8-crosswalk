@@ -989,3 +989,61 @@ testFloat32x4Store();
 testFloat32x4Store();
 %OptimizeFunctionOnNextCall(testFloat32x4Store);
 testFloat32x4Store();
+
+function testSIMDFromInt32x4() {
+  var m = SIMD.float32x4(9, 10, 11, 12);
+  var nMask = SIMD.int32x4.fromFloat32x4(m);
+  var n = SIMD.float32x4.fromInt32x4(nMask);
+
+  assertEquals(9.0, n.x);
+  assertEquals(10.0, n.y);
+  assertEquals(11.0, n.z);
+  assertEquals(12.0, n.w);
+};
+
+testSIMDFromInt32x4();
+testSIMDFromInt32x4();
+%OptimizeFunctionOnNextCall(testSIMDFromInt32x4);
+testSIMDFromInt32x4();
+
+function testSIMDFromInt32x4Bits() {
+  var m = SIMD.float32x4(9, 10, 11, 12);
+  var nMask = SIMD.int32x4.fromFloat32x4Bits(m);
+  var n = SIMD.float32x4.fromInt32x4Bits(nMask);
+
+  assertEquals(9.0, n.x);
+  assertEquals(10.0, n.y);
+  assertEquals(11.0, n.z);
+  assertEquals(12.0, n.w);
+};
+
+testSIMDFromInt32x4Bits();
+testSIMDFromInt32x4Bits();
+%OptimizeFunctionOnNextCall(testSIMDFromInt32x4Bits);
+testSIMDFromInt32x4Bits();
+
+function testSIMDromFloat64x2() {
+  var m = SIMD.float32x4(9.0, 10.0, 11.0, 12.0);
+  var nMask = SIMD.float64x2.fromFloat32x4(m);
+  var n = SIMD.float32x4.fromFloat64x2(nMask);
+
+  assertEquals(9.0, n.x);
+  assertEquals(10.0, n.y);
+  assertEquals(0, n.z);
+  assertEquals(0, n.w);
+};
+
+testSIMDromFloat64x2();
+
+function testSIMDFromFloat64x2Bits() {
+  var m = SIMD.float32x4(9.0, 10.0, 11.0, 12.0);
+  var nMask = SIMD.float64x2.fromFloat32x4Bits(m);
+  var n = SIMD.float32x4.fromFloat64x2Bits(nMask);
+
+  assertEquals(9.0, n.x);
+  assertEquals(10.0, n.y);
+  assertEquals(11.0, n.z);
+  assertEquals(12.0, n.w);
+};
+
+testSIMDFromFloat64x2Bits()
