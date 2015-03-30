@@ -200,11 +200,13 @@ SetUpInt32x4();
 macro SIMD128_UNARY_FUNCTIONS(FUNCTION)
 FUNCTION(Float32x4, Abs)
 FUNCTION(Float32x4, BitsToInt32x4)
+FUNCTION(Float32x4, BitsToFloat64x2)
 FUNCTION(Float32x4, Neg)
 FUNCTION(Float32x4, Reciprocal)
 FUNCTION(Float32x4, ReciprocalSqrt)
 FUNCTION(Float32x4, Sqrt)
 FUNCTION(Float32x4, ToInt32x4)
+FUNCTION(Float32x4, ToFloat64x2)
 FUNCTION(Float64x2, Abs)
 FUNCTION(Float64x2, Neg)
 FUNCTION(Float64x2, Sqrt)
@@ -212,6 +214,12 @@ FUNCTION(Int32x4, BitsToFloat32x4)
 FUNCTION(Int32x4, Neg)
 FUNCTION(Int32x4, Not)
 FUNCTION(Int32x4, ToFloat32x4)
+FUNCTION(Int32x4, ToFloat64x2)
+FUNCTION(Int32x4, BitsToFloat64x2)
+FUNCTION(Float64x2, ToFloat32x4)
+FUNCTION(Float64x2, BitsToFloat32x4)
+FUNCTION(Float64x2, ToInt32x4)
+FUNCTION(Float64x2, BitsToInt32x4)
 endmacro
 
 macro SIMD128_BINARY_FUNCTIONS(FUNCTION)
@@ -564,6 +572,8 @@ function SetUpSIMD() {
     "abs", Float32x4AbsJS,
     "fromInt32x4", Int32x4ToFloat32x4JS,
     "fromInt32x4Bits", Int32x4BitsToFloat32x4JS,
+    "fromFloat64x2", Float64x2ToFloat32x4JS,
+    "fromFloat64x2Bits", Float64x2BitsToFloat32x4JS,
     "neg", Float32x4NegJS,
     "reciprocal", Float32x4ReciprocalJS,
     "reciprocalSqrt", Float32x4ReciprocalSqrtJS,
@@ -613,6 +623,10 @@ function SetUpSIMD() {
     "abs", Float64x2AbsJS,
     "neg", Float64x2NegJS,
     "sqrt", Float64x2SqrtJS,
+    "fromFloat32x4", Float32x4ToFloat64x2JS,
+    "fromFloat32x4Bits", Float32x4BitsToFloat64x2JS,
+    "fromInt32x4", Int32x4ToFloat64x2JS,
+    "fromInt32x4Bits", Int32x4BitsToFloat64x2JS,
     // Binary
     "add", Float64x2AddJS,
     "div", Float64x2DivJS,
@@ -648,6 +662,8 @@ function SetUpSIMD() {
     // Unary
     "fromFloat32x4", Float32x4ToInt32x4JS,
     "fromFloat32x4Bits", Float32x4BitsToInt32x4JS,
+    "fromFloat64x2", Float64x2ToInt32x4JS,
+    "fromFloat64x2Bits", Float64x2BitsToInt32x4JS,
     "neg", Int32x4NegJS,
     "not", Int32x4NotJS,
     // Binary
