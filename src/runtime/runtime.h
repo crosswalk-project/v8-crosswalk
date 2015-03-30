@@ -196,11 +196,13 @@ namespace internal {
   F(Float32x4StoreXYZW, 3, 1)                  \
   F(Float32x4Abs, 1, 1)                        \
   F(Float32x4BitsToInt32x4, 1, 1)              \
+  F(Float32x4BitsToFloat64x2, 1, 1)            \
   F(Float32x4Neg, 1, 1)                        \
   F(Float32x4Reciprocal, 1, 1)                 \
   F(Float32x4ReciprocalSqrt, 1, 1)             \
   F(Float32x4Sqrt, 1, 1)                       \
   F(Float32x4ToInt32x4, 1, 1)                  \
+  F(Float32x4ToFloat64x2, 1, 1)                \
   F(Float32x4Add, 2, 1)                        \
   F(Float32x4Div, 2, 1)                        \
   F(Float32x4Max, 2, 1)                        \
@@ -226,9 +228,13 @@ namespace internal {
   F(Float64x2LoadXY, 2, 1)                     \
   F(Float64x2StoreX, 3, 1)                     \
   F(Float64x2StoreXY, 3, 1)                    \
+  F(Float64x2BitsToFloat32x4, 1, 1)            \
+  F(Float64x2BitsToInt32x4, 1, 1)              \
   F(Float64x2Abs, 1, 1)                        \
   F(Float64x2Neg, 1, 1)                        \
   F(Float64x2Sqrt, 1, 1)                       \
+  F(Float64x2ToFloat32x4, 1, 1)                \
+  F(Float64x2ToInt32x4, 1, 1)                  \
   F(Float64x2Add, 2, 1)                        \
   F(Float64x2Div, 2, 1)                        \
   F(Float64x2Max, 2, 1)                        \
@@ -250,9 +256,11 @@ namespace internal {
   F(Int32x4StoreXYZ, 3, 1)                     \
   F(Int32x4StoreXYZW, 3, 1)                    \
   F(Int32x4BitsToFloat32x4, 1, 1)              \
+  F(Int32x4BitsToFloat64x2, 1, 1)              \
   F(Int32x4Neg, 1, 1)                          \
   F(Int32x4Not, 1, 1)                          \
   F(Int32x4ToFloat32x4, 1, 1)                  \
+  F(Int32x4ToFloat64x2, 1, 1)                  \
   F(Int32x4And, 2, 1)                          \
   F(Int32x4Or, 2, 1)                           \
   F(Int32x4Xor, 2, 1)                          \
