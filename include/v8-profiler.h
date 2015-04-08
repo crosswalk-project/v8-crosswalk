@@ -351,12 +351,12 @@ class V8_EXPORT OutputStream {  // NOLINT
   /**
    * Writes XDK object
    */
-  virtual WriteResult WriteHeapXDKChunk(const char* symbols, int symbolsSize,
-                                        const char* frames, int framesSize,
-                                        const char* types, int typesSize,
-                                        const char* chunks, int chunksSize,
+  virtual WriteResult WriteHeapXDKChunk(const char* symbols, size_t symbolsSize,
+                                        const char* frames, size_t framesSize,
+                                        const char* types, size_t typesSize,
+                                        const char* chunks, size_t chunksSize,
                                         const char* retentions,
-                                        int retentionSize) {
+                                        size_t retentionSize) {
     return kAbort;
   }
 };
