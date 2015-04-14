@@ -249,6 +249,10 @@ FUNCTION(Float32x4)
 FUNCTION(Int32x4)
 endmacro
 
+macro SIMD128_SHUFFLE_64x2_FUNCTIONS(FUNCTION)
+FUNCTION(Float64x2)
+endmacro
+
 macro FLOAT32x4_BINARY_FUNCTIONS_WITH_FLOAT32_PARAMETER(FUNCTION)
 FUNCTION(Scale)
 FUNCTION(WithX)
@@ -289,6 +293,31 @@ function TYPEFUNCTIONJS(a4, b4) {
   CheckTYPE(a4);
   CheckTYPE(b4);
   return %TYPEFUNCTION(a4, b4);
+}
+endmacro
+
+macro DECLARE_SIMD_SHUFFLE_64x2_FUNCTION(TYPE)
+function TYPESwizzleJS(x4, x, y) {
+  CheckTYPE(x4);
+  var x_ = TO_INT32(x);
+  var y_ = TO_INT32(y);
+  if ((x_ < 0) || (x_ > 1) ||
+      (y_ < 0) || (y_ > 1)) {
+    throw MakeRangeError("invalid_simd_shuffle_lane_index");
+  }
+  return %TYPESwizzle(x4, x_, y_);
+}
+
+function TYPEShuffleJS(x4, y4, x, y) {
+  CheckTYPE(x4);
+  CheckTYPE(y4);
+  var x_ = TO_INT32(x);
+  var y_ = TO_INT32(y);
+  if ((x_ < 0) || (x_ > 3) ||
+      (y_ < 0) || (y_ > 3)) {
+    throw MakeRangeError("invalid_simd_shuffle_lane_index");
+  }
+  return %TYPEShuffle(x4, y4, x_, y_);
 }
 endmacro
 
@@ -360,6 +389,7 @@ endmacro
 SIMD128_UNARY_FUNCTIONS(DECLARE_SIMD_UNARY_FUNCTION)
 SIMD128_BINARY_FUNCTIONS(DECLARE_SIMD_BINARY_FUNCTION)
 SIMD128_SHUFFLE_FUNCTIONS(DECLARE_SIMD_SHUFFLE_FUNCTION)
+SIMD128_SHUFFLE_64x2_FUNCTIONS(DECLARE_SIMD_SHUFFLE_64x2_FUNCTION)
 FLOAT32x4_BINARY_FUNCTIONS_WITH_FLOAT32_PARAMETER(DECLARE_FLOAT32x4_BINARY_FUNCTION_WITH_FLOAT32_PARAMETER)
 FLOAT64x2_BINARY_FUNCTIONS_WITH_FLOAT64_PARAMETER(DECLARE_FLOAT64x2_BINARY_FUNCTION_WITH_FLOAT64_PARAMETER)
 INT32x4_BINARY_FUNCTIONS_WITH_INT32_PARAMETER(DECLARE_INT32x4_BINARY_FUNCTION_WITH_INT32_PARAMETER)
@@ -599,7 +629,10 @@ function SetUpSIMD() {
     "withX", Float64x2WithXJS,
     "withY", Float64x2WithYJS,
     // Ternary
-    "clamp", Float64x2ClampJS
+    "clamp", Float64x2ClampJS,
+    "swizzle", Float64x2SwizzleJS,
+    //Quarternary
+    "shuffle", Float64x2ShuffleJS
   ));
 
   // Set up non-enumerable properties of the SIMD int32x4 object.

@@ -239,6 +239,8 @@ namespace internal {
   F(Float64x2WithX, 2, 1)                                  \
   F(Float64x2WithY, 2, 1)                                  \
   F(Float64x2Clamp, 3, 1)                                  \
+  F(Float64x2Swizzle, 3, 1)                                \
+  F(Float64x2Shuffle, 4, 1)                                \
   F(Int32x4LoadX, 2, 1)                                    \
   F(Int32x4LoadXY, 2, 1)                                   \
   F(Int32x4LoadXYZ, 2, 1)                                  \
