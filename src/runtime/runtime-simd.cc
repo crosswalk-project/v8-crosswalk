@@ -540,6 +540,23 @@ RUNTIME_FUNCTION(Runtime_##TYPE##Swizzle) {                   \
 SIMD128_SWIZZLE_FUNCTIONS(DECLARE_SIMD_SWIZZLE_FUNCTION)
 
 
+RUNTIME_FUNCTION(Runtime_Float64x2Swizzle) {
+  HandleScope scope(isolate);
+  DCHECK(args.length() == 3);
+
+  CONVERT_ARG_CHECKED(Float64x2, a, 0);
+  RUNTIME_ASSERT(args[1]->IsNumber());
+  uint32_t x = NumberToUint32(args[1]);
+  RUNTIME_ASSERT(args[2]->IsNumber());
+  uint32_t y = NumberToUint32(args[2]);
+
+  float64x2_value_t result;
+  result.storage[0] = a->getAt(x & 0x1);
+  result.storage[1] = a->getAt(y & 0x1);
+  RETURN_Float64x2_RESULT(result);
+}
+
+
 #define SIMD128_SHUFFLE_FUNCTIONS(V)                          \
   V(Float32x4)                                                \
   V(Int32x4)
@@ -576,6 +593,27 @@ RUNTIME_FUNCTION(Runtime_##TYPE##Shuffle) {                   \
 
 
 SIMD128_SHUFFLE_FUNCTIONS(DECLARE_SIMD_SHUFFLE_FUNCTION)
+
+
+RUNTIME_FUNCTION(Runtime_Float64x2Shuffle) {
+  HandleScope scope(isolate);
+  DCHECK(args.length == 4);
+
+  CONVERT_ARG_CHECKED(Float64x2, a, 0);
+  CONVERT_ARG_CHECKED(Float64x2, b, 1);
+  RUNTIME_ASSERT(args[2]->IsNumber());
+  uint32_t x = NumberToUint32(args[2]);
+  RUNTIME_ASSERT(args[3]->IsNumber());
+  uint32_t y = NumberToUint32(args[3]);
+
+  float64x2_value_t result;
+  result.storage[0] = x < 2 ?
+      a->getAt(x & 0x1) : b->getAt((x - 2) & 0x1);
+  result.storage[1] = y < 2 ?
+      a->getAt(y & 0x1) : b->getAt((y - 2) & 0x1);
+
+  RETURN_Float64x2_RESULT(result);
+}
 
 
 RUNTIME_FUNCTION(Runtime_Float32x4Scale) {

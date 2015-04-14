@@ -292,6 +292,29 @@ function TYPEFUNCTIONJS(a4, b4) {
 }
 endmacro
 
+function Float64x2SwizzleJS(x2, x, y) {
+  CheckFloat64x2(x2);
+  var x_ = TO_INT32(x);
+  var y_ = TO_INT32(y);
+  if ((x_ < 0) || (x_ > 1) ||
+      (y_ < 0) || (y_ > 1)) {
+    throw MakeRangeError("invalid_simd_shuffle_lane_index");
+  }
+  return %Float64x2Swizzle(x2, x_, y_);
+}
+
+function Float64x2ShuffleJS(x2, y2, x, y) {
+  CheckFloat64x2(x2);
+  CheckFloat64x2(y2);
+  var x_ = TO_INT32(x);
+  var y_ = TO_INT32(y);
+  if ((x_ < 0) || (x_ > 3) ||
+      (y_ < 0) || (y_ > 3)) {
+    throw MakeRangeError("invalid_simd_shuffle_lane_index");
+  }
+  return %Float64x2Shuffle(x2, y2, x_, y_);
+}
+
 macro DECLARE_SIMD_SHUFFLE_FUNCTION(TYPE)
 function TYPESwizzleJS(x4, x, y, z, w) {
   CheckTYPE(x4);
@@ -601,7 +624,10 @@ function SetUpSIMD() {
     "withX", Float64x2WithXJS,
     "withY", Float64x2WithYJS,
     // Ternary
-    "clamp", Float64x2ClampJS
+    "clamp", Float64x2ClampJS,
+    "swizzle", Float64x2SwizzleJS,
+    //Quarternary
+    "shuffle", Float64x2ShuffleJS
   ));
 
   // Set up non-enumerable properties of the SIMD int32x4 object.
