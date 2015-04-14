@@ -518,3 +518,42 @@ function testArrayOfFloat64x2() {
 }
 
 testArrayOfFloat64x2();
+
+function testSIMDShuffle() {
+  var a = SIMD.float64x2(1.0, 2.0);
+  var b = SIMD.float64x2(3.0, 4.0);
+  var xx = SIMD.float64x2.shuffle(a, b, 0, 2);
+  var xy = SIMD.float64x2.shuffle(a, b, 0, 3);
+  var yx = SIMD.float64x2.shuffle(a, b, 1, 2);
+  var yy = SIMD.float64x2.shuffle(a, b, 1, 3);
+
+  assertEquals(xx.x, 1.0);
+  assertEquals(xx.y, 3.0);
+  assertEquals(xy.x, 1.0);
+  assertEquals(xy.y, 4.0);
+  assertEquals(yx.x, 2.0);
+  assertEquals(yx.y, 3.0);
+  assertEquals(yy.x, 2.0);
+  assertEquals(yy.y, 4.0);
+}
+
+testSIMDShuffle();
+
+function testSIMDSwizzle() {
+  var a = SIMD.float64x2(1.0, 2.0);
+  var xx = SIMD.float64x2.swizzle(a, 0, 0);
+  var xy = SIMD.float64x2.swizzle(a, 0, 1);
+  var yx = SIMD.float64x2.swizzle(a, 1, 0);
+  var yy = SIMD.float64x2.swizzle(a, 1, 1);
+
+  assertEquals(xx.x, 1.0);
+  assertEquals(xx.y, 1.0);
+  assertEquals(xy.x, 1.0);
+  assertEquals(xy.y, 2.0);
+  assertEquals(yx.x, 2.0);
+  assertEquals(yx.y, 1.0);
+  assertEquals(yy.x, 2.0);
+  assertEquals(yy.y, 2.0);
+}
+
+testSIMDSwizzle();
