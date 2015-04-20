@@ -7674,6 +7674,7 @@ void HeapSnapshot::Delete() {
   }
 }
 
+
 const char* HeapEventXDK::getSymbols() {
   const i::HeapEventXDK* eventXDK =
     reinterpret_cast<const i::HeapEventXDK*>(this);
