@@ -3040,6 +3040,13 @@ LInstruction* LChunkBuilder::DoTernarySIMDOperation(
     case kFloat64x2Clamp: {
       return DefineSameAsFirst(result);
     }
+    case kFloat64x2Swizzle: {
+      LOperand* second = UseOrConstant(instr->second());
+      LOperand* third = UseOrConstant(instr->third());
+      LTernarySIMDOperation* result =
+          new(zone()) LTernarySIMDOperation(first, second, third, instr->op());
+      return AssignEnvironment(DefineSameAsFirst(result));
+    }
     default:
       UNREACHABLE();
       return NULL;
@@ -3072,6 +3079,12 @@ LInstruction* LChunkBuilder::DoQuarternarySIMDOperation(
       new(zone()) LQuarternarySIMDOperation(x, y, z, w, instr->op());
   if (instr->op() == kInt32x4Bool) {
     return AssignEnvironment(DefineAsRegister(result));
+  } else if (instr->op() == kFloat64x2Shuffle) {
+    LOperand* z = UseOrConstant(instr->z());
+    LOperand* w = UseOrConstant(instr->w());
+    LQuarternarySIMDOperation* result =
+        new(zone()) LQuarternarySIMDOperation(x, y, z, w, instr->op());
+    return AssignEnvironment(DefineSameAsFirst(result));
   } else {
     return DefineAsRegister(result);
   }
