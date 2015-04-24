@@ -358,23 +358,41 @@ void LAccessArgumentsAt::PrintDataTo(StringStream* stream) {
 
 
 int LPlatformChunk::GetNextSpillIndex(RegisterKind kind) {
-  // Skip a slot if for a double-width slot.
-  if (kind == DOUBLE_REGISTERS) {
-    spill_slot_count_++;
-    spill_slot_count_ |= 1;
-    num_double_slots_++;
+  switch (kind) {
+    case GENERAL_REGISTERS: return spill_slot_count_++;
+    case DOUBLE_REGISTERS: {
+      // Skip a slot if for a double-width slot.
+      spill_slot_count_++;
+      spill_slot_count_ |= 1;
+      num_double_slots_++;
+      return spill_slot_count_++;
+    }
+    case FLOAT32x4_REGISTERS:
+    case FLOAT64x2_REGISTERS:
+    case INT32x4_REGISTERS: {
+      // Skip three slots if for a quad-width slot.
+      spill_slot_count_ += 3;
+      num_double_slots_ += 2;  // for dynamic frame alignment
+      return spill_slot_count_++;
+    }
+    default:
+      UNREACHABLE();
+      return -1;
   }
-  return spill_slot_count_++;
 }
 
 
 LOperand* LPlatformChunk::GetNextSpillSlot(RegisterKind kind) {
   int index = GetNextSpillIndex(kind);
-  if (kind == DOUBLE_REGISTERS) {
-    return LDoubleStackSlot::Create(index, zone());
-  } else {
-    DCHECK(kind == GENERAL_REGISTERS);
-    return LStackSlot::Create(index, zone());
+  switch (kind) {
+    case GENERAL_REGISTERS: return LStackSlot::Create(index, zone());
+    case DOUBLE_REGISTERS: return LDoubleStackSlot::Create(index, zone());
+    case FLOAT32x4_REGISTERS: return LFloat32x4StackSlot::Create(index, zone());
+    case FLOAT64x2_REGISTERS: return LFloat64x2StackSlot::Create(index, zone());
+    case INT32x4_REGISTERS: return LInt32x4StackSlot::Create(index, zone());
+    default:
+      UNREACHABLE();
+      return NULL;
   }
 }
 
@@ -989,6 +1007,7 @@ LInstruction* LChunkBuilder::DoBranch(HBranch* instr) {
 
   bool easy_case = !r.IsTagged() || type.IsBoolean() || type.IsSmi() ||
       type.IsJSArray() || type.IsHeapNumber() || type.IsString();
+
   LOperand* temp = !easy_case && expected.NeedsMap() ? TempRegister() : NULL;
   LInstruction* branch = new(zone()) LBranch(UseRegister(value), temp);
   if (!easy_case &&
@@ -1887,7 +1906,9 @@ LInstruction* LChunkBuilder::DoBoundsCheck(HBoundsCheck* instr) {
   LOperand* length = !index->IsConstantOperand()
       ? UseOrConstantAtStart(instr->length())
       : UseAtStart(instr->length());
-  LInstruction* result = new(zone()) LBoundsCheck(index, length);
+  LOperand* temp0 = TempRegister();
+  LOperand* temp1 = TempRegister();
+  LInstruction* result = new(zone()) LBoundsCheck(index, length, temp0, temp1);
   if (!FLAG_debug_code || !instr->skip_check()) {
     result = AssignEnvironment(result);
   }
@@ -1941,6 +1962,11 @@ LInstruction* LChunkBuilder::DoChange(HChange* instr) {
           DefineAsRegister(new(zone()) LNumberUntagD(value, temp));
       if (!val->representation().IsSmi()) result = AssignEnvironment(result);
       return result;
+    } else if (to.IsSIMD128()) {
+      LOperand* value = UseRegister(instr->value());
+      LOperand* temp = TempRegister();
+      LTaggedToSIMD128* res = new(zone()) LTaggedToSIMD128(value, temp, to);
+      return AssignEnvironment(DefineAsRegister(res));
     } else if (to.IsSmi()) {
       LOperand* value = UseRegister(val);
       if (val->type().IsSmi()) {
@@ -2015,6 +2041,17 @@ LInstruction* LChunkBuilder::DoChange(HChange* instr) {
         return DefineAsRegister(new(zone()) LInteger32ToDouble(Use(val)));
       }
     }
+  } else if (from.IsSIMD128()) {
+    DCHECK(to.IsTagged());
+    info()->MarkAsDeferredCalling();
+    LOperand* value = UseRegister(instr->value());
+    LOperand* temp = TempRegister();
+    LOperand* temp2 = TempRegister();
+
+    // Make sure that temp and result_temp are different registers.
+    LUnallocated* result_temp = TempRegister();
+    LSIMD128ToTagged* result = new(zone()) LSIMD128ToTagged(value, temp, temp2);
+    return AssignPointerMap(Define(result, result_temp));
   }
   UNREACHABLE();
   return NULL;
@@ -2231,7 +2268,19 @@ LInstruction* LChunkBuilder::DoLoadKeyed(HLoadKeyed* instr) {
         (instr->representation().IsInteger32() &&
          !(IsDoubleOrFloatElementsKind(instr->elements_kind()))) ||
         (instr->representation().IsDouble() &&
-         (IsDoubleOrFloatElementsKind(instr->elements_kind()))));
+         (IsDoubleOrFloatElementsKind(instr->elements_kind()))) ||
+        (CpuFeatures::SupportsSIMD128InCrankshaft()
+            ? instr->representation().IsFloat32x4()
+            : instr->representation().IsTagged() &&
+         (IsFloat32x4ElementsKind(instr->elements_kind()))) ||
+        (CpuFeatures::SupportsSIMD128InCrankshaft()
+            ? instr->representation().IsFloat64x2()
+            : instr->representation().IsTagged() &&
+         (IsFloat64x2ElementsKind(instr->elements_kind()))) ||
+        (CpuFeatures::SupportsSIMD128InCrankshaft()
+            ? instr->representation().IsInt32x4()
+            : instr->representation().IsTagged() &&
+         (IsInt32x4ElementsKind(instr->elements_kind()))));
     LOperand* backing_store = UseRegister(instr->elements());
     result = DefineAsRegister(new(zone()) LLoadKeyed(backing_store, key));
   }
@@ -2267,15 +2316,36 @@ LInstruction* LChunkBuilder::DoLoadKeyedGeneric(HLoadKeyedGeneric* instr) {
 
 LOperand* LChunkBuilder::GetStoreKeyedValueOperand(HStoreKeyed* instr) {
   ElementsKind elements_kind = instr->elements_kind();
+  BuiltinFunctionId op = instr->op();
 
   // Determine if we need a byte register in this case for the value.
   bool val_is_fixed_register =
-      elements_kind == EXTERNAL_INT8_ELEMENTS ||
+      (elements_kind == EXTERNAL_INT8_ELEMENTS ||
       elements_kind == EXTERNAL_UINT8_ELEMENTS ||
       elements_kind == EXTERNAL_UINT8_CLAMPED_ELEMENTS ||
       elements_kind == UINT8_ELEMENTS ||
       elements_kind == INT8_ELEMENTS ||
-      elements_kind == UINT8_CLAMPED_ELEMENTS;
+      elements_kind == UINT8_CLAMPED_ELEMENTS) &&
+      (op != kInt8ArraySetFloat32x4XYZW &&
+      op != kInt8ArraySetFloat32x4X &&
+      op != kInt8ArraySetFloat32x4XY &&
+      op != kInt8ArraySetFloat32x4XYZ &&
+      op != kInt8ArraySetInt32x4XYZW &&
+      op != kInt8ArraySetInt32x4X &&
+      op != kInt8ArraySetInt32x4XY &&
+      op != kInt8ArraySetInt32x4XYZ &&
+      op != kInt8ArraySetFloat64x2XY &&
+      op != kInt8ArraySetFloat64x2X &&
+      op != kUint8ArraySetFloat32x4XYZW &&
+      op != kUint8ArraySetFloat32x4X &&
+      op != kUint8ArraySetFloat32x4XY &&
+      op != kUint8ArraySetFloat32x4XYZ &&
+      op != kUint8ArraySetInt32x4XYZW &&
+      op != kUint8ArraySetInt32x4X &&
+      op != kUint8ArraySetInt32x4XY &&
+      op != kUint8ArraySetInt32x4XYZ &&
+      op != kUint8ArraySetFloat64x2XY &&
+      op != kUint8ArraySetFloat64x2X);
   if (val_is_fixed_register) {
     return UseFixed(instr->value(), eax);
   }
@@ -2319,7 +2389,19 @@ LInstruction* LChunkBuilder::DoStoreKeyed(HStoreKeyed* instr) {
       (instr->value()->representation().IsInteger32() &&
        !IsDoubleOrFloatElementsKind(elements_kind)) ||
       (instr->value()->representation().IsDouble() &&
-       IsDoubleOrFloatElementsKind(elements_kind)));
+       IsDoubleOrFloatElementsKind(elements_kind)) ||
+      (CpuFeatures::SupportsSIMD128InCrankshaft()
+          ? instr->value()->representation().IsFloat32x4()
+          : instr->value()->representation().IsTagged() &&
+       IsFloat32x4ElementsKind(elements_kind)) ||
+      (CpuFeatures::SupportsSIMD128InCrankshaft()
+          ? instr->value()->representation().IsFloat64x2()
+          : instr->value()->representation().IsTagged() &&
+       IsFloat64x2ElementsKind(elements_kind)) ||
+      (CpuFeatures::SupportsSIMD128InCrankshaft()
+          ? instr->value()->representation().IsInt32x4()
+          : instr->value()->representation().IsTagged() &&
+       IsInt32x4ElementsKind(elements_kind)));
   DCHECK((instr->is_fixed_typed_array() &&
           instr->elements()->representation().IsTagged()) ||
          (instr->is_external() &&
@@ -2721,6 +2803,335 @@ LInstruction* LChunkBuilder::DoAllocateBlockContext(
   LAllocateBlockContext* result =
       new(zone()) LAllocateBlockContext(context, function);
   return MarkAsCall(DefineFixed(result, esi), instr);
+}
+
+
+const char* LNullarySIMDOperation::Mnemonic() const {
+  switch (op()) {
+#define SIMD_NULLARY_OPERATION_CASE_ITEM(module, function, name, p4)           \
+    case k##name:                                                              \
+      return #module "-" #function;
+SIMD_NULLARY_OPERATIONS(SIMD_NULLARY_OPERATION_CASE_ITEM)
+#undef SIMD_NULLARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+LInstruction* LChunkBuilder::DoNullarySIMDOperation(
+    HNullarySIMDOperation* instr) {
+  LNullarySIMDOperation* result =
+      new(zone()) LNullarySIMDOperation(instr->op());
+  switch (instr->op()) {
+#define SIMD_NULLARY_OPERATION_CASE_ITEM(module, function, name, p4)           \
+    case k##name:
+SIMD_NULLARY_OPERATIONS(SIMD_NULLARY_OPERATION_CASE_ITEM)
+#undef SIMD_NULLARY_OPERATION_CASE_ITEM
+      return DefineAsRegister(result);
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+const char* LUnarySIMDOperation::Mnemonic() const {
+  switch (op()) {
+    case kSIMD128Change: return "SIMD128-change";
+#define SIMD_UNARY_OPERATION_CASE_ITEM(module, function, name, p4, p5)         \
+    case k##name:                                                              \
+      return #module "-" #function;
+SIMD_UNARY_OPERATIONS(SIMD_UNARY_OPERATION_CASE_ITEM)
+SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(SIMD_UNARY_OPERATION_CASE_ITEM)
+#undef SIMD_UNARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+LInstruction* LChunkBuilder::DoUnarySIMDOperation(HUnarySIMDOperation* instr) {
+  LOperand* input = UseRegisterAtStart(instr->value());
+  LUnarySIMDOperation* result =
+      new(zone()) LUnarySIMDOperation(input, instr->op());
+  switch (instr->op()) {
+    case kSIMD128Change:
+      return AssignEnvironment(DefineAsRegister(result));
+    case kFloat32x4Abs:
+    case kFloat32x4Neg:
+    case kFloat32x4Reciprocal:
+    case kFloat32x4ReciprocalSqrt:
+    case kFloat32x4Sqrt:
+    case kFloat64x2Abs:
+    case kFloat64x2Neg:
+    case kFloat64x2Sqrt:
+    case kInt32x4Neg:
+    case kInt32x4Not:
+      return DefineSameAsFirst(result);
+    case kFloat32x4Check:
+    case kFloat64x2Check:
+    case kInt32x4Check:
+    case kFloat32x4BitsToInt32x4:
+    case kFloat32x4ToInt32x4:
+    case kInt32x4BitsToFloat32x4:
+    case kInt32x4ToFloat32x4:
+    case kFloat32x4Splat:
+    case kInt32x4Splat:
+    case kFloat32x4GetSignMask:
+    case kFloat32x4GetX:
+    case kFloat32x4GetY:
+    case kFloat32x4GetZ:
+    case kFloat32x4GetW:
+    case kFloat64x2GetSignMask:
+    case kFloat64x2GetX:
+    case kFloat64x2GetY:
+    case kInt32x4GetSignMask:
+    case kInt32x4GetX:
+    case kInt32x4GetY:
+    case kInt32x4GetZ:
+    case kInt32x4GetW:
+    case kInt32x4GetFlagX:
+    case kInt32x4GetFlagY:
+    case kInt32x4GetFlagZ:
+    case kInt32x4GetFlagW:
+      return DefineAsRegister(result);
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+const char* LBinarySIMDOperation::Mnemonic() const {
+  switch (op()) {
+#define SIMD_BINARY_OPERATION_CASE_ITEM(module, function, name, p4, p5, p6)    \
+    case k##name:                                                              \
+      return #module "-" #function;
+SIMD_BINARY_OPERATIONS(SIMD_BINARY_OPERATION_CASE_ITEM)
+#undef SIMD_BINARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+LInstruction* LChunkBuilder::DoBinarySIMDOperation(
+    HBinarySIMDOperation* instr) {
+  switch (instr->op()) {
+    case kFloat32x4Add:
+    case kFloat32x4Div:
+    case kFloat32x4Max:
+    case kFloat32x4Min:
+    case kFloat32x4Mul:
+    case kFloat32x4Sub:
+    case kFloat32x4Scale:
+    case kFloat32x4WithX:
+    case kFloat32x4WithY:
+    case kFloat32x4WithZ:
+    case kFloat32x4WithW:
+    case kFloat64x2Add:
+    case kFloat64x2Div:
+    case kFloat64x2Max:
+    case kFloat64x2Min:
+    case kFloat64x2Mul:
+    case kFloat64x2Sub:
+    case kFloat64x2Scale:
+    case kFloat64x2WithX:
+    case kFloat64x2WithY:
+    case kInt32x4Add:
+    case kInt32x4And:
+    case kInt32x4Mul:
+    case kInt32x4Or:
+    case kInt32x4Sub:
+    case kInt32x4Xor:
+    case kInt32x4WithX:
+    case kInt32x4WithY:
+    case kInt32x4WithZ:
+    case kInt32x4WithW:
+    case kInt32x4WithFlagX:
+    case kInt32x4WithFlagY:
+    case kInt32x4WithFlagZ:
+    case kInt32x4WithFlagW:
+    case kInt32x4GreaterThan:
+    case kInt32x4Equal:
+    case kInt32x4LessThan: {
+      LOperand* left = UseRegisterAtStart(instr->left());
+      LOperand* right = UseRegisterAtStart(instr->right());
+      LBinarySIMDOperation* result =
+          new(zone()) LBinarySIMDOperation(left, right, instr->op());
+      if (instr->op() == kInt32x4WithFlagX ||
+          instr->op() == kInt32x4WithFlagY ||
+          instr->op() == kInt32x4WithFlagZ ||
+          instr->op() == kInt32x4WithFlagW) {
+        return AssignEnvironment(DefineSameAsFirst(result));
+      } else {
+        return DefineSameAsFirst(result);
+      }
+    }
+    case kFloat64x2Constructor: {
+      LOperand* left = UseRegisterAtStart(instr->left());
+      LOperand* right = UseRegisterAtStart(instr->right());
+      LBinarySIMDOperation* result =
+          new(zone()) LBinarySIMDOperation(left, right, instr->op());
+      return DefineAsRegister(result);
+    }
+    case kFloat32x4Shuffle:
+    case kInt32x4Shuffle:
+    case kInt32x4ShiftLeft:
+    case kInt32x4ShiftRight:
+    case kInt32x4ShiftRightArithmetic: {
+      LOperand* left = UseRegisterAtStart(instr->left());
+      LOperand* right = UseOrConstant(instr->right());
+      LBinarySIMDOperation* result =
+          new(zone()) LBinarySIMDOperation(left, right, instr->op());
+      return AssignEnvironment(DefineSameAsFirst(result));
+    }
+    case kFloat32x4LessThan:
+    case kFloat32x4LessThanOrEqual:
+    case kFloat32x4Equal:
+    case kFloat32x4NotEqual:
+    case kFloat32x4GreaterThanOrEqual:
+    case kFloat32x4GreaterThan: {
+      LOperand* left = UseRegisterAtStart(instr->left());
+      LOperand* right = UseRegisterAtStart(instr->right());
+      LBinarySIMDOperation* result =
+          new(zone()) LBinarySIMDOperation(left, right, instr->op());
+      return DefineAsRegister(result);
+    }
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+const char* LTernarySIMDOperation::Mnemonic() const {
+  switch (op()) {
+#define SIMD_TERNARY_OPERATION_CASE_ITEM(module, function, name, p4, p5, p6,   \
+                                         p7)                                   \
+    case k##name:                                                              \
+      return #module "-" #function;
+SIMD_TERNARY_OPERATIONS(SIMD_TERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_TERNARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+LInstruction* LChunkBuilder::DoTernarySIMDOperation(
+    HTernarySIMDOperation* instr) {
+  LOperand* first = UseRegisterAtStart(instr->first());
+  LOperand* second = UseRegisterAtStart(instr->second());
+  LOperand* third = UseRegisterAtStart(instr->third());
+  LTernarySIMDOperation* result =
+      new(zone()) LTernarySIMDOperation(first, second, third, instr->op());
+  switch (instr->op()) {
+    case kInt32x4Select:
+    case kFloat32x4Select: {
+      return DefineAsRegister(result);
+    }
+    case kFloat32x4Clamp:
+    case kFloat64x2Clamp: {
+      return DefineSameAsFirst(result);
+    }
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+const char* LQuarternarySIMDOperation::Mnemonic() const {
+  switch (op()) {
+#define SIMD_QUARTERNARY_OPERATION_CASE_ITEM(module, function, name, p4, p5,   \
+                                             p6, p7, p8)                       \
+    case k##name:                                                              \
+      return #module "-" #function;
+SIMD_QUARTERNARY_OPERATIONS(SIMD_QUARTERNARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUARTERNARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+LInstruction* LChunkBuilder::DoQuarternarySIMDOperation(
+    HQuarternarySIMDOperation* instr) {
+  LOperand* x = UseRegisterAtStart(instr->x());
+  LOperand* y = UseRegisterAtStart(instr->y());
+  LOperand* z = UseRegisterAtStart(instr->z());
+  LOperand* w = UseRegisterAtStart(instr->w());
+  LQuarternarySIMDOperation* result =
+      new(zone()) LQuarternarySIMDOperation(x, y, z, w, instr->op());
+  if (instr->op() == kInt32x4Bool) {
+    return AssignEnvironment(DefineAsRegister(result));
+  } else {
+    return DefineAsRegister(result);
+  }
+}
+
+
+const char* LQuinarySIMDOperation::Mnemonic() const {
+  switch (op()) {
+#define SIMD_QUINARY_OPERATION_CASE_ITEM(module, function, name, p4, p5,   \
+                                         p6, p7, p8, p9)                   \
+    case k##name:                                                          \
+      return #module "-" #function;
+SIMD_QUINARY_OPERATIONS(SIMD_QUINARY_OPERATION_CASE_ITEM)
+#undef SIMD_QUINARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+LInstruction* LChunkBuilder::DoQuinarySIMDOperation(
+    HQuinarySIMDOperation* instr) {
+  LOperand* a0 = UseRegisterAtStart(instr->a0());
+  LOperand* a1 = UseOrConstant(instr->a1());
+  LOperand* a2 = UseOrConstant(instr->a2());
+  LOperand* a3 = UseOrConstant(instr->a3());
+  LOperand* a4 = UseOrConstant(instr->a4());
+  LQuinarySIMDOperation* result =
+      new(zone()) LQuinarySIMDOperation(a0, a1, a2, a3, a4, instr->op());
+  return AssignEnvironment(DefineSameAsFirst(result));
+}
+
+
+const char* LSenarySIMDOperation::Mnemonic() const {
+  switch (op()) {
+#define SIMD_SENARY_OPERATION_CASE_ITEM(module, function, name, p4, p5,   \
+                                        p6, p7, p8, p9, p10)              \
+    case k##name:                                                         \
+      return #module "-" #function;
+SIMD_SENARY_OPERATIONS(SIMD_SENARY_OPERATION_CASE_ITEM)
+#undef SIMD_SENARY_OPERATION_CASE_ITEM
+    default:
+      UNREACHABLE();
+      return NULL;
+  }
+}
+
+
+LInstruction* LChunkBuilder::DoSenarySIMDOperation(
+    HSenarySIMDOperation* instr) {
+  LOperand* a0 = UseRegisterAtStart(instr->a0());
+  LOperand* a1 = UseRegisterAtStart(instr->a1());
+  LOperand* a2 = UseOrConstant(instr->a2());
+  LOperand* a3 = UseOrConstant(instr->a3());
+  LOperand* a4 = UseOrConstant(instr->a4());
+  LOperand* a5 = UseOrConstant(instr->a5());
+  LSenarySIMDOperation* result =
+      new(zone()) LSenarySIMDOperation(a0, a1, a2, a3, a4, a5, instr->op());
+  return AssignEnvironment(DefineSameAsFirst(result));
 }
 
 

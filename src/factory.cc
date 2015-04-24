@@ -1064,6 +1064,30 @@ Handle<HeapNumber> Factory::NewHeapNumber(double value,
 }
 
 
+Handle<Float32x4> Factory::NewFloat32x4(float32x4_value_t value,
+                                        PretenureFlag pretenure) {
+  CALL_HEAP_FUNCTION(
+      isolate(),
+      isolate()->heap()->AllocateFloat32x4(value, pretenure), Float32x4);
+}
+
+
+Handle<Float64x2> Factory::NewFloat64x2(float64x2_value_t value,
+                                        PretenureFlag pretenure) {
+  CALL_HEAP_FUNCTION(
+      isolate(),
+      isolate()->heap()->AllocateFloat64x2(value, pretenure), Float64x2);
+}
+
+
+Handle<Int32x4> Factory::NewInt32x4(int32x4_value_t value,
+                                    PretenureFlag pretenure) {
+  CALL_HEAP_FUNCTION(
+      isolate(),
+      isolate()->heap()->AllocateInt32x4(value, pretenure), Int32x4);
+}
+
+
 Handle<Object> Factory::NewTypeError(const char* message,
                                      Vector<Handle<Object> > args) {
   return NewError("MakeTypeError", message, args);
@@ -1314,6 +1338,9 @@ Handle<JSFunction> Factory::NewFunction(Handle<String> name, Handle<Code> code,
   ElementsKind elements_kind =
       type == JS_ARRAY_TYPE ? FAST_SMI_ELEMENTS : FAST_HOLEY_SMI_ELEMENTS;
   Handle<Map> initial_map = NewMap(type, instance_size, elements_kind);
+  if (type == FLOAT32x4_TYPE) {
+    initial_map->set_is_extensible(false);
+  }
   if (!function->shared()->is_generator()) {
     if (prototype->IsTheHole()) {
       prototype = NewFunctionPrototype(function);
