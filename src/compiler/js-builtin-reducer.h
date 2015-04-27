@@ -29,6 +29,7 @@ class JSBuiltinReducer FINAL : public Reducer {
   Reduction ReduceMathMax(Node* node);
   Reduction ReduceMathImul(Node* node);
   Reduction ReduceMathFround(Node* node);
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
   Reduction ReduceFloat32x4Add(Node* node);
   Reduction ReduceFloat32x4Sub(Node* node);
   Reduction ReduceFloat32x4Mul(Node* node);
@@ -122,6 +123,7 @@ class JSBuiltinReducer FINAL : public Reducer {
   Reduction ReduceGetFloat64x2XY(Node* node);
   Reduction ReduceSetFloat64x2X(Node* node);
   Reduction ReduceSetFloat64x2XY(Node* node);
+#endif
 
   Node* ToBoolean(Node* input, Node* context);
   JSGraph* jsgraph() const { return jsgraph_; }

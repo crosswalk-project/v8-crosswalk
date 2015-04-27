@@ -220,6 +220,7 @@ Reduction JSBuiltinReducer::ReduceMathFround(Node* node) {
   }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 REDUCED_SIMD_BINARY_OPERATIONS(DECLARE_REDUCE_BINARY_SIMD_OPERATION)
 
 
@@ -655,6 +656,7 @@ SIMD_LOAD_OPERATION(DECLARE_REDUCE_SIMD_LOAD)
 
 
 SIMD_STORE_OPERATION(DECLARE_REDUCE_SIMD_STORE)
+#endif
 
 
 Node* JSBuiltinReducer::ToBoolean(Node* input, Node* context) {
@@ -684,6 +686,7 @@ Node* JSBuiltinReducer::ToBoolean(Node* input, Node* context) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 Reduction JSBuiltinReducer::ReduceInt32x4Bool(Node* node) {
   JSCallReduction r(node);
   if (r.GetJSCallArity() == 4) {
@@ -795,6 +798,7 @@ Type* JSBuiltinReducer::GetFloat64x2() {
 
   return float64x2_.get();
 }
+#endif
 
 
 Reduction JSBuiltinReducer::Reduce(Node* node) {
@@ -809,6 +813,7 @@ Reduction JSBuiltinReducer::Reduce(Node* node) {
       return ReplaceWithPureReduction(node, ReduceMathImul(node));
     case kMathFround:
       return ReplaceWithPureReduction(node, ReduceMathFround(node));
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
     case kFloat32x4Add:
       return ReplaceWithPureReduction(node, ReduceFloat32x4Add(node));
     case kFloat32x4Sub:
@@ -997,6 +1002,7 @@ Reduction JSBuiltinReducer::Reduce(Node* node) {
       return ReplaceWithPureReduction(node, ReduceSetFloat64x2X(node));
     case kSetFloat64x2XY:
       return ReplaceWithPureReduction(node, ReduceSetFloat64x2XY(node));
+#endif
     default:
       break;
   }

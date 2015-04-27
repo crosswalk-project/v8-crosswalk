@@ -64,79 +64,8 @@ CheckedStoreRepresentation CheckedStoreRepresentationOf(Operator const* op) {
 }
 
 
-#define PURE_OP_LIST(V)                                                       \
-  V(Word32And, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)      \
-  V(Word32Or, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
-  V(Word32Xor, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)      \
-  V(Word32Shl, Operator::kNoProperties, 2, 0, 1)                              \
-  V(Word32Shr, Operator::kNoProperties, 2, 0, 1)                              \
-  V(Word32Sar, Operator::kNoProperties, 2, 0, 1)                              \
-  V(Word32Ror, Operator::kNoProperties, 2, 0, 1)                              \
-  V(Word32Equal, Operator::kCommutative, 2, 0, 1)                             \
-  V(Word32Clz, Operator::kNoProperties, 1, 0, 1)                              \
-  V(Word64And, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)      \
-  V(Word64Or, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
-  V(Word64Xor, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)      \
-  V(Word64Shl, Operator::kNoProperties, 2, 0, 1)                              \
-  V(Word64Shr, Operator::kNoProperties, 2, 0, 1)                              \
-  V(Word64Sar, Operator::kNoProperties, 2, 0, 1)                              \
-  V(Word64Ror, Operator::kNoProperties, 2, 0, 1)                              \
-  V(Word64Equal, Operator::kCommutative, 2, 0, 1)                             \
-  V(Int32Add, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
-  V(Int32AddWithOverflow, Operator::kAssociative | Operator::kCommutative, 2, \
-    0, 2)                                                                     \
-  V(Int32Sub, Operator::kNoProperties, 2, 0, 1)                               \
-  V(Int32SubWithOverflow, Operator::kNoProperties, 2, 0, 2)                   \
-  V(Int32Mul, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
-  V(Int32MulHigh, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)   \
-  V(Int32Div, Operator::kNoProperties, 2, 1, 1)                               \
-  V(Int32Mod, Operator::kNoProperties, 2, 1, 1)                               \
-  V(Int32LessThan, Operator::kNoProperties, 2, 0, 1)                          \
-  V(Int32LessThanOrEqual, Operator::kNoProperties, 2, 0, 1)                   \
-  V(Uint32Div, Operator::kNoProperties, 2, 1, 1)                              \
-  V(Uint32LessThan, Operator::kNoProperties, 2, 0, 1)                         \
-  V(Uint32LessThanOrEqual, Operator::kNoProperties, 2, 0, 1)                  \
-  V(Uint32Mod, Operator::kNoProperties, 2, 1, 1)                              \
-  V(Uint32MulHigh, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)  \
-  V(Int64Add, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
-  V(Int64Sub, Operator::kNoProperties, 2, 0, 1)                               \
-  V(Int64Mul, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
-  V(Int64Div, Operator::kNoProperties, 2, 0, 1)                               \
-  V(Int64Mod, Operator::kNoProperties, 2, 0, 1)                               \
-  V(Int64LessThan, Operator::kNoProperties, 2, 0, 1)                          \
-  V(Int64LessThanOrEqual, Operator::kNoProperties, 2, 0, 1)                   \
-  V(Uint64Div, Operator::kNoProperties, 2, 0, 1)                              \
-  V(Uint64LessThan, Operator::kNoProperties, 2, 0, 1)                         \
-  V(Uint64Mod, Operator::kNoProperties, 2, 0, 1)                              \
-  V(ChangeFloat32ToFloat64, Operator::kNoProperties, 1, 0, 1)                 \
-  V(ChangeFloat64ToInt32, Operator::kNoProperties, 1, 0, 1)                   \
-  V(ChangeFloat64ToUint32, Operator::kNoProperties, 1, 0, 1)                  \
-  V(ChangeInt32ToFloat64, Operator::kNoProperties, 1, 0, 1)                   \
-  V(ChangeInt32ToInt64, Operator::kNoProperties, 1, 0, 1)                     \
-  V(ChangeUint32ToFloat64, Operator::kNoProperties, 1, 0, 1)                  \
-  V(ChangeUint32ToUint64, Operator::kNoProperties, 1, 0, 1)                   \
-  V(TruncateFloat64ToFloat32, Operator::kNoProperties, 1, 0, 1)               \
-  V(TruncateFloat64ToInt32, Operator::kNoProperties, 1, 0, 1)                 \
-  V(TruncateInt64ToInt32, Operator::kNoProperties, 1, 0, 1)                   \
-  V(Float64Add, Operator::kCommutative, 2, 0, 1)                              \
-  V(Float64Sub, Operator::kNoProperties, 2, 0, 1)                             \
-  V(Float64Mul, Operator::kCommutative, 2, 0, 1)                              \
-  V(Float64Div, Operator::kNoProperties, 2, 0, 1)                             \
-  V(Float64Mod, Operator::kNoProperties, 2, 0, 1)                             \
-  V(Float64Sqrt, Operator::kNoProperties, 1, 0, 1)                            \
-  V(Float64RoundDown, Operator::kNoProperties, 1, 0, 1)                       \
-  V(Float64RoundTruncate, Operator::kNoProperties, 1, 0, 1)                   \
-  V(Float64RoundTiesAway, Operator::kNoProperties, 1, 0, 1)                   \
-  V(Float64Equal, Operator::kCommutative, 2, 0, 1)                            \
-  V(Float64LessThan, Operator::kNoProperties, 2, 0, 1)                        \
-  V(Float64LessThanOrEqual, Operator::kNoProperties, 2, 0, 1)                 \
-  V(Float64ExtractLowWord32, Operator::kNoProperties, 1, 0, 1)                \
-  V(Float64ExtractHighWord32, Operator::kNoProperties, 1, 0, 1)               \
-  V(Float64InsertLowWord32, Operator::kNoProperties, 2, 0, 1)                 \
-  V(Float64InsertHighWord32, Operator::kNoProperties, 2, 0, 1)                \
-  V(Float64Max, Operator::kNoProperties, 2, 0, 1)                             \
-  V(Float64Min, Operator::kNoProperties, 2, 0, 1)                             \
-  V(LoadStackPointer, Operator::kNoProperties, 0, 0, 1)                       \
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+#define SIMD_PURE_OP_LIST(V)                                                  \
   V(Float32x4Add, Operator::kCommutative, 2, 0, 1)                            \
   V(Float32x4Sub, Operator::kNoProperties, 2, 0, 1)                           \
   V(Float32x4Mul, Operator::kCommutative, 2, 0, 1)                            \
@@ -224,6 +153,84 @@ CheckedStoreRepresentation CheckedStoreRepresentationOf(Operator const* op) {
   V(Float32x4GreaterThanOrEqual, Operator::kNoProperties, 2, 0, 1)            \
   V(Float32x4LessThan, Operator::kNoProperties, 2, 0, 1)                      \
   V(Float32x4LessThanOrEqual, Operator::kNoProperties, 2, 0, 1)
+#else
+#define SIMD_PURE_OP_LIST(v)
+#endif
+
+#define PURE_OP_LIST(V)                                                       \
+  V(Word32And, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)      \
+  V(Word32Or, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
+  V(Word32Xor, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)      \
+  V(Word32Shl, Operator::kNoProperties, 2, 0, 1)                              \
+  V(Word32Shr, Operator::kNoProperties, 2, 0, 1)                              \
+  V(Word32Sar, Operator::kNoProperties, 2, 0, 1)                              \
+  V(Word32Ror, Operator::kNoProperties, 2, 0, 1)                              \
+  V(Word32Equal, Operator::kCommutative, 2, 0, 1)                             \
+  V(Word32Clz, Operator::kNoProperties, 1, 0, 1)                              \
+  V(Word64And, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)      \
+  V(Word64Or, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
+  V(Word64Xor, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)      \
+  V(Word64Shl, Operator::kNoProperties, 2, 0, 1)                              \
+  V(Word64Shr, Operator::kNoProperties, 2, 0, 1)                              \
+  V(Word64Sar, Operator::kNoProperties, 2, 0, 1)                              \
+  V(Word64Ror, Operator::kNoProperties, 2, 0, 1)                              \
+  V(Word64Equal, Operator::kCommutative, 2, 0, 1)                             \
+  V(Int32Add, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
+  V(Int32AddWithOverflow, Operator::kAssociative | Operator::kCommutative, 2, \
+    0, 2)                                                                     \
+  V(Int32Sub, Operator::kNoProperties, 2, 0, 1)                               \
+  V(Int32SubWithOverflow, Operator::kNoProperties, 2, 0, 2)                   \
+  V(Int32Mul, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
+  V(Int32MulHigh, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)   \
+  V(Int32Div, Operator::kNoProperties, 2, 1, 1)                               \
+  V(Int32Mod, Operator::kNoProperties, 2, 1, 1)                               \
+  V(Int32LessThan, Operator::kNoProperties, 2, 0, 1)                          \
+  V(Int32LessThanOrEqual, Operator::kNoProperties, 2, 0, 1)                   \
+  V(Uint32Div, Operator::kNoProperties, 2, 1, 1)                              \
+  V(Uint32LessThan, Operator::kNoProperties, 2, 0, 1)                         \
+  V(Uint32LessThanOrEqual, Operator::kNoProperties, 2, 0, 1)                  \
+  V(Uint32Mod, Operator::kNoProperties, 2, 1, 1)                              \
+  V(Uint32MulHigh, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)  \
+  V(Int64Add, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
+  V(Int64Sub, Operator::kNoProperties, 2, 0, 1)                               \
+  V(Int64Mul, Operator::kAssociative | Operator::kCommutative, 2, 0, 1)       \
+  V(Int64Div, Operator::kNoProperties, 2, 0, 1)                               \
+  V(Int64Mod, Operator::kNoProperties, 2, 0, 1)                               \
+  V(Int64LessThan, Operator::kNoProperties, 2, 0, 1)                          \
+  V(Int64LessThanOrEqual, Operator::kNoProperties, 2, 0, 1)                   \
+  V(Uint64Div, Operator::kNoProperties, 2, 0, 1)                              \
+  V(Uint64LessThan, Operator::kNoProperties, 2, 0, 1)                         \
+  V(Uint64Mod, Operator::kNoProperties, 2, 0, 1)                              \
+  V(ChangeFloat32ToFloat64, Operator::kNoProperties, 1, 0, 1)                 \
+  V(ChangeFloat64ToInt32, Operator::kNoProperties, 1, 0, 1)                   \
+  V(ChangeFloat64ToUint32, Operator::kNoProperties, 1, 0, 1)                  \
+  V(ChangeInt32ToFloat64, Operator::kNoProperties, 1, 0, 1)                   \
+  V(ChangeInt32ToInt64, Operator::kNoProperties, 1, 0, 1)                     \
+  V(ChangeUint32ToFloat64, Operator::kNoProperties, 1, 0, 1)                  \
+  V(ChangeUint32ToUint64, Operator::kNoProperties, 1, 0, 1)                   \
+  V(TruncateFloat64ToFloat32, Operator::kNoProperties, 1, 0, 1)               \
+  V(TruncateFloat64ToInt32, Operator::kNoProperties, 1, 0, 1)                 \
+  V(TruncateInt64ToInt32, Operator::kNoProperties, 1, 0, 1)                   \
+  V(Float64Add, Operator::kCommutative, 2, 0, 1)                              \
+  V(Float64Sub, Operator::kNoProperties, 2, 0, 1)                             \
+  V(Float64Mul, Operator::kCommutative, 2, 0, 1)                              \
+  V(Float64Div, Operator::kNoProperties, 2, 0, 1)                             \
+  V(Float64Mod, Operator::kNoProperties, 2, 0, 1)                             \
+  V(Float64Sqrt, Operator::kNoProperties, 1, 0, 1)                            \
+  V(Float64RoundDown, Operator::kNoProperties, 1, 0, 1)                       \
+  V(Float64RoundTruncate, Operator::kNoProperties, 1, 0, 1)                   \
+  V(Float64RoundTiesAway, Operator::kNoProperties, 1, 0, 1)                   \
+  V(Float64Equal, Operator::kCommutative, 2, 0, 1)                            \
+  V(Float64LessThan, Operator::kNoProperties, 2, 0, 1)                        \
+  V(Float64LessThanOrEqual, Operator::kNoProperties, 2, 0, 1)                 \
+  V(Float64ExtractLowWord32, Operator::kNoProperties, 1, 0, 1)                \
+  V(Float64ExtractHighWord32, Operator::kNoProperties, 1, 0, 1)               \
+  V(Float64InsertLowWord32, Operator::kNoProperties, 2, 0, 1)                 \
+  V(Float64InsertHighWord32, Operator::kNoProperties, 2, 0, 1)                \
+  V(Float64Max, Operator::kNoProperties, 2, 0, 1)                             \
+  V(Float64Min, Operator::kNoProperties, 2, 0, 1)                             \
+  V(LoadStackPointer, Operator::kNoProperties, 0, 0, 1)                       \
+  SIMD_PURE_OP_LIST(V)
 
 
 #define MACHINE_TYPE_LIST(V) \

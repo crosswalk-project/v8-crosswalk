@@ -1445,6 +1445,7 @@ Bounds Typer::Visitor::TypeJSToObject(Node* node) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 Bounds Typer::Visitor::TypeJSToFloat32x4Obj(Node* node) {
   return Bounds(
       Type::Intersect(typer_->GetFloat32x4(), Type::Tagged(), zone()));
@@ -1460,6 +1461,7 @@ Bounds Typer::Visitor::TypeJSToFloat64x2Obj(Node* node) {
   return Bounds(
       Type::Intersect(typer_->GetFloat64x2(), Type::Tagged(), zone()));
 }
+#endif
 
 
 // JS object operators.
@@ -1914,6 +1916,7 @@ Bounds Typer::Visitor::TypeChangeFloat64ToTagged(Node* node) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 Bounds Typer::Visitor::TypeChangeFloat32x4ToTagged(Node* node) {
   Bounds arg = Operand(node, 0);
   return Bounds(ChangeRepresentation(arg.lower, Type::Tagged(), zone()),
@@ -1956,6 +1959,7 @@ Bounds Typer::Visitor::TypeChangeTaggedToFloat64x2(Node* node) {
       ChangeRepresentation(arg.lower, typer_->GetFloat64x2(), zone()),
       ChangeRepresentation(arg.upper, typer_->GetFloat64x2(), zone()));
 }
+#endif
 
 
 Bounds Typer::Visitor::TypeChangeBoolToBit(Node* node) {
@@ -2538,7 +2542,9 @@ Bounds Typer::Visitor::TypeCheckedStore(Node* node) {
   }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 SIMD_OPERATIONS(DECLARE_TYPE_SIMD_OPERATION)
+#endif
 
 
 // Heap constants.
