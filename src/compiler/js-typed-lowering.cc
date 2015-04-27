@@ -712,6 +712,7 @@ Reduction JSTypedLowering::ReduceJSToNumber(Node* node) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 Reduction JSTypedLowering::ReduceJSToFloat32x4Obj(Node* node) {
   Node* const input = node->InputAt(0);
   if (input->opcode() == IrOpcode::kJSToFloat32x4Obj) {
@@ -749,6 +750,7 @@ Reduction JSTypedLowering::ReduceJSToFloat64x2Obj(Node* node) {
   }
   return NoChange();
 }
+#endif
 
 
 Reduction JSTypedLowering::ReduceJSToStringInput(Node* input) {
@@ -874,6 +876,7 @@ Type* JSTypedLowering::GetFloat64x2() {
 
 
 Reduction JSTypedLowering::ReduceJSLoadNamed(Node* node) {
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
   Isolate* isolate = jsgraph_->isolate();
   // During boostrapping, simd mobule might not be ready.
   if (isolate->IsSimdEnabled()) {
@@ -965,6 +968,7 @@ Reduction JSTypedLowering::ReduceJSLoadNamed(Node* node) {
       }
     }
   }
+#endif
   return NoChange();
 }
 
@@ -1173,8 +1177,10 @@ Reduction JSTypedLowering::Reduce(Node* node) {
       return ReduceJSToBoolean(node);
     case IrOpcode::kJSToNumber:
       return ReduceJSToNumber(node);
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
     case IrOpcode::kJSToFloat32x4Obj:
       return ReduceJSToFloat32x4Obj(node);
+#endif
     case IrOpcode::kJSToString:
       return ReduceJSToString(node);
     case IrOpcode::kJSLoadProperty:

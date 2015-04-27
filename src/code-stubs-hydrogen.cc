@@ -924,6 +924,7 @@ Handle<Code> AllocateHeapNumberStub::GenerateCode() {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 template <>
 HValue* CodeStubGraphBuilder<AllocateFloat32x4Stub>::BuildCodeStub() {
   HValue* result =
@@ -1024,6 +1025,7 @@ HValue* CodeStubGraphBuilder<AllocateFloat64x2Stub>::BuildCodeStub() {
 Handle<Code> AllocateFloat64x2Stub::GenerateCode() {
   return DoGenerateCode(this);
 }
+#endif
 
 
 HValue* CodeStubGraphBuilderBase::BuildArrayConstructor(
