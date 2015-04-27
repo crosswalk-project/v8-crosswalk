@@ -92,15 +92,22 @@
 
 #define JS_LOGIC_UNOP_LIST(V) V(JSUnaryNot)
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+#define SIMD_JS_CONVERSION_UNOP_LIST(V) \
+  V(JSToFloat32x4Obj)                   \
+  V(JSToInt32x4Obj)                     \
+  V(JSToFloat64x2Obj)
+#else
+#define SIMD_JS_CONVERSION_UNOP_LIST(V)
+#endif
+
 #define JS_CONVERSION_UNOP_LIST(V) \
   V(JSToBoolean)                   \
   V(JSToNumber)                    \
   V(JSToString)                    \
   V(JSToName)                      \
   V(JSToObject)                    \
-  V(JSToFloat32x4Obj)              \
-  V(JSToInt32x4Obj)                \
-  V(JSToFloat64x2Obj)
+  SIMD_JS_CONVERSION_UNOP_LIST(V)
 
 #define JS_OTHER_UNOP_LIST(V) \
   V(JSTypeOf)
@@ -154,8 +161,21 @@
   V(StringLessThan)                      \
   V(StringLessThanOrEqual)
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+#define SIMD_SIMPLIFIED_OP_LIST(V) \
+  V(ChangeFloat32x4ToTagged)       \
+  V(ChangeTaggedToFloat32x4)       \
+  V(ChangeInt32x4ToTagged)         \
+  V(ChangeTaggedToInt32x4)         \
+  V(ChangeFloat64x2ToTagged)       \
+  V(ChangeTaggedToFloat64x2)
+#else
+#define SIMD_SIMPLIFIED_OP_LIST(V)
+#endif
+
 #define SIMPLIFIED_OP_LIST(V)      \
   SIMPLIFIED_COMPARE_BINOP_LIST(V) \
+  SIMD_SIMPLIFIED_OP_LIST(V)       \
   V(BooleanNot)                    \
   V(BooleanToNumber)               \
   V(NumberAdd)                     \
@@ -173,12 +193,6 @@
   V(ChangeInt32ToTagged)           \
   V(ChangeUint32ToTagged)          \
   V(ChangeFloat64ToTagged)         \
-  V(ChangeFloat32x4ToTagged)       \
-  V(ChangeTaggedToFloat32x4)       \
-  V(ChangeInt32x4ToTagged)         \
-  V(ChangeTaggedToInt32x4)         \
-  V(ChangeFloat64x2ToTagged)       \
-  V(ChangeTaggedToFloat64x2)       \
   V(ChangeBoolToBit)               \
   V(ChangeBitToBool)               \
   V(LoadField)                     \
@@ -205,71 +219,8 @@
   V(Float64LessThan)                  \
   V(Float64LessThanOrEqual)
 
-#define MACHINE_OP_LIST(V)      \
-  MACHINE_COMPARE_BINOP_LIST(V) \
-  V(Load)                       \
-  V(Store)                      \
-  V(Word32And)                  \
-  V(Word32Or)                   \
-  V(Word32Xor)                  \
-  V(Word32Shl)                  \
-  V(Word32Shr)                  \
-  V(Word32Sar)                  \
-  V(Word32Ror)                  \
-  V(Word32Clz)                  \
-  V(Word64And)                  \
-  V(Word64Or)                   \
-  V(Word64Xor)                  \
-  V(Word64Shl)                  \
-  V(Word64Shr)                  \
-  V(Word64Sar)                  \
-  V(Word64Ror)                  \
-  V(Int32Add)                   \
-  V(Int32AddWithOverflow)       \
-  V(Int32Sub)                   \
-  V(Int32SubWithOverflow)       \
-  V(Int32Mul)                   \
-  V(Int32MulHigh)               \
-  V(Int32Div)                   \
-  V(Int32Mod)                   \
-  V(Uint32Div)                  \
-  V(Uint32Mod)                  \
-  V(Uint32MulHigh)              \
-  V(Int64Add)                   \
-  V(Int64Sub)                   \
-  V(Int64Mul)                   \
-  V(Int64Div)                   \
-  V(Int64Mod)                   \
-  V(Uint64Div)                  \
-  V(Uint64Mod)                  \
-  V(ChangeFloat32ToFloat64)     \
-  V(ChangeFloat64ToInt32)       \
-  V(ChangeFloat64ToUint32)      \
-  V(ChangeInt32ToFloat64)       \
-  V(ChangeInt32ToInt64)         \
-  V(ChangeUint32ToFloat64)      \
-  V(ChangeUint32ToUint64)       \
-  V(TruncateFloat64ToFloat32)   \
-  V(TruncateFloat64ToInt32)     \
-  V(TruncateInt64ToInt32)       \
-  V(Float64Add)                 \
-  V(Float64Sub)                 \
-  V(Float64Mul)                 \
-  V(Float64Div)                 \
-  V(Float64Mod)                 \
-  V(Float64Max)                 \
-  V(Float64Min)                 \
-  V(Float64Sqrt)                \
-  V(Float64RoundDown)           \
-  V(Float64RoundTruncate)       \
-  V(Float64RoundTiesAway)       \
-  V(Float64ExtractLowWord32)    \
-  V(Float64ExtractHighWord32)   \
-  V(Float64InsertLowWord32)     \
-  V(Float64InsertHighWord32)    \
-  V(LoadStackPointer)           \
-  V(CheckedLoad)                \
-  V(CheckedStore)               \
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+#define SIMD_MACHINE_OP_LIST(V)  \
   V(Float32x4Add)                \
   V(Float32x4Mul)                \
   V(Float32x4Sub)                \
@@ -360,6 +311,76 @@
   V(Float64x2WithX)              \
   V(Float64x2WithY)              \
   V(Float64x2Clamp)
+#else
+#define SIMD_MACHINE_OP_LIST(V)
+#endif
+
+#define MACHINE_OP_LIST(V)      \
+  MACHINE_COMPARE_BINOP_LIST(V) \
+  V(Load)                       \
+  V(Store)                      \
+  V(Word32And)                  \
+  V(Word32Or)                   \
+  V(Word32Xor)                  \
+  V(Word32Shl)                  \
+  V(Word32Shr)                  \
+  V(Word32Sar)                  \
+  V(Word32Ror)                  \
+  V(Word32Clz)                  \
+  V(Word64And)                  \
+  V(Word64Or)                   \
+  V(Word64Xor)                  \
+  V(Word64Shl)                  \
+  V(Word64Shr)                  \
+  V(Word64Sar)                  \
+  V(Word64Ror)                  \
+  V(Int32Add)                   \
+  V(Int32AddWithOverflow)       \
+  V(Int32Sub)                   \
+  V(Int32SubWithOverflow)       \
+  V(Int32Mul)                   \
+  V(Int32MulHigh)               \
+  V(Int32Div)                   \
+  V(Int32Mod)                   \
+  V(Uint32Div)                  \
+  V(Uint32Mod)                  \
+  V(Uint32MulHigh)              \
+  V(Int64Add)                   \
+  V(Int64Sub)                   \
+  V(Int64Mul)                   \
+  V(Int64Div)                   \
+  V(Int64Mod)                   \
+  V(Uint64Div)                  \
+  V(Uint64Mod)                  \
+  V(ChangeFloat32ToFloat64)     \
+  V(ChangeFloat64ToInt32)       \
+  V(ChangeFloat64ToUint32)      \
+  V(ChangeInt32ToFloat64)       \
+  V(ChangeInt32ToInt64)         \
+  V(ChangeUint32ToFloat64)      \
+  V(ChangeUint32ToUint64)       \
+  V(TruncateFloat64ToFloat32)   \
+  V(TruncateFloat64ToInt32)     \
+  V(TruncateInt64ToInt32)       \
+  V(Float64Add)                 \
+  V(Float64Sub)                 \
+  V(Float64Mul)                 \
+  V(Float64Div)                 \
+  V(Float64Mod)                 \
+  V(Float64Max)                 \
+  V(Float64Min)                 \
+  V(Float64Sqrt)                \
+  V(Float64RoundDown)           \
+  V(Float64RoundTruncate)       \
+  V(Float64RoundTiesAway)       \
+  V(Float64ExtractLowWord32)    \
+  V(Float64ExtractHighWord32)   \
+  V(Float64InsertLowWord32)     \
+  V(Float64InsertHighWord32)    \
+  V(LoadStackPointer)           \
+  V(CheckedLoad)                \
+  V(CheckedStore)               \
+  SIMD_MACHINE_OP_LIST(V)
 
 #define VALUE_OP_LIST(V) \
   COMMON_OP_LIST(V)      \

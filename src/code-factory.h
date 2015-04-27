@@ -62,22 +62,26 @@ class CodeFactory FINAL {
 
   static Callable ToNumber(Isolate* isolate);
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
   static Callable ToFloat32x4Obj(Isolate* isolate);
 
   static Callable ToInt32x4Obj(Isolate* isolate);
 
   static Callable ToFloat64x2Obj(Isolate* isolate);
+#endif
 
   static Callable StringAdd(Isolate* isolate, StringAddFlags flags,
                             PretenureFlag pretenure_flag);
 
   static Callable AllocateHeapNumber(Isolate* isolate);
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
   static Callable AllocateFloat32x4(Isolate* isolate);
 
   static Callable AllocateInt32x4(Isolate* isolate);
 
   static Callable AllocateFloat64x2(Isolate* isolate);
+#endif
 
   static Callable CallFunction(Isolate* isolate, int argc,
                                CallFunctionFlags flags);
