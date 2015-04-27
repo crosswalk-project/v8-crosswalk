@@ -865,6 +865,7 @@ void InstructionSelector::VisitNode(Node* node) {
     }
     case IrOpcode::kCheckedStore:
       return VisitCheckedStore(node);
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
     case IrOpcode::kFloat32x4Add:
       return MarkAsFloat32x4(node), VisitFloat32x4Add(node);
     case IrOpcode::kFloat32x4Sub:
@@ -1039,6 +1040,7 @@ void InstructionSelector::VisitNode(Node* node) {
       return MarkAsFloat64x2(node), VisitFloat64x2WithY(node);
     case IrOpcode::kFloat64x2Clamp:
       return MarkAsFloat64x2(node), VisitFloat64x2Clamp(node);
+#endif
     default:
       V8_Fatal(__FILE__, __LINE__, "Unexpected operator #%d:%s @ node #%d",
                node->opcode(), node->op()->mnemonic(), node->id());

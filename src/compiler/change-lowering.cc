@@ -27,6 +27,7 @@ Reduction ChangeLowering::Reduce(Node* node) {
       return ChangeBoolToBit(node->InputAt(0));
     case IrOpcode::kChangeFloat64ToTagged:
       return ChangeFloat64ToTagged(node->InputAt(0), control);
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
     case IrOpcode::kChangeFloat32x4ToTagged:
       return ChangeFloat32x4ToTagged(node->InputAt(0), control);
     case IrOpcode::kChangeTaggedToFloat32x4:
@@ -39,6 +40,7 @@ Reduction ChangeLowering::Reduce(Node* node) {
       return ChangeFloat64x2ToTagged(node->InputAt(0), control);
     case IrOpcode::kChangeTaggedToFloat64x2:
       return ChangeTaggedToFloat64x2(node->InputAt(0), control);
+#endif
     case IrOpcode::kChangeInt32ToTagged:
       return ChangeInt32ToTagged(node->InputAt(0), control);
     case IrOpcode::kChangeTaggedToFloat64:
@@ -62,6 +64,7 @@ Node* ChangeLowering::HeapNumberValueIndexConstant() {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 Node* ChangeLowering::Float32x4ValueIndexConstant() {
   STATIC_ASSERT(Float32x4::kValueOffset % kPointerSize == 0);
   const int value_offset =
@@ -84,6 +87,7 @@ Node* ChangeLowering::Float64x2ValueIndexConstant() {
       ((Float64x2::kValueOffset / kPointerSize) * (machine()->Is64() ? 8 : 4));
   return jsgraph()->IntPtrConstant(value_offset - kHeapObjectTag);
 }
+#endif
 
 
 Node* ChangeLowering::SmiMaxValueConstant() {
@@ -118,6 +122,7 @@ Node* ChangeLowering::AllocateHeapNumberWithValue(Node* value, Node* control) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 Node* ChangeLowering::AllocateFloat32x4WithValue(Node* value, Node* control) {
   Callable callable = CodeFactory::AllocateFloat32x4(isolate());
   CallDescriptor* descriptor = Linkage::GetStubCallDescriptor(
@@ -182,6 +187,7 @@ Node* ChangeLowering::AllocateFloat64x2WithValue(Node* value, Node* control) {
       value, stored_bytes, val_obj, control);
   return graph()->NewNode(common()->Finish(1), float64x2_obj, store);
 }
+#endif
 
 
 Node* ChangeLowering::ChangeInt32ToFloat64(Node* value) {
@@ -257,6 +263,7 @@ Reduction ChangeLowering::ChangeFloat64ToTagged(Node* value, Node* control) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 Reduction ChangeLowering::ChangeFloat32x4ToTagged(Node* val, Node* control) {
   return Replace(AllocateFloat32x4WithValue(val, control));
 }
@@ -270,6 +277,7 @@ Reduction ChangeLowering::ChangeInt32x4ToTagged(Node* val, Node* control) {
 Reduction ChangeLowering::ChangeFloat64x2ToTagged(Node* val, Node* control) {
   return Replace(AllocateFloat64x2WithValue(val, control));
 }
+#endif
 
 
 Reduction ChangeLowering::ChangeInt32ToTagged(Node* value, Node* control) {
@@ -421,6 +429,7 @@ Reduction ChangeLowering::ChangeTaggedToFloat64(Node* value, Node* control) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 Reduction ChangeLowering::ChangeTaggedToFloat32x4(Node* value, Node* control) {
   // TODO(weiliang): inline Float32x4 map check.
   Node* val_obj = graph()->NewNode(machine()->Load(kRepTagged), value,
@@ -467,6 +476,7 @@ Reduction ChangeLowering::ChangeTaggedToFloat64x2(Node* value, Node* control) {
 
   return Replace(load);
 }
+#endif
 
 
 Reduction ChangeLowering::ChangeUint32ToTagged(Node* value, Node* control) {
