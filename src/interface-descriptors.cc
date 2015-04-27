@@ -52,6 +52,7 @@ const char* CallInterfaceDescriptor::DebugName(Isolate* isolate) const {
   case CallDescriptors::NAME: \
     return #NAME " Descriptor";
     INTERFACE_DESCRIPTOR_LIST(DEF_CASE)
+    SIMD_INTERFACE_DESCRIPTOR_LIST(DEF_CASE)
 #undef DEF_CASE
     case CallDescriptors::NUMBER_OF_DESCRIPTORS:
       break;
