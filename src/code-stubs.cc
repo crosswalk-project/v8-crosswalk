@@ -684,6 +684,7 @@ void AllocateHeapNumberStub::InitializeDescriptor(
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
 void AllocateFloat32x4Stub::InitializeDescriptor(
     CodeStubDescriptor* descriptor) {
   descriptor->Initialize(
@@ -702,6 +703,7 @@ void AllocateFloat64x2Stub::InitializeDescriptor(
   descriptor->Initialize(
       Runtime::FunctionForId(Runtime::kAllocateFloat64x2)->entry);
 }
+#endif
 
 
 void CompareNilICStub::InitializeDescriptor(CodeStubDescriptor* descriptor) {

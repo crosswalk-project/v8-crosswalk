@@ -31,31 +31,8 @@ namespace v8 {
 namespace internal {
 namespace compiler {
 
-// Target-specific opcodes that specify which assembly sequence to emit.
-// Most opcodes specify a single instruction.
-#define ARCH_OPCODE_LIST(V) \
-  V(ArchCallCodeObject)     \
-  V(ArchCallJSFunction)     \
-  V(ArchJmp)                \
-  V(ArchLookupSwitch)       \
-  V(ArchTableSwitch)        \
-  V(ArchNop)                \
-  V(ArchDeoptimize)         \
-  V(ArchRet)                \
-  V(ArchStackPointer)       \
-  V(ArchTruncateDoubleToI)  \
-  V(CheckedLoadInt8)        \
-  V(CheckedLoadUint8)       \
-  V(CheckedLoadInt16)       \
-  V(CheckedLoadUint16)      \
-  V(CheckedLoadWord32)      \
-  V(CheckedLoadFloat32)     \
-  V(CheckedLoadFloat64)     \
-  V(CheckedStoreWord8)      \
-  V(CheckedStoreWord16)     \
-  V(CheckedStoreWord32)     \
-  V(CheckedStoreFloat32)    \
-  V(CheckedStoreFloat64)    \
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+#define SIMD_OPCODE_LIST(V)      \
   V(Float32x4Add)                \
   V(Float32x4Mul)                \
   V(Float32x4Sub)                \
@@ -146,7 +123,37 @@ namespace compiler {
   V(Float64x2Scale)              \
   V(Float64x2WithX)              \
   V(Float64x2WithY)              \
-  V(Float64x2Clamp)              \
+  V(Float64x2Clamp)
+#else
+  #define SIMD_OPCODE_LIST(V)
+#endif
+
+// Target-specific opcodes that specify which assembly sequence to emit.
+// Most opcodes specify a single instruction.
+#define ARCH_OPCODE_LIST(V) \
+  V(ArchCallCodeObject)     \
+  V(ArchCallJSFunction)     \
+  V(ArchJmp)                \
+  V(ArchLookupSwitch)       \
+  V(ArchTableSwitch)        \
+  V(ArchNop)                \
+  V(ArchDeoptimize)         \
+  V(ArchRet)                \
+  V(ArchStackPointer)       \
+  V(ArchTruncateDoubleToI)  \
+  V(CheckedLoadInt8)        \
+  V(CheckedLoadUint8)       \
+  V(CheckedLoadInt16)       \
+  V(CheckedLoadUint16)      \
+  V(CheckedLoadWord32)      \
+  V(CheckedLoadFloat32)     \
+  V(CheckedLoadFloat64)     \
+  V(CheckedStoreWord8)      \
+  V(CheckedStoreWord16)     \
+  V(CheckedStoreWord32)     \
+  V(CheckedStoreFloat32)    \
+  V(CheckedStoreFloat64)    \
+  SIMD_OPCODE_LIST(V)       \
   TARGET_ARCH_OPCODE_LIST(V)
 
 enum ArchOpcode {

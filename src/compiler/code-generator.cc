@@ -69,7 +69,9 @@ Handle<Code> CodeGenerator::GenerateCode() {
   }
 
 #ifdef DEBUG
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
   AssembleStopAt();
+#endif
 #endif
 
   // Architecture-specific, linkage-specific prologue.
