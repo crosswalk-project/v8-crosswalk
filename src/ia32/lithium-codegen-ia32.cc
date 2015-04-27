@@ -6922,6 +6922,14 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
 }
 
 
+static uint8_t ComputeShuffleSelect64x2(uint32_t x, uint32_t y) {
+  DCHECK(x < 2 && y < 2);
+  uint32_t r = static_cast<uint8_t>(
+      ((y << 1) | (x << 0)) & 0xFF);
+  return r;
+}
+
+
 void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
   switch (instr->op()) {
     case kFloat32x4Select: {
@@ -7027,6 +7035,25 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
       __ minpd(value_reg, upper_reg);
       __ maxpd(value_reg, lower_reg);
       return;
+    }
+    case kFloat64x2Swizzle: {
+      DCHECK(instr->first()->Equals(instr->result()));
+      DCHECK(instr->hydrogen()->first()->representation().IsFloat64x2());
+      if ((instr->hydrogen()->second()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->second())->HasInteger32Value())&&
+          (instr->hydrogen()->third()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->third())->HasInteger32Value())) {
+        int32_t x = ToInteger32(LConstantOperand::cast(instr->second()));
+        int32_t y = ToInteger32(LConstantOperand::cast(instr->third()));
+        uint8_t select = ComputeShuffleSelect64x2(x, y);
+        XMMRegister left_reg = ToFloat64x2Register(instr->first());
+        __ shufpd(left_reg, left_reg, select);
+        return;
+      } else {
+        Comment(";;; deoptimize: non-constant selector for swizzle");
+        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+        return;
+      }
     }
     default:
       UNREACHABLE();
@@ -7142,6 +7169,51 @@ void LCodeGen::DoQuarternarySIMDOperation(LQuarternarySIMDOperation* instr) {
       __ movups(result_reg, Operand(esp, 0));
       __ add(esp, Immediate(kInt32x4Size));
       return;
+    }
+    case kFloat64x2Shuffle: {
+      DCHECK(instr->hydrogen()->x()->representation().IsFloat64x2());
+      DCHECK(instr->hydrogen()->y()->representation().IsFloat64x2());
+
+      if ((instr->hydrogen()->z()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->z())->HasInteger32Value()) &&
+          (instr->hydrogen()->w()->IsConstant() &&
+          HConstant::cast(instr->hydrogen()->w())->HasInteger32Value())) {
+        int32_t x = ToInteger32(LConstantOperand::cast(instr->z()));
+        int32_t y = ToInteger32(LConstantOperand::cast(instr->w()));
+        XMMRegister lhs = ToFloat64x2Register(instr->x());
+        XMMRegister rhs = ToFloat64x2Register(instr->y());
+        XMMRegister temp = xmm0;
+
+        uint32_t num_lanes_from_lhs = (x < 2) + (y < 2);
+        if (num_lanes_from_lhs  == 2) {
+          uint8_t select = ComputeShuffleSelect64x2(x, y);
+          __ shufpd(lhs, lhs, select);
+          return;
+        } else if (num_lanes_from_lhs == 0) {
+          x -= 2;
+          y -= 2;
+          uint8_t select = ComputeShuffleSelect64x2(x, y);
+          __ movaps(lhs, rhs);
+          __ shufpd(lhs, lhs, select);
+          return;
+        } else if (num_lanes_from_lhs == 1) {
+          if (x < 2) {
+            uint8_t select = ComputeShuffleSelect64x2(x, y%2);
+            __ shufpd(lhs, rhs, select);
+            return;
+          } else (y < 2) {
+            uint8_t select = ComputeShuffleSelect64x2(x%2, y);
+            __ movaps(temp, rhs);
+            __ shufpd(temp, lhs, select);
+            __ movaps(lhs, temp);
+            return;
+          }
+        }
+      } else {
+        Comment(";;; deoptimize: non-constant selector for shuffle");
+        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
+        return;
+      }
     }
     default:
       UNREACHABLE();
