@@ -169,6 +169,7 @@ struct MaybeBoolFlag {
 
 // Flags for language modes and experimental language features.
 DEFINE_BOOL(simd_object, false, "enable SIMD object and operations")
+DEFINE_BOOL(simd_warning, false, "warn if SIMD API is not inlined")
 DEFINE_BOOL(use_strict, false, "enforce strict mode")
 DEFINE_BOOL(use_strong, false, "enforce strong mode")
 DEFINE_IMPLICATION(use_strong, use_strict)

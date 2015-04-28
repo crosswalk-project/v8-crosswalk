@@ -77,6 +77,8 @@ class CodeGenerator FINAL : public GapResolver::Assembler {
   void AssembleDeoptimizerCall(int deoptimization_id,
                                Deoptimizer::BailoutType bailout_type);
 
+  void AssembleStopAt();
+
   // Generates an architecture-specific, descriptor-specific prologue
   // to set up a stack frame.
   void AssemblePrologue();

@@ -157,6 +157,14 @@ class SimplifiedOperatorBuilder FINAL {
   const Operator* ChangeInt32ToTagged();
   const Operator* ChangeUint32ToTagged();
   const Operator* ChangeFloat64ToTagged();
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+  const Operator* ChangeFloat32x4ToTagged();
+  const Operator* ChangeTaggedToFloat32x4();
+  const Operator* ChangeInt32x4ToTagged();
+  const Operator* ChangeTaggedToInt32x4();
+  const Operator* ChangeFloat64x2ToTagged();
+  const Operator* ChangeTaggedToFloat64x2();
+#endif
   const Operator* ChangeBoolToBit();
   const Operator* ChangeBitToBool();
 

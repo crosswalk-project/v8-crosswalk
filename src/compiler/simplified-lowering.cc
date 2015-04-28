@@ -61,10 +61,10 @@ class RepresentationSelector {
  public:
   // Information for each node tracked during the fixpoint.
   struct NodeInfo {
-    MachineTypeUnion use : 15;     // Union of all usages for the node.
+    MachineTypeUnion use : 31;     // Union of all usages for the node.
     bool queued : 1;           // Bookkeeping for the traversal.
     bool visited : 1;          // Bookkeeping for the traversal.
-    MachineTypeUnion output : 15;  // Output type of the node.
+    MachineTypeUnion output : 31;  // Output type of the node.
   };
 
   RepresentationSelector(JSGraph* jsgraph, Zone* zone,
@@ -345,6 +345,14 @@ class RepresentationSelector {
     } else if (upper->Is(Type::Number())) {
       // multiple uses => pick kRepFloat64.
       return kRepFloat64;
+    } else if (jsgraph_->isolate()->IsSimdEnabled()) {
+      if (upper->Is(GetFloat32x4())) {
+        return kRepFloat32x4;
+      } else if (upper->Is(GetInt32x4())) {
+        return kRepInt32x4;
+      } else if (upper->Is(GetFloat64x2())) {
+        return kRepFloat64x2;
+      }
     }
     return kRepTagged;
   }
@@ -898,7 +906,31 @@ class RepresentationSelector {
         LoadRepresentation rep = OpParameter<LoadRepresentation>(node);
         ProcessInput(node, 0, tBase);   // pointer or object
         ProcessInput(node, 1, kMachIntPtr);  // index
-        ProcessRemainingInputs(node, 2);
+        if (RepresentationOf(rep) == kRepFloat32x4 ||
+            RepresentationOf(rep) == kRepInt32x4 ||
+            RepresentationOf(rep) == kRepFloat64x2) {
+          ProcessInput(node, 2, kMachInt32);  // partial
+          ProcessRemainingInputs(node, 3);
+        } else {
+          ProcessRemainingInputs(node, 2);
+        }
+        SetOutput(node, rep);
+        break;
+      }
+      case IrOpcode::kCheckedLoad: {
+        MachineTypeUnion tBase = kRepTagged | kMachPtr;
+        LoadRepresentation rep = OpParameter<LoadRepresentation>(node);
+        ProcessInput(node, 0, tBase);       // pointer or object
+        ProcessInput(node, 1, kMachIntPtr);  // index
+        ProcessInput(node, 2, kMachInt32);  // length
+        if (RepresentationOf(rep) == kRepFloat32x4 ||
+            RepresentationOf(rep) == kRepInt32x4 ||
+            RepresentationOf(rep) == kRepFloat64x2) {
+          ProcessInput(node, 3, kMachInt32);  // partial
+          ProcessRemainingInputs(node, 4);
+        } else {
+          ProcessRemainingInputs(node, 3);
+        }
         SetOutput(node, rep);
         break;
       }
@@ -909,7 +941,32 @@ class RepresentationSelector {
         ProcessInput(node, 0, tBase);   // pointer or object
         ProcessInput(node, 1, kMachIntPtr);  // index
         ProcessInput(node, 2, rep.machine_type());
-        ProcessRemainingInputs(node, 3);
+        if (rep.machine_type() == kRepFloat32x4 ||
+            rep.machine_type() == kRepInt32x4 ||
+            rep.machine_type() == kRepFloat64x2) {
+          ProcessInput(node, 3, kMachInt32);  // partial
+          ProcessRemainingInputs(node, 4);
+        } else {
+          ProcessRemainingInputs(node, 3);
+        }
+        SetOutput(node, 0);
+        break;
+      }
+      case IrOpcode::kCheckedStore: {
+        MachineTypeUnion tBase = kRepTagged | kMachPtr;
+        StoreRepresentation rep = OpParameter<StoreRepresentation>(node);
+        ProcessInput(node, 0, tBase);       // pointer or object
+        ProcessInput(node, 1, kMachIntPtr);  // index
+        ProcessInput(node, 2, kMachInt32);  // length
+        ProcessInput(node, 3, rep.machine_type());
+        if (rep.machine_type() == kRepFloat32x4 ||
+            rep.machine_type() == kRepInt32x4 ||
+            rep.machine_type() == kRepFloat64x2) {
+          ProcessInput(node, 4, kMachInt32);  // partial
+          ProcessRemainingInputs(node, 5);
+        } else {
+          ProcessRemainingInputs(node, 4);
+        }
         SetOutput(node, 0);
         break;
       }
@@ -1034,6 +1091,268 @@ class RepresentationSelector {
       case IrOpcode::kStateValues:
         VisitStateValues(node);
         break;
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+      case IrOpcode::kFloat32x4Add:
+      case IrOpcode::kFloat32x4Sub:
+      case IrOpcode::kFloat32x4Mul:
+      case IrOpcode::kFloat32x4Div:
+      case IrOpcode::kFloat32x4Min:
+      case IrOpcode::kFloat32x4Max:
+        DCHECK_EQ(2, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32x4);
+        ProcessInput(node, 1, kMachFloat32x4);
+        SetOutput(node, kMachFloat32x4);
+        break;
+      case IrOpcode::kFloat32x4Constructor:
+        DCHECK_EQ(4, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32);
+        ProcessInput(node, 1, kMachFloat32);
+        ProcessInput(node, 2, kMachFloat32);
+        ProcessInput(node, 3, kMachFloat32);
+        SetOutput(node, kMachFloat32x4);
+        break;
+      case IrOpcode::kFloat32x4GetX:
+      case IrOpcode::kFloat32x4GetY:
+      case IrOpcode::kFloat32x4GetZ:
+      case IrOpcode::kFloat32x4GetW:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32x4);
+        SetOutput(node, kMachFloat32);
+        break;
+      case IrOpcode::kFloat32x4GetSignMask:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32x4);
+        SetOutput(node, kMachInt32);
+        break;
+      case IrOpcode::kFloat32x4Abs:
+      case IrOpcode::kFloat32x4Neg:
+      case IrOpcode::kFloat32x4Reciprocal:
+      case IrOpcode::kFloat32x4ReciprocalSqrt:
+      case IrOpcode::kFloat32x4Sqrt:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32x4);
+        SetOutput(node, kMachFloat32x4);
+        break;
+      case IrOpcode::kFloat32x4Splat:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32);
+        SetOutput(node, kMachFloat32x4);
+        break;
+      case IrOpcode::kFloat32x4Scale:
+      case IrOpcode::kFloat32x4WithX:
+      case IrOpcode::kFloat32x4WithY:
+      case IrOpcode::kFloat32x4WithZ:
+      case IrOpcode::kFloat32x4WithW:
+        DCHECK_EQ(2, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32x4);
+        ProcessInput(node, 1, kMachFloat32);
+        SetOutput(node, kMachFloat32x4);
+        break;
+      case IrOpcode::kFloat32x4Clamp:
+        DCHECK_EQ(3, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32x4);
+        ProcessInput(node, 1, kMachFloat32x4);
+        ProcessInput(node, 2, kMachFloat32x4);
+        SetOutput(node, kMachFloat32x4);
+        break;
+      case IrOpcode::kFloat32x4Swizzle:
+        DCHECK_EQ(5, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32x4);
+        ProcessInput(node, 1, kMachInt32);
+        ProcessInput(node, 2, kMachInt32);
+        ProcessInput(node, 3, kMachInt32);
+        ProcessInput(node, 4, kMachInt32);
+        SetOutput(node, kMachFloat32x4);
+        break;
+      case IrOpcode::kFloat32x4Equal:
+      case IrOpcode::kFloat32x4NotEqual:
+      case IrOpcode::kFloat32x4GreaterThan:
+      case IrOpcode::kFloat32x4GreaterThanOrEqual:
+      case IrOpcode::kFloat32x4LessThan:
+      case IrOpcode::kFloat32x4LessThanOrEqual:
+        DCHECK_EQ(2, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32x4);
+        ProcessInput(node, 1, kMachFloat32x4);
+        SetOutput(node, kMachInt32x4);
+        break;
+      case IrOpcode::kFloat32x4Select:
+        DCHECK_EQ(3, node->InputCount());
+        ProcessInput(node, 0, kMachInt32x4);
+        ProcessInput(node, 1, kMachFloat32x4);
+        ProcessInput(node, 2, kMachFloat32x4);
+        SetOutput(node, kMachFloat32x4);
+        break;
+      case IrOpcode::kFloat32x4Shuffle:
+        DCHECK_EQ(6, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32x4);
+        ProcessInput(node, 1, kMachFloat32x4);
+        ProcessInput(node, 2, kMachInt32);
+        ProcessInput(node, 3, kMachInt32);
+        ProcessInput(node, 4, kMachInt32);
+        ProcessInput(node, 5, kMachInt32);
+        SetOutput(node, kMachFloat32x4);
+        break;
+      case IrOpcode::kInt32x4Shuffle:
+        DCHECK_EQ(6, node->InputCount());
+        ProcessInput(node, 0, kMachInt32x4);
+        ProcessInput(node, 1, kMachInt32x4);
+        ProcessInput(node, 2, kMachInt32);
+        ProcessInput(node, 3, kMachInt32);
+        ProcessInput(node, 4, kMachInt32);
+        ProcessInput(node, 5, kMachInt32);
+        SetOutput(node, kMachInt32x4);
+        break;
+      // Int32x4
+      case IrOpcode::kInt32x4Add:
+      case IrOpcode::kInt32x4And:
+      case IrOpcode::kInt32x4Sub:
+      case IrOpcode::kInt32x4Mul:
+      case IrOpcode::kInt32x4Or:
+      case IrOpcode::kInt32x4Xor:
+      case IrOpcode::kInt32x4Equal:
+      case IrOpcode::kInt32x4GreaterThan:
+      case IrOpcode::kInt32x4LessThan:
+        DCHECK_EQ(2, node->InputCount());
+        ProcessInput(node, 0, kMachInt32x4);
+        ProcessInput(node, 1, kMachInt32x4);
+        SetOutput(node, kMachInt32x4);
+        break;
+      case IrOpcode::kInt32x4Constructor:
+        DCHECK_EQ(4, node->InputCount());
+        ProcessInput(node, 0, kMachInt32);
+        ProcessInput(node, 1, kMachInt32);
+        ProcessInput(node, 2, kMachInt32);
+        ProcessInput(node, 3, kMachInt32);
+        SetOutput(node, kMachInt32x4);
+        break;
+      case IrOpcode::kInt32x4GetX:
+      case IrOpcode::kInt32x4GetY:
+      case IrOpcode::kInt32x4GetZ:
+      case IrOpcode::kInt32x4GetW:
+      case IrOpcode::kInt32x4GetSignMask:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachInt32x4);
+        SetOutput(node, kMachInt32);
+        break;
+      case IrOpcode::kInt32x4Bool:
+        DCHECK_EQ(4, node->InputCount());
+        ProcessInput(node, 0, kMachBool);
+        ProcessInput(node, 1, kMachBool);
+        ProcessInput(node, 2, kMachBool);
+        ProcessInput(node, 3, kMachBool);
+        SetOutput(node, kMachInt32x4);
+        break;
+      case IrOpcode::kInt32x4Select:
+        DCHECK_EQ(3, node->InputCount());
+        ProcessInput(node, 0, kMachInt32x4);
+        ProcessInput(node, 1, kMachInt32x4);
+        ProcessInput(node, 2, kMachInt32x4);
+        SetOutput(node, kMachInt32x4);
+        break;
+      case IrOpcode::kInt32x4GetFlagX:
+      case IrOpcode::kInt32x4GetFlagY:
+      case IrOpcode::kInt32x4GetFlagZ:
+      case IrOpcode::kInt32x4GetFlagW:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachInt32x4);
+        SetOutput(node, kMachAnyTagged);
+        break;
+      case IrOpcode::kInt32x4Neg:
+      case IrOpcode::kInt32x4Not:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachInt32x4);
+        SetOutput(node, kMachInt32x4);
+        break;
+      case IrOpcode::kInt32x4Splat:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachInt32);
+        SetOutput(node, kMachInt32x4);
+        break;
+      case IrOpcode::kInt32x4Swizzle:
+        DCHECK_EQ(5, node->InputCount());
+        ProcessInput(node, 0, kMachInt32x4);
+        ProcessInput(node, 1, kMachInt32);
+        ProcessInput(node, 2, kMachInt32);
+        ProcessInput(node, 3, kMachInt32);
+        ProcessInput(node, 4, kMachInt32);
+        SetOutput(node, kMachInt32x4);
+        break;
+      case IrOpcode::kInt32x4ShiftLeft:
+      case IrOpcode::kInt32x4ShiftRight:
+      case IrOpcode::kInt32x4ShiftRightArithmetic:
+      case IrOpcode::kInt32x4WithX:
+      case IrOpcode::kInt32x4WithY:
+      case IrOpcode::kInt32x4WithZ:
+      case IrOpcode::kInt32x4WithW:
+        DCHECK_EQ(2, node->InputCount());
+        ProcessInput(node, 0, kMachInt32x4);
+        ProcessInput(node, 1, kMachInt32);
+        SetOutput(node, kMachInt32x4);
+        break;
+      // Float64x2
+      case IrOpcode::kFloat64x2Add:
+      case IrOpcode::kFloat64x2Sub:
+      case IrOpcode::kFloat64x2Mul:
+      case IrOpcode::kFloat64x2Div:
+      case IrOpcode::kFloat64x2Min:
+      case IrOpcode::kFloat64x2Max:
+        DCHECK_EQ(2, node->InputCount());
+        ProcessInput(node, 0, kMachFloat64x2);
+        ProcessInput(node, 1, kMachFloat64x2);
+        SetOutput(node, kMachFloat64x2);
+        break;
+      case IrOpcode::kFloat64x2Constructor:
+        DCHECK_EQ(2, node->InputCount());
+        ProcessInput(node, 0, kMachFloat64);
+        ProcessInput(node, 1, kMachFloat64);
+        SetOutput(node, kMachFloat64x2);
+        break;
+      case IrOpcode::kFloat64x2GetX:
+      case IrOpcode::kFloat64x2GetY:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachFloat64x2);
+        SetOutput(node, kMachFloat64);
+        break;
+      case IrOpcode::kFloat64x2GetSignMask:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachFloat64x2);
+        SetOutput(node, kMachInt32);
+        break;
+      case IrOpcode::kFloat64x2Abs:
+      case IrOpcode::kFloat64x2Neg:
+      case IrOpcode::kFloat64x2Sqrt:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachFloat64x2);
+        SetOutput(node, kMachFloat64x2);
+        break;
+      case IrOpcode::kFloat64x2Scale:
+      case IrOpcode::kFloat64x2WithX:
+      case IrOpcode::kFloat64x2WithY:
+        DCHECK_EQ(2, node->InputCount());
+        ProcessInput(node, 0, kMachFloat64x2);
+        ProcessInput(node, 1, kMachFloat64);
+        SetOutput(node, kMachFloat64x2);
+        break;
+      case IrOpcode::kFloat64x2Clamp:
+        DCHECK_EQ(3, node->InputCount());
+        ProcessInput(node, 0, kMachFloat64x2);
+        ProcessInput(node, 1, kMachFloat64x2);
+        ProcessInput(node, 2, kMachFloat64x2);
+        SetOutput(node, kMachFloat64x2);
+        break;
+      case IrOpcode::kInt32x4BitsToFloat32x4:
+      case IrOpcode::kInt32x4ToFloat32x4:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachInt32x4);
+        SetOutput(node, kMachFloat32x4);
+        break;
+      case IrOpcode::kFloat32x4BitsToInt32x4:
+      case IrOpcode::kFloat32x4ToInt32x4:
+        DCHECK_EQ(1, node->InputCount());
+        ProcessInput(node, 0, kMachFloat32x4);
+        SetOutput(node, kMachInt32x4);
+        break;
+#endif
       default:
         VisitInputs(node);
         break;
@@ -1074,6 +1393,48 @@ class RepresentationSelector {
     }
   }
 
+  Type* GetFloat32x4() {
+    DCHECK(jsgraph_->isolate()->IsSimdEnabled());
+    if (!float32x4_.is_set()) {
+      Isolate* isolate = jsgraph_->isolate();
+      Type* float32x4_type = Type::Class(
+          handle(isolate->native_context()->float32x4_function()->initial_map(),
+                 isolate),
+          jsgraph_->zone());
+      float32x4_.set(float32x4_type);
+    }
+
+    return float32x4_.get();
+  }
+
+  Type* GetInt32x4() {
+    DCHECK(jsgraph_->isolate()->IsSimdEnabled());
+    if (!int32x4_.is_set()) {
+      Isolate* isolate = jsgraph_->isolate();
+      Type* int32x4_type = Type::Class(
+          handle(isolate->native_context()->int32x4_function()->initial_map(),
+                 isolate),
+          jsgraph_->zone());
+      int32x4_.set(int32x4_type);
+    }
+
+    return int32x4_.get();
+  }
+
+  Type* GetFloat64x2() {
+    DCHECK(jsgraph_->isolate()->IsSimdEnabled());
+    if (!float64x2_.is_set()) {
+      Isolate* isolate = jsgraph_->isolate();
+      Type* float64x2_type = Type::Class(
+          handle(isolate->native_context()->float64x2_function()->initial_map(),
+                 isolate),
+          jsgraph_->zone());
+      float64x2_.set(float64x2_type);
+    }
+
+    return float64x2_.get();
+  }
+
  private:
   JSGraph* jsgraph_;
   int count_;                       // number of nodes in the graph
@@ -1090,6 +1451,9 @@ class RepresentationSelector {
   // position information via the SourcePositionWrapper like all other reducers.
   SourcePositionTable* source_positions_;
   Type* safe_int_additive_range_;
+  SetOncePointer<Type> float32x4_;
+  SetOncePointer<Type> int32x4_;
+  SetOncePointer<Type> float64x2_;
 
   NodeInfo* GetInfo(Node* node) {
     DCHECK(node->id() >= 0);

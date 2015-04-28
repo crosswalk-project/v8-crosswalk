@@ -189,6 +189,100 @@ class MachineOperatorBuilder FINAL : public ZoneObject {
   const Operator* Float64InsertLowWord32();
   const Operator* Float64InsertHighWord32();
 
+// SIMD operators
+#define SIMD_OPERATORS(V)        \
+  V(Float32x4Add)                \
+  V(Float32x4Mul)                \
+  V(Float32x4Sub)                \
+  V(Float32x4Div)                \
+  V(Float32x4Constructor)        \
+  V(Float32x4Min)                \
+  V(Float32x4Max)                \
+  V(Float32x4GetX)               \
+  V(Float32x4GetY)               \
+  V(Float32x4GetZ)               \
+  V(Float32x4GetW)               \
+  V(Float32x4GetSignMask)        \
+  V(Float32x4Abs)                \
+  V(Float32x4Neg)                \
+  V(Float32x4Reciprocal)         \
+  V(Float32x4ReciprocalSqrt)     \
+  V(Float32x4Splat)              \
+  V(Float32x4Sqrt)               \
+  V(Float32x4Scale)              \
+  V(Float32x4WithX)              \
+  V(Float32x4WithY)              \
+  V(Float32x4WithZ)              \
+  V(Float32x4WithW)              \
+  V(Float32x4Clamp)              \
+  V(Float32x4Swizzle)            \
+  V(Float32x4Equal)              \
+  V(Float32x4NotEqual)           \
+  V(Float32x4GreaterThan)        \
+  V(Float32x4GreaterThanOrEqual) \
+  V(Float32x4LessThan)           \
+  V(Float32x4LessThanOrEqual)    \
+  V(Float32x4Select)             \
+  V(Float32x4Shuffle)            \
+  V(Int32x4Add)                  \
+  V(Int32x4And)                  \
+  V(Int32x4Mul)                  \
+  V(Int32x4Sub)                  \
+  V(Int32x4Or)                   \
+  V(Int32x4Xor)                  \
+  V(Int32x4Constructor)          \
+  V(Int32x4GetX)                 \
+  V(Int32x4GetY)                 \
+  V(Int32x4GetZ)                 \
+  V(Int32x4GetW)                 \
+  V(Int32x4Bool)                 \
+  V(Int32x4Select)               \
+  V(Int32x4Shuffle)              \
+  V(Int32x4GetFlagX)             \
+  V(Int32x4GetFlagY)             \
+  V(Int32x4GetFlagZ)             \
+  V(Int32x4GetFlagW)             \
+  V(Int32x4GetSignMask)          \
+  V(Int32x4Neg)                  \
+  V(Int32x4Not)                  \
+  V(Int32x4Splat)                \
+  V(Int32x4Swizzle)              \
+  V(Int32x4ShiftLeft)            \
+  V(Int32x4ShiftRight)           \
+  V(Int32x4ShiftRightArithmetic) \
+  V(Int32x4BitsToFloat32x4)      \
+  V(Int32x4ToFloat32x4)          \
+  V(Float32x4BitsToInt32x4)      \
+  V(Float32x4ToInt32x4)          \
+  V(Int32x4Equal)                \
+  V(Int32x4GreaterThan)          \
+  V(Int32x4LessThan)             \
+  V(Int32x4WithX)                \
+  V(Int32x4WithY)                \
+  V(Int32x4WithZ)                \
+  V(Int32x4WithW)                \
+  V(Float64x2Add)                \
+  V(Float64x2Mul)                \
+  V(Float64x2Sub)                \
+  V(Float64x2Div)                \
+  V(Float64x2Constructor)        \
+  V(Float64x2Min)                \
+  V(Float64x2Max)                \
+  V(Float64x2GetX)               \
+  V(Float64x2GetY)               \
+  V(Float64x2GetSignMask)        \
+  V(Float64x2Abs)                \
+  V(Float64x2Neg)                \
+  V(Float64x2Sqrt)               \
+  V(Float64x2Scale)              \
+  V(Float64x2WithX)              \
+  V(Float64x2WithY)              \
+  V(Float64x2Clamp)
+
+#define DECLARE_SIMD_OPERATORS(opcode) const Operator* opcode();
+
+  SIMD_OPERATORS(DECLARE_SIMD_OPERATORS)
+
   // load [base + index]
   const Operator* Load(LoadRepresentation rep);
 

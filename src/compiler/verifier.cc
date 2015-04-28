@@ -487,6 +487,11 @@ void Verifier::Visitor::Check(Node* node) {
       CheckUpperIs(node, Type::Name());
       break;
     case IrOpcode::kJSToObject:
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+    case IrOpcode::kJSToFloat32x4Obj:
+    case IrOpcode::kJSToInt32x4Obj:
+    case IrOpcode::kJSToFloat64x2Obj:
+#endif
       // Type is Receiver.
       CheckUpperIs(node, Type::Receiver());
       break;
@@ -811,6 +816,107 @@ void Verifier::Visitor::Check(Node* node) {
     case IrOpcode::kLoadStackPointer:
     case IrOpcode::kCheckedLoad:
     case IrOpcode::kCheckedStore:
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+    case IrOpcode::kFloat32x4Add:
+    case IrOpcode::kFloat32x4Sub:
+    case IrOpcode::kFloat32x4Mul:
+    case IrOpcode::kFloat32x4Div:
+    case IrOpcode::kFloat32x4Constructor:
+    case IrOpcode::kFloat32x4Check:
+    case IrOpcode::kChangeFloat32x4ToTagged:
+    case IrOpcode::kChangeTaggedToFloat32x4:
+    case IrOpcode::kFloat32x4Min:
+    case IrOpcode::kFloat32x4Max:
+    case IrOpcode::kFloat32x4GetX:
+    case IrOpcode::kFloat32x4GetY:
+    case IrOpcode::kFloat32x4GetZ:
+    case IrOpcode::kFloat32x4GetW:
+    case IrOpcode::kFloat32x4GetSignMask:
+    case IrOpcode::kFloat32x4Abs:
+    case IrOpcode::kFloat32x4Neg:
+    case IrOpcode::kFloat32x4Reciprocal:
+    case IrOpcode::kFloat32x4ReciprocalSqrt:
+    case IrOpcode::kFloat32x4Sqrt:
+    case IrOpcode::kFloat32x4Splat:
+    case IrOpcode::kFloat32x4Scale:
+    case IrOpcode::kFloat32x4WithX:
+    case IrOpcode::kFloat32x4WithY:
+    case IrOpcode::kFloat32x4WithZ:
+    case IrOpcode::kFloat32x4WithW:
+    case IrOpcode::kFloat32x4Clamp:
+    case IrOpcode::kFloat32x4Swizzle:
+    case IrOpcode::kFloat32x4Equal:
+    case IrOpcode::kFloat32x4NotEqual:
+    case IrOpcode::kFloat32x4GreaterThan:
+    case IrOpcode::kFloat32x4GreaterThanOrEqual:
+    case IrOpcode::kFloat32x4LessThan:
+    case IrOpcode::kFloat32x4LessThanOrEqual:
+    case IrOpcode::kFloat32x4Select:
+    case IrOpcode::kFloat32x4Shuffle:
+    // Int32x4
+    case IrOpcode::kInt32x4Add:
+    case IrOpcode::kInt32x4And:
+    case IrOpcode::kInt32x4Sub:
+    case IrOpcode::kInt32x4Mul:
+    case IrOpcode::kInt32x4Or:
+    case IrOpcode::kInt32x4Xor:
+    case IrOpcode::kInt32x4Constructor:
+    case IrOpcode::kInt32x4Check:
+    case IrOpcode::kChangeInt32x4ToTagged:
+    case IrOpcode::kChangeTaggedToInt32x4:
+    case IrOpcode::kInt32x4GetX:
+    case IrOpcode::kInt32x4GetY:
+    case IrOpcode::kInt32x4GetZ:
+    case IrOpcode::kInt32x4GetW:
+    case IrOpcode::kInt32x4Bool:
+    case IrOpcode::kInt32x4Select:
+    case IrOpcode::kInt32x4Shuffle:
+    case IrOpcode::kInt32x4GetSignMask:
+    case IrOpcode::kInt32x4GetFlagX:
+    case IrOpcode::kInt32x4GetFlagY:
+    case IrOpcode::kInt32x4GetFlagZ:
+    case IrOpcode::kInt32x4GetFlagW:
+    case IrOpcode::kInt32x4Neg:
+    case IrOpcode::kInt32x4Not:
+    case IrOpcode::kInt32x4Splat:
+    case IrOpcode::kInt32x4Swizzle:
+    case IrOpcode::kInt32x4ShiftLeft:
+    case IrOpcode::kInt32x4ShiftRight:
+    case IrOpcode::kInt32x4ShiftRightArithmetic:
+    case IrOpcode::kInt32x4Equal:
+    case IrOpcode::kInt32x4GreaterThan:
+    case IrOpcode::kInt32x4LessThan:
+    case IrOpcode::kInt32x4WithX:
+    case IrOpcode::kInt32x4WithY:
+    case IrOpcode::kInt32x4WithZ:
+    case IrOpcode::kInt32x4WithW:
+    // Float64x2
+    case IrOpcode::kFloat64x2Add:
+    case IrOpcode::kFloat64x2Sub:
+    case IrOpcode::kFloat64x2Mul:
+    case IrOpcode::kFloat64x2Div:
+    case IrOpcode::kFloat64x2Min:
+    case IrOpcode::kFloat64x2Max:
+    case IrOpcode::kFloat64x2Constructor:
+    case IrOpcode::kFloat64x2Check:
+    case IrOpcode::kChangeFloat64x2ToTagged:
+    case IrOpcode::kChangeTaggedToFloat64x2:
+    case IrOpcode::kFloat64x2GetX:
+    case IrOpcode::kFloat64x2GetY:
+    case IrOpcode::kFloat64x2GetSignMask:
+    case IrOpcode::kFloat64x2Abs:
+    case IrOpcode::kFloat64x2Neg:
+    case IrOpcode::kFloat64x2Sqrt:
+    case IrOpcode::kFloat64x2Scale:
+    case IrOpcode::kFloat64x2WithX:
+    case IrOpcode::kFloat64x2WithY:
+    case IrOpcode::kFloat64x2Clamp:
+    // Conversion
+    case IrOpcode::kInt32x4BitsToFloat32x4:
+    case IrOpcode::kInt32x4ToFloat32x4:
+    case IrOpcode::kFloat32x4BitsToInt32x4:
+    case IrOpcode::kFloat32x4ToInt32x4:
+#endif
       // TODO(rossberg): Check.
       break;
   }

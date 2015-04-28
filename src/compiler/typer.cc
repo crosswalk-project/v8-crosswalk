@@ -32,6 +32,28 @@ enum LazyCachedType {
   kImulFunc,
   kClz32Func,
   kArrayBufferFunc,
+  kFloat32x4Tagged,
+  kFloat32x4Func1,
+  kFloat32x4Func1f,
+  kFloat32x4Func2,
+  kFloat32x4FuncA,
+  kFloat32x4Func1_1n,
+  kFloat32x4Func3,
+  kFloat32x4Func4f,
+  kFloat32x4Func1_4i,
+  kInt32x4Tagged,
+  kInt32x4Func1,
+  kInt32x4Func2,
+  kInt32x4Func4i,
+  kInt32x4Func2f32x4,
+  kInt32x4FuncA,
+  kFloat64x2Tagged,
+  kFloat64x2Func1,
+  kFloat64x2Func2,
+  kFloat64x2Func2n,
+  kFloat64x2Func1_1n,
+  kFloat64x2Func3,
+  kFloat64x2FuncA,
 #define TYPED_ARRAY_CASE(Type, type, TYPE, ctype, size) \
   k##Type, k##Type##Array, k##Type##ArrayFunc,
   TYPED_ARRAYS(TYPED_ARRAY_CASE)
@@ -101,11 +123,72 @@ class LazyTypeCache FINAL : public ZoneObject {
 #undef TYPED_ARRAY_CASE
       case kNumLazyCachedTypes:
         break;
+      case kFloat32x4Tagged:
+        return CreateFloat32x4Tagged();
       case kFloat32x4:
+        return CreateFloat32x4();
+      case kFloat32x4Func1:
+        return Type::Function(Get(kFloat32x4), Get(kFloat32x4), zone());
+      case kFloat32x4Func1f:
+        return Type::Function(Get(kFloat32x4), Get(kFloat32), zone());
+      case kFloat32x4Func2:
+        return Type::Function(Get(kFloat32x4), Get(kFloat32x4), Get(kFloat32x4),
+                              zone());
+      case kFloat32x4FuncA:
+        return Type::Function(Get(kFloat32x4), zone());
+      case kFloat32x4Func1_1n:
+        return Type::Function(Get(kFloat32x4), Get(kFloat32x4), Type::Number(),
+                              zone());
+      case kFloat32x4Func3:
+        return Type::Function(Get(kFloat32x4), Get(kFloat32x4), Get(kFloat32x4),
+                              Get(kFloat32x4), zone());
+      case kFloat32x4Func4f:
+        return Type::Function(Get(kFloat32x4), Get(kFloat32), Get(kFloat32),
+                              Get(kFloat32), Get(kFloat32), zone());
+      case kFloat32x4Func1_4i:
+        return Type::Function(Get(kFloat32x4), Get(kFloat32x4),
+                              Type::Integral32(), Type::Integral32(),
+                              Type::Integral32(), Type::Integral32(), zone());
+      case kInt32x4Func2f32x4:
+        return Type::Function(Get(kInt32x4), Get(kFloat32x4), Get(kFloat32x4),
+                              zone());
+      // Int32x4
       case kInt32x4:
+        return CreateInt32x4();
+      case kInt32x4Tagged:
+        return CreateInt32x4Tagged();
+      case kInt32x4Func1:
+        return Type::Function(Get(kInt32x4), Get(kInt32x4), zone());
+      case kInt32x4Func2:
+        return Type::Function(Get(kInt32x4), Get(kInt32x4), Get(kInt32x4),
+                              zone());
+      case kInt32x4Func4i:
+        return Type::Function(Get(kInt32x4), Type::Integral32(),
+                              Type::Integral32(), Type::Integral32(),
+                              Type::Integral32(), zone());
+      case kInt32x4FuncA:
+        return Type::Function(Get(kInt32x4), zone());
+      // Float64x2
+      case kFloat64x2Tagged:
+        return CreateFloat64x2Tagged();
       case kFloat64x2:
-        // TODO(huningxin): fix this workaround.
-        return NULL;
+        return CreateFloat64x2();
+      case kFloat64x2Func1:
+        return Type::Function(Get(kFloat64x2), Get(kFloat64x2), zone());
+      case kFloat64x2Func2:
+        return Type::Function(Get(kFloat64x2), Get(kFloat64x2), Get(kFloat64x2),
+                              zone());
+      case kFloat64x2Func2n:
+        return Type::Function(Get(kFloat64x2), Type::Number(), Type::Number(),
+                              zone());
+      case kFloat64x2Func1_1n:
+        return Type::Function(Get(kFloat64x2), Get(kFloat64x2), Type::Number(),
+                              zone());
+      case kFloat64x2Func3:
+        return Type::Function(Get(kFloat64x2), Get(kFloat64x2), Get(kFloat64x2),
+                              Get(kFloat64x2), zone());
+      case kFloat64x2FuncA:
+        return Type::Function(Get(kFloat64x2), zone());
     }
     UNREACHABLE();
     return NULL;
@@ -134,6 +217,54 @@ class LazyTypeCache FINAL : public ZoneObject {
 
   Type* CreateRange(double min, double max) const {
     return Type::Range(min, max, zone());
+  }
+
+  Type* CreateFloat32x4() {
+    Handle<Map> float32x4_map =
+        handle(isolate()->native_context()->float32x4_function()->initial_map(),
+               isolate());
+    return Type::Intersect(Type::Class(float32x4_map, zone()), Type::Untagged(),
+                           zone());
+  }
+
+  Type* CreateFloat32x4Tagged() {
+    Handle<Map> float32x4_map =
+        handle(isolate()->native_context()->float32x4_function()->initial_map(),
+               isolate());
+    return Type::Intersect(Type::Class(float32x4_map, zone()), Type::Tagged(),
+                           zone());
+  }
+
+  Type* CreateInt32x4() {
+    Handle<Map> int32x4_map =
+        handle(isolate()->native_context()->int32x4_function()->initial_map(),
+               isolate());
+    return Type::Intersect(Type::Class(int32x4_map, zone()), Type::Untagged(),
+                           zone());
+  }
+
+  Type* CreateInt32x4Tagged() {
+    Handle<Map> int32x4_map =
+        handle(isolate()->native_context()->int32x4_function()->initial_map(),
+               isolate());
+    return Type::Intersect(Type::Class(int32x4_map, zone()), Type::Tagged(),
+                           zone());
+  }
+
+  Type* CreateFloat64x2() {
+    Handle<Map> float64x2_map =
+        handle(isolate()->native_context()->float64x2_function()->initial_map(),
+               isolate());
+    return Type::Intersect(Type::Class(float64x2_map, zone()), Type::Untagged(),
+                           zone());
+  }
+
+  Type* CreateFloat64x2Tagged() {
+    Handle<Map> float64x2_map =
+        handle(isolate()->native_context()->float64x2_function()->initial_map(),
+               isolate());
+    return Type::Intersect(Type::Class(float64x2_map, zone()), Type::Tagged(),
+                           zone());
   }
 
   Factory* factory() const { return isolate()->factory(); }
@@ -384,6 +515,48 @@ class Typer::Visitor : public Reducer {
     }
   }
 };
+
+
+Type* Typer::GetFloat32x4() {
+  DCHECK(isolate()->IsSimdEnabled());
+  if (!float32x4_.is_set()) {
+    Handle<Map> float32x4_map =
+        handle(isolate()->native_context()->float32x4_function()->initial_map(),
+               isolate());
+    Type* float32x4_type = Type::Class(float32x4_map, zone());
+    float32x4_.set(float32x4_type);
+  }
+
+  return float32x4_.get();
+}
+
+
+Type* Typer::GetInt32x4() {
+  DCHECK(isolate()->IsSimdEnabled());
+  if (!int32x4_.is_set()) {
+    Handle<Map> int32x4_map =
+        handle(isolate()->native_context()->int32x4_function()->initial_map(),
+               isolate());
+    Type* int32x4_type = Type::Class(int32x4_map, zone());
+    int32x4_.set(int32x4_type);
+  }
+
+  return int32x4_.get();
+}
+
+
+Type* Typer::GetFloat64x2() {
+  DCHECK(isolate()->IsSimdEnabled());
+  if (!float64x2_.is_set()) {
+    Handle<Map> float64x2_map =
+        handle(isolate()->native_context()->float64x2_function()->initial_map(),
+               isolate());
+    Type* float64x2_type = Type::Class(float64x2_map, zone());
+    float64x2_.set(float64x2_type);
+  }
+
+  return float64x2_.get();
+}
 
 
 void Typer::Run() {
@@ -1272,6 +1445,25 @@ Bounds Typer::Visitor::TypeJSToObject(Node* node) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+Bounds Typer::Visitor::TypeJSToFloat32x4Obj(Node* node) {
+  return Bounds(
+      Type::Intersect(typer_->GetFloat32x4(), Type::Tagged(), zone()));
+}
+
+
+Bounds Typer::Visitor::TypeJSToInt32x4Obj(Node* node) {
+  return Bounds(Type::Intersect(typer_->GetInt32x4(), Type::Tagged(), zone()));
+}
+
+
+Bounds Typer::Visitor::TypeJSToFloat64x2Obj(Node* node) {
+  return Bounds(
+      Type::Intersect(typer_->GetFloat64x2(), Type::Tagged(), zone()));
+}
+#endif
+
+
 // JS object operators.
 
 
@@ -1724,6 +1916,52 @@ Bounds Typer::Visitor::TypeChangeFloat64ToTagged(Node* node) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+Bounds Typer::Visitor::TypeChangeFloat32x4ToTagged(Node* node) {
+  Bounds arg = Operand(node, 0);
+  return Bounds(ChangeRepresentation(arg.lower, Type::Tagged(), zone()),
+                ChangeRepresentation(arg.upper, Type::Tagged(), zone()));
+}
+
+
+Bounds Typer::Visitor::TypeChangeTaggedToFloat32x4(Node* node) {
+  Bounds arg = Operand(node, 0);
+  return Bounds(
+      ChangeRepresentation(arg.lower, typer_->GetFloat32x4(), zone()),
+      ChangeRepresentation(arg.upper, typer_->GetFloat32x4(), zone()));
+}
+
+
+Bounds Typer::Visitor::TypeChangeInt32x4ToTagged(Node* node) {
+  Bounds arg = Operand(node, 0);
+  return Bounds(ChangeRepresentation(arg.lower, Type::Tagged(), zone()),
+                ChangeRepresentation(arg.upper, Type::Tagged(), zone()));
+}
+
+
+Bounds Typer::Visitor::TypeChangeTaggedToInt32x4(Node* node) {
+  Bounds arg = Operand(node, 0);
+  return Bounds(ChangeRepresentation(arg.lower, typer_->GetInt32x4(), zone()),
+                ChangeRepresentation(arg.upper, typer_->GetInt32x4(), zone()));
+}
+
+
+Bounds Typer::Visitor::TypeChangeFloat64x2ToTagged(Node* node) {
+  Bounds arg = Operand(node, 0);
+  return Bounds(ChangeRepresentation(arg.lower, Type::Tagged(), zone()),
+                ChangeRepresentation(arg.upper, Type::Tagged(), zone()));
+}
+
+
+Bounds Typer::Visitor::TypeChangeTaggedToFloat64x2(Node* node) {
+  Bounds arg = Operand(node, 0);
+  return Bounds(
+      ChangeRepresentation(arg.lower, typer_->GetFloat64x2(), zone()),
+      ChangeRepresentation(arg.upper, typer_->GetFloat64x2(), zone()));
+}
+#endif
+
+
 Bounds Typer::Visitor::TypeChangeBoolToBit(Node* node) {
   Bounds arg = Operand(node, 0);
   // TODO(neis): DCHECK(arg.upper->Is(Type::Boolean()));
@@ -1797,7 +2035,18 @@ Bounds Typer::Visitor::TypeObjectIsNonNegativeSmi(Node* node) {
 // Machine operators.
 
 Bounds Typer::Visitor::TypeLoad(Node* node) {
-  return Bounds::Unbounded(zone());
+  if (OpParameter<MachineType>(node) == kRepFloat32x4) {
+    return Bounds(
+        Type::Intersect(typer_->GetFloat32x4(), Type::Untagged(), zone()));
+  } else if (OpParameter<MachineType>(node) == kRepInt32x4) {
+    return Bounds(
+        Type::Intersect(typer_->GetInt32x4(), Type::Untagged(), zone()));
+  } else if (OpParameter<MachineType>(node) == kRepFloat64x2) {
+    return Bounds(
+        Type::Intersect(typer_->GetFloat64x2(), Type::Untagged(), zone()));
+  } else {
+    return Bounds::Unbounded(zone());
+  }
 }
 
 
@@ -2174,7 +2423,18 @@ Bounds Typer::Visitor::TypeLoadStackPointer(Node* node) {
 
 
 Bounds Typer::Visitor::TypeCheckedLoad(Node* node) {
-  return Bounds::Unbounded(zone());
+  if (OpParameter<MachineType>(node) == kRepFloat32x4) {
+    return Bounds(
+        Type::Intersect(typer_->GetFloat32x4(), Type::Untagged(), zone()));
+  } else if (OpParameter<MachineType>(node) == kRepInt32x4) {
+    return Bounds(
+        Type::Intersect(typer_->GetInt32x4(), Type::Untagged(), zone()));
+  } else if (OpParameter<MachineType>(node) == kRepFloat64x2) {
+    return Bounds(
+        Type::Intersect(typer_->GetFloat64x2(), Type::Untagged(), zone()));
+  } else {
+    return Bounds::Unbounded(zone());
+  }
 }
 
 
@@ -2182,6 +2442,109 @@ Bounds Typer::Visitor::TypeCheckedStore(Node* node) {
   UNREACHABLE();
   return Bounds();
 }
+
+#define SIMD_OPERATIONS(V)                                               \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Add)              \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Sub)              \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Mul)              \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Div)              \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Constructor)      \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Check)            \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Min)              \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Max)              \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Abs)              \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Neg)              \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Reciprocal)       \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4ReciprocalSqrt)   \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Splat)            \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Sqrt)             \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Scale)            \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4WithX)            \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4WithY)            \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4WithZ)            \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4WithW)            \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Clamp)            \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Swizzle)          \
+  V(typer_->GetInt32x4(), Type::Untagged(), Float32x4Equal)              \
+  V(typer_->GetInt32x4(), Type::Untagged(), Float32x4NotEqual)           \
+  V(typer_->GetInt32x4(), Type::Untagged(), Float32x4GreaterThan)        \
+  V(typer_->GetInt32x4(), Type::Untagged(), Float32x4GreaterThanOrEqual) \
+  V(typer_->GetInt32x4(), Type::Untagged(), Float32x4LessThan)           \
+  V(typer_->GetInt32x4(), Type::Untagged(), Float32x4LessThanOrEqual)    \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Select)           \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Float32x4Shuffle)          \
+  V(Type::Number(), Type::UntaggedFloat32(), Float32x4GetX)              \
+  V(Type::Number(), Type::UntaggedFloat32(), Float32x4GetY)              \
+  V(Type::Number(), Type::UntaggedFloat32(), Float32x4GetZ)              \
+  V(Type::Number(), Type::UntaggedFloat32(), Float32x4GetW)              \
+  V(Type::Signed32(), Type::UntaggedSigned32(), Float32x4GetSignMask)    \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Add)                  \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Sub)                  \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Mul)                  \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4And)                  \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Or)                   \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Xor)                  \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Constructor)          \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Check)                \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Bool)                 \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Select)               \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Shuffle)              \
+  V(Type::Number(), Type::UntaggedSigned32(), Int32x4GetX)               \
+  V(Type::Number(), Type::UntaggedSigned32(), Int32x4GetY)               \
+  V(Type::Number(), Type::UntaggedSigned32(), Int32x4GetZ)               \
+  V(Type::Number(), Type::UntaggedSigned32(), Int32x4GetW)               \
+  V(Type::Signed32(), Type::UntaggedSigned32(), Int32x4GetSignMask)      \
+  V(Type::Boolean(), Type::Tagged(), Int32x4GetFlagX)                    \
+  V(Type::Boolean(), Type::Tagged(), Int32x4GetFlagY)                    \
+  V(Type::Boolean(), Type::Tagged(), Int32x4GetFlagZ)                    \
+  V(Type::Boolean(), Type::Tagged(), Int32x4GetFlagW)                    \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Neg)                  \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Not)                  \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Splat)                \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Swizzle)              \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4ShiftLeft)            \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4ShiftRight)           \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4ShiftRightArithmetic) \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Int32x4BitsToFloat32x4)    \
+  V(typer_->GetFloat32x4(), Type::Untagged(), Int32x4ToFloat32x4)        \
+  V(typer_->GetInt32x4(), Type::Untagged(), Float32x4BitsToInt32x4)      \
+  V(typer_->GetInt32x4(), Type::Untagged(), Float32x4ToInt32x4)          \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4Equal)                \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4GreaterThan)          \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4LessThan)             \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4WithX)                \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4WithY)                \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4WithZ)                \
+  V(typer_->GetInt32x4(), Type::Untagged(), Int32x4WithW)                \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Add)              \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Sub)              \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Mul)              \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Div)              \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Constructor)      \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Check)            \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Min)              \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Max)              \
+  V(Type::Number(), Type::UntaggedFloat64(), Float64x2GetX)              \
+  V(Type::Number(), Type::UntaggedFloat64(), Float64x2GetY)              \
+  V(Type::Signed32(), Type::UntaggedSigned32(), Float64x2GetSignMask)    \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Abs)              \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Neg)              \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Sqrt)             \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Scale)            \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2WithX)            \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2WithY)            \
+  V(typer_->GetFloat64x2(), Type::Untagged(), Float64x2Clamp)
+
+
+#define DECLARE_TYPE_SIMD_OPERATION(type1, type2, opcode) \
+  Bounds Typer::Visitor::Type##opcode(Node* node) {       \
+    return Bounds(Type::Intersect(type1, type2, zone())); \
+  }
+
+
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+SIMD_OPERATIONS(DECLARE_TYPE_SIMD_OPERATION)
+#endif
 
 
 // Heap constants.
@@ -2222,6 +2585,112 @@ Type* Typer::Visitor::TypeConstant(Handle<Object> value) {
           return typer_->cache_->Get(kImulFunc);
         case kMathClz32:
           return typer_->cache_->Get(kClz32Func);
+        // Float32x4
+        case kFloat32x4Abs:
+        case kFloat32x4Neg:
+        case kFloat32x4Reciprocal:
+        case kFloat32x4ReciprocalSqrt:
+        case kFloat32x4Sqrt:
+        case kInt32x4ToFloat32x4:
+        case kInt32x4BitsToFloat32x4:
+        case kFloat32x4Check:
+          return typer_->cache_->Get(kFloat32x4Func1);
+        case kFloat32x4Add:
+        case kFloat32x4Sub:
+        case kFloat32x4Mul:
+        case kFloat32x4Div:
+        case kFloat32x4Max:
+        case kFloat32x4Min:
+          return typer_->cache_->Get(kFloat32x4Func2);
+        case kFloat32x4Scale:
+        case kFloat32x4WithX:
+        case kFloat32x4WithY:
+        case kFloat32x4WithZ:
+        case kFloat32x4WithW:
+          return typer_->cache_->Get(kFloat32x4Func1_1n);
+        case kFloat32x4Clamp:
+          return typer_->cache_->Get(kFloat32x4Func3);
+        case kFloat32x4Swizzle:
+          return typer_->cache_->Get(kFloat32x4Func1_4i);
+        case kFloat32x4Splat:
+          return typer_->cache_->Get(kFloat32x4Func1f);
+        case kFloat32x4Constructor:
+          return typer_->cache_->Get(kFloat32x4Func4f);
+        case kGetFloat32x4X:
+        case kGetFloat32x4XY:
+        case kGetFloat32x4XYZ:
+        case kGetFloat32x4XYZW:
+        case kFloat32x4Select:
+        case kFloat32x4Shuffle:
+          return typer_->cache_->Get(kFloat32x4FuncA);
+        case kFloat32x4Equal:
+        case kFloat32x4NotEqual:
+        case kFloat32x4GreaterThan:
+        case kFloat32x4GreaterThanOrEqual:
+        case kFloat32x4LessThan:
+        case kFloat32x4LessThanOrEqual:
+          return typer_->cache_->Get(kInt32x4Func2f32x4);
+        // Int32x4
+        case kInt32x4Add:
+        case kInt32x4And:
+        case kInt32x4Sub:
+        case kInt32x4Mul:
+        case kInt32x4Or:
+        case kInt32x4Xor:
+        case kInt32x4Equal:
+        case kInt32x4GreaterThan:
+        case kInt32x4LessThan:
+        case kInt32x4WithX:
+        case kInt32x4WithY:
+        case kInt32x4WithZ:
+        case kInt32x4WithW:
+          return typer_->cache_->Get(kInt32x4Func2);
+        case kInt32x4Constructor:
+          return typer_->cache_->Get(kInt32x4Func4i);
+        case kInt32x4Swizzle:
+          return typer_->cache_->Get(kFloat32x4Func1_4i);
+        case kInt32x4Neg:
+        case kInt32x4Not:
+        case kInt32x4Splat:
+        case kFloat32x4BitsToInt32x4:
+        case kFloat32x4ToInt32x4:
+        case kInt32x4Check:
+          return typer_->cache_->Get(kInt32x4Func1);
+        case kInt32x4Bool:
+        case kInt32x4Select:
+        case kInt32x4Shuffle:
+        case kGetInt32x4X:
+        case kGetInt32x4XY:
+        case kGetInt32x4XYZ:
+        case kGetInt32x4XYZW:
+        case kInt32x4ShiftLeft:
+        case kInt32x4ShiftRight:
+        case kInt32x4ShiftRightArithmetic:
+          return typer_->cache_->Get(kInt32x4FuncA);
+        // Float64x2
+        case kFloat64x2Add:
+        case kFloat64x2Sub:
+        case kFloat64x2Mul:
+        case kFloat64x2Div:
+        case kFloat64x2Max:
+        case kFloat64x2Min:
+          return typer_->cache_->Get(kFloat64x2Func2);
+        case kFloat64x2Constructor:
+          return typer_->cache_->Get(kFloat64x2Func2n);
+        case kFloat64x2Abs:
+        case kFloat64x2Neg:
+        case kFloat64x2Sqrt:
+        case kFloat64x2Check:
+          return typer_->cache_->Get(kFloat64x2Func1);
+        case kFloat64x2Scale:
+        case kFloat64x2WithX:
+        case kFloat64x2WithY:
+          return typer_->cache_->Get(kFloat64x2Func1_1n);
+        case kFloat64x2Clamp:
+          return typer_->cache_->Get(kFloat64x2Func3);
+        case kGetFloat64x2X:
+        case kGetFloat64x2XY:
+          return typer_->cache_->Get(kFloat64x2FuncA);
         default:
           break;
       }
@@ -2256,6 +2725,12 @@ Type* Typer::Visitor::TypeConstant(Handle<Object> value) {
       TYPED_ARRAYS(TYPED_ARRAY_CASE)
 #undef TYPED_ARRAY_CASE
     }
+  } else if (value->IsFloat32x4()) {
+    return typer_->cache_->Get(kFloat32x4Tagged);
+  } else if (value->IsInt32x4()) {
+    return typer_->cache_->Get(kInt32x4Tagged);
+  } else if (value->IsFloat64x2()) {
+    return typer_->cache_->Get(kFloat64x2Tagged);
   }
   return Type::Constant(value, zone());
 }

@@ -13,6 +13,18 @@ namespace internal {
 
 class PlatformInterfaceDescriptor;
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+#define SIMD_INTERFACE_DESCRIPTOR_LIST(V)     \
+  V(ToFloat32x4)                              \
+  V(ToInt32x4)                                \
+  V(ToFloat64x2)                              \
+  V(AllocateFloat32x4)                        \
+  V(AllocateInt32x4)                          \
+  V(AllocateFloat64x2)
+#else
+#define SIMD_INTERFACE_DESCRIPTOR_LIST(V)
+#endif
+
 #define INTERFACE_DESCRIPTOR_LIST(V)          \
   V(Load)                                     \
   V(Store)                                    \
@@ -58,7 +70,6 @@ class PlatformInterfaceDescriptor;
   V(MathPowTagged)                            \
   V(MathPowInteger)                           \
   V(ContextOnly)
-
 
 class CallInterfaceDescriptorData {
  public:
@@ -115,6 +126,9 @@ class CallDescriptors {
   enum Key {
 #define DEF_ENUM(name) name,
     INTERFACE_DESCRIPTOR_LIST(DEF_ENUM)
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+    SIMD_INTERFACE_DESCRIPTOR_LIST(DEF_ENUM)
+#endif
 #undef DEF_ENUM
     NUMBER_OF_DESCRIPTORS
   };
@@ -296,6 +310,26 @@ class ToNumberDescriptor : public CallInterfaceDescriptor {
 };
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+class ToFloat32x4Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(ToFloat32x4Descriptor, CallInterfaceDescriptor)
+};
+
+
+class ToInt32x4Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(ToInt32x4Descriptor, CallInterfaceDescriptor)
+};
+
+
+class ToFloat64x2Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(ToFloat64x2Descriptor, CallInterfaceDescriptor)
+};
+#endif
+
+
 class NumberToStringDescriptor : public CallInterfaceDescriptor {
  public:
   DECLARE_DESCRIPTOR(NumberToStringDescriptor, CallInterfaceDescriptor)
@@ -376,6 +410,26 @@ class AllocateHeapNumberDescriptor : public CallInterfaceDescriptor {
  public:
   DECLARE_DESCRIPTOR(AllocateHeapNumberDescriptor, CallInterfaceDescriptor)
 };
+
+
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+class AllocateFloat32x4Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(AllocateFloat32x4Descriptor, CallInterfaceDescriptor)
+};
+
+
+class AllocateInt32x4Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(AllocateInt32x4Descriptor, CallInterfaceDescriptor)
+};
+
+
+class AllocateFloat64x2Descriptor : public CallInterfaceDescriptor {
+ public:
+  DECLARE_DESCRIPTOR(AllocateFloat64x2Descriptor, CallInterfaceDescriptor)
+};
+#endif
 
 
 class ArrayConstructorConstantArgCountDescriptor
@@ -533,6 +587,9 @@ class ContextOnlyDescriptor : public CallInterfaceDescriptor {
 #define DEF_KEY(name) \
   CallDescriptors::Key name##Descriptor::key() { return CallDescriptors::name; }
 INTERFACE_DESCRIPTOR_LIST(DEF_KEY)
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+    SIMD_INTERFACE_DESCRIPTOR_LIST(DEF_KEY)
+#endif
 #undef DEF_KEY
 }
 }  // namespace v8::internal

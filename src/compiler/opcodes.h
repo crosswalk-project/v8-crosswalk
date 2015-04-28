@@ -92,12 +92,22 @@
 
 #define JS_LOGIC_UNOP_LIST(V) V(JSUnaryNot)
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+#define SIMD_JS_CONVERSION_UNOP_LIST(V) \
+  V(JSToFloat32x4Obj)                   \
+  V(JSToInt32x4Obj)                     \
+  V(JSToFloat64x2Obj)
+#else
+#define SIMD_JS_CONVERSION_UNOP_LIST(V)
+#endif
+
 #define JS_CONVERSION_UNOP_LIST(V) \
   V(JSToBoolean)                   \
   V(JSToNumber)                    \
   V(JSToString)                    \
   V(JSToName)                      \
-  V(JSToObject)
+  V(JSToObject)                    \
+  SIMD_JS_CONVERSION_UNOP_LIST(V)
 
 #define JS_OTHER_UNOP_LIST(V) \
   V(JSTypeOf)
@@ -151,8 +161,21 @@
   V(StringLessThan)                      \
   V(StringLessThanOrEqual)
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+#define SIMD_SIMPLIFIED_OP_LIST(V) \
+  V(ChangeFloat32x4ToTagged)       \
+  V(ChangeTaggedToFloat32x4)       \
+  V(ChangeInt32x4ToTagged)         \
+  V(ChangeTaggedToInt32x4)         \
+  V(ChangeFloat64x2ToTagged)       \
+  V(ChangeTaggedToFloat64x2)
+#else
+#define SIMD_SIMPLIFIED_OP_LIST(V)
+#endif
+
 #define SIMPLIFIED_OP_LIST(V)      \
   SIMPLIFIED_COMPARE_BINOP_LIST(V) \
+  SIMD_SIMPLIFIED_OP_LIST(V)       \
   V(BooleanNot)                    \
   V(BooleanToNumber)               \
   V(NumberAdd)                     \
@@ -195,6 +218,102 @@
   V(Float64Equal)                     \
   V(Float64LessThan)                  \
   V(Float64LessThanOrEqual)
+
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+#define SIMD_MACHINE_OP_LIST(V)  \
+  V(Float32x4Add)                \
+  V(Float32x4Mul)                \
+  V(Float32x4Sub)                \
+  V(Float32x4Div)                \
+  V(Float32x4Constructor)        \
+  V(Float32x4Check)              \
+  V(Float32x4Min)                \
+  V(Float32x4Max)                \
+  V(Float32x4GetX)               \
+  V(Float32x4GetY)               \
+  V(Float32x4GetZ)               \
+  V(Float32x4GetW)               \
+  V(Float32x4GetSignMask)        \
+  V(Float32x4Abs)                \
+  V(Float32x4Neg)                \
+  V(Float32x4Reciprocal)         \
+  V(Float32x4ReciprocalSqrt)     \
+  V(Float32x4Splat)              \
+  V(Float32x4Sqrt)               \
+  V(Float32x4Scale)              \
+  V(Float32x4WithX)              \
+  V(Float32x4WithY)              \
+  V(Float32x4WithZ)              \
+  V(Float32x4WithW)              \
+  V(Float32x4Clamp)              \
+  V(Float32x4Swizzle)            \
+  V(Float32x4Equal)              \
+  V(Float32x4NotEqual)           \
+  V(Float32x4GreaterThan)        \
+  V(Float32x4GreaterThanOrEqual) \
+  V(Float32x4LessThan)           \
+  V(Float32x4LessThanOrEqual)    \
+  V(Float32x4Select)             \
+  V(Float32x4Shuffle)            \
+  V(Int32x4Add)                  \
+  V(Int32x4And)                  \
+  V(Int32x4Mul)                  \
+  V(Int32x4Sub)                  \
+  V(Int32x4Or)                   \
+  V(Int32x4Xor)                  \
+  V(Int32x4Constructor)          \
+  V(Int32x4Check)                \
+  V(Int32x4GetX)                 \
+  V(Int32x4GetY)                 \
+  V(Int32x4GetZ)                 \
+  V(Int32x4GetW)                 \
+  V(Int32x4Bool)                 \
+  V(Int32x4Select)               \
+  V(Int32x4Shuffle)              \
+  V(Int32x4GetFlagX)             \
+  V(Int32x4GetFlagY)             \
+  V(Int32x4GetFlagZ)             \
+  V(Int32x4GetFlagW)             \
+  V(Int32x4GetSignMask)          \
+  V(Int32x4Neg)                  \
+  V(Int32x4Not)                  \
+  V(Int32x4Splat)                \
+  V(Int32x4Swizzle)              \
+  V(Int32x4ShiftLeft)            \
+  V(Int32x4ShiftRight)           \
+  V(Int32x4ShiftRightArithmetic) \
+  V(Int32x4BitsToFloat32x4)      \
+  V(Int32x4ToFloat32x4)          \
+  V(Int32x4Equal)                \
+  V(Int32x4GreaterThan)          \
+  V(Int32x4LessThan)             \
+  V(Float32x4BitsToInt32x4)      \
+  V(Float32x4ToInt32x4)          \
+  V(Int32x4WithX)                \
+  V(Int32x4WithY)                \
+  V(Int32x4WithZ)                \
+  V(Int32x4WithW)                \
+  V(Float64x2Add)                \
+  V(Float64x2Mul)                \
+  V(Float64x2Sub)                \
+  V(Float64x2Div)                \
+  V(Float64x2Constructor)        \
+  V(Float64x2Check)              \
+  V(Float64x2Min)                \
+  V(Float64x2Max)                \
+  V(Float64x2GetX)               \
+  V(Float64x2GetY)               \
+  V(Float64x2GetSignMask)        \
+  V(Float64x2Abs)                \
+  V(Float64x2Neg)                \
+  V(Float64x2Sqrt)               \
+  V(Float64x2Scale)              \
+  V(Float64x2WithX)              \
+  V(Float64x2WithY)              \
+  V(Float64x2Clamp)
+#else
+#define SIMD_MACHINE_OP_LIST(V)
+#endif
 
 #define MACHINE_OP_LIST(V)      \
   MACHINE_COMPARE_BINOP_LIST(V) \
@@ -260,7 +379,8 @@
   V(Float64InsertHighWord32)    \
   V(LoadStackPointer)           \
   V(CheckedLoad)                \
-  V(CheckedStore)
+  V(CheckedStore)               \
+  SIMD_MACHINE_OP_LIST(V)
 
 #define VALUE_OP_LIST(V) \
   COMMON_OP_LIST(V)      \
