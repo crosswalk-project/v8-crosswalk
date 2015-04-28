@@ -307,6 +307,26 @@ void JSGenericLowering::LowerJSToObject(Node* node) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+void JSGenericLowering::LowerJSToFloat32x4Obj(Node* node) {
+  Callable callable = CodeFactory::ToFloat32x4Obj(isolate());
+  ReplaceWithStubCall(node, callable, FlagsForNode(node));
+}
+
+
+void JSGenericLowering::LowerJSToInt32x4Obj(Node* node) {
+  Callable callable = CodeFactory::ToInt32x4Obj(isolate());
+  ReplaceWithStubCall(node, callable, FlagsForNode(node));
+}
+
+
+void JSGenericLowering::LowerJSToFloat64x2Obj(Node* node) {
+  Callable callable = CodeFactory::ToFloat64x2Obj(isolate());
+  ReplaceWithStubCall(node, callable, FlagsForNode(node));
+}
+#endif
+
+
 void JSGenericLowering::LowerJSLoadProperty(Node* node) {
   const LoadPropertyParameters& p = LoadPropertyParametersOf(node->op());
   Callable callable =

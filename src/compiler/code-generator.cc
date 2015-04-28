@@ -68,6 +68,12 @@ Handle<Code> CodeGenerator::GenerateCode() {
     ProfileEntryHookStub::MaybeCallEntryHook(masm());
   }
 
+#ifdef DEBUG
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+  AssembleStopAt();
+#endif
+#endif
+
   // Architecture-specific, linkage-specific prologue.
   info->set_prologue_offset(masm()->pc_offset());
   AssemblePrologue();
@@ -610,6 +616,7 @@ void CodeGenerator::AssembleDeoptimizerCall(
 
 void CodeGenerator::AssemblePrologue() { UNIMPLEMENTED(); }
 
+void CodeGenerator::AssembleStopAt() { UNIMPLEMENTED(); }
 
 void CodeGenerator::AssembleReturn() { UNIMPLEMENTED(); }
 

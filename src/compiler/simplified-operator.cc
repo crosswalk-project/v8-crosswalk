@@ -162,6 +162,19 @@ const ElementAccess& ElementAccessOf(const Operator* op) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+#define SIMD_PURE_OP_LIST(V)                            \
+  V(ChangeFloat32x4ToTagged, Operator::kNoProperties, 1) \
+  V(ChangeTaggedToFloat32x4, Operator::kNoProperties, 1) \
+  V(ChangeInt32x4ToTagged, Operator::kNoProperties, 1)   \
+  V(ChangeTaggedToInt32x4, Operator::kNoProperties, 1)   \
+  V(ChangeFloat64x2ToTagged, Operator::kNoProperties, 1) \
+  V(ChangeTaggedToFloat64x2, Operator::kNoProperties, 1)
+#else
+#define SIMD_PURE_OP_LIST(V)
+#endif
+
+
 #define PURE_OP_LIST(V)                                 \
   V(BooleanNot, Operator::kNoProperties, 1)             \
   V(BooleanToNumber, Operator::kNoProperties, 1)        \
@@ -189,7 +202,8 @@ const ElementAccess& ElementAccessOf(const Operator* op) {
   V(ChangeBoolToBit, Operator::kNoProperties, 1)        \
   V(ChangeBitToBool, Operator::kNoProperties, 1)        \
   V(ObjectIsSmi, Operator::kNoProperties, 1)            \
-  V(ObjectIsNonNegativeSmi, Operator::kNoProperties, 1)
+  V(ObjectIsNonNegativeSmi, Operator::kNoProperties, 1) \
+  SIMD_PURE_OP_LIST(V)
 
 
 struct SimplifiedOperatorGlobalCache FINAL {

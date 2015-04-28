@@ -272,7 +272,7 @@ Operand::Operand(Register index,
 
 Operand::Operand(const Operand& operand, int32_t offset) {
   DCHECK(operand.len_ >= 1);
-  // Operand encodes REX ModR/M [SIB] [Disp].
+  // Operand encodes ModR/M [SIB] [Disp].
   byte modrm = operand.buf_[0];
   DCHECK(modrm < 0xC0);  // Disallow mode 3 (register target).
   bool has_sib = ((modrm & 0x07) == 0x04);
@@ -300,6 +300,7 @@ Operand::Operand(const Operand& operand, int32_t offset) {
     buf_[0] = (modrm & 0x3f) | (is_baseless ? 0x00 : 0x80);
     len_ = disp_offset + 4;
     Memory::int32_at(&buf_[disp_offset]) = disp_value;
+    rmode_ = operand.rmode_;
   } else if (disp_value != 0 || (base_reg == 0x05)) {
     // Need 8 bits of displacement.
     buf_[0] = (modrm & 0x3f) | 0x40;  // Mode 1.

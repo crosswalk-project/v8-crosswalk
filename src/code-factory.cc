@@ -134,6 +134,29 @@ Callable CodeFactory::ToNumber(Isolate* isolate) {
 }
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+// static
+Callable CodeFactory::ToFloat32x4Obj(Isolate* isolate) {
+  ToFloat32x4Stub stub(isolate);
+  return Callable(stub.GetCode(), stub.GetCallInterfaceDescriptor());
+}
+
+
+// static
+Callable CodeFactory::ToInt32x4Obj(Isolate* isolate) {
+  ToInt32x4Stub stub(isolate);
+  return Callable(stub.GetCode(), stub.GetCallInterfaceDescriptor());
+}
+
+
+// static
+Callable CodeFactory::ToFloat64x2Obj(Isolate* isolate) {
+  ToFloat64x2Stub stub(isolate);
+  return Callable(stub.GetCode(), stub.GetCallInterfaceDescriptor());
+}
+#endif
+
+
 // static
 Callable CodeFactory::StringAdd(Isolate* isolate, StringAddFlags flags,
                                 PretenureFlag pretenure_flag) {
@@ -147,6 +170,29 @@ Callable CodeFactory::AllocateHeapNumber(Isolate* isolate) {
   AllocateHeapNumberStub stub(isolate);
   return Callable(stub.GetCode(), stub.GetCallInterfaceDescriptor());
 }
+
+
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+// static
+Callable CodeFactory::AllocateFloat32x4(Isolate* isolate) {
+  AllocateFloat32x4Stub stub(isolate);
+  return Callable(stub.GetCode(), stub.GetCallInterfaceDescriptor());
+}
+
+
+// static
+Callable CodeFactory::AllocateInt32x4(Isolate* isolate) {
+  AllocateInt32x4Stub stub(isolate);
+  return Callable(stub.GetCode(), stub.GetCallInterfaceDescriptor());
+}
+
+
+// static
+Callable CodeFactory::AllocateFloat64x2(Isolate* isolate) {
+  AllocateFloat64x2Stub stub(isolate);
+  return Callable(stub.GetCode(), stub.GetCallInterfaceDescriptor());
+}
+#endif
 
 
 // static

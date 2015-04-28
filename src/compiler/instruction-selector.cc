@@ -257,6 +257,57 @@ void InstructionSelector::MarkAsDouble(Node* node) {
 }
 
 
+bool InstructionSelector::IsFloat32x4(const Node* node) const {
+  DCHECK_NOT_NULL(node);
+  int const virtual_register = virtual_registers_[node->id()];
+  if (virtual_register == InstructionOperand::kInvalidVirtualRegister) {
+    return false;
+  }
+  return sequence()->IsFloat32x4(virtual_register);
+}
+
+
+void InstructionSelector::MarkAsFloat32x4(Node* node) {
+  DCHECK_NOT_NULL(node);
+  DCHECK(!IsReference(node));
+  sequence()->MarkAsFloat32x4(GetVirtualRegister(node));
+}
+
+
+bool InstructionSelector::IsInt32x4(const Node* node) const {
+  DCHECK_NOT_NULL(node);
+  int const virtual_register = virtual_registers_[node->id()];
+  if (virtual_register == InstructionOperand::kInvalidVirtualRegister) {
+    return false;
+  }
+  return sequence()->IsInt32x4(virtual_register);
+}
+
+
+void InstructionSelector::MarkAsInt32x4(Node* node) {
+  DCHECK_NOT_NULL(node);
+  DCHECK(!IsReference(node));
+  sequence()->MarkAsInt32x4(GetVirtualRegister(node));
+}
+
+
+bool InstructionSelector::IsFloat64x2(const Node* node) const {
+  DCHECK_NOT_NULL(node);
+  int const virtual_register = virtual_registers_[node->id()];
+  if (virtual_register == InstructionOperand::kInvalidVirtualRegister) {
+    return false;
+  }
+  return sequence()->IsFloat64x2(virtual_register);
+}
+
+
+void InstructionSelector::MarkAsFloat64x2(Node* node) {
+  DCHECK_NOT_NULL(node);
+  DCHECK(!IsReference(node));
+  sequence()->MarkAsFloat64x2(GetVirtualRegister(node));
+}
+
+
 bool InstructionSelector::IsReference(const Node* node) const {
   DCHECK_NOT_NULL(node);
   int const virtual_register = virtual_registers_[node->id()];
@@ -285,6 +336,15 @@ void InstructionSelector::MarkAsRepresentation(MachineType rep,
     case kRepTagged:
       sequence()->MarkAsReference(unalloc.virtual_register());
       break;
+    case kRepFloat32x4:
+      sequence()->MarkAsFloat32x4(unalloc.virtual_register());
+      break;
+    case kRepInt32x4:
+      sequence()->MarkAsInt32x4(unalloc.virtual_register());
+      break;
+    case kRepFloat64x2:
+      sequence()->MarkAsFloat64x2(unalloc.virtual_register());
+      break;
     default:
       break;
   }
@@ -300,6 +360,15 @@ void InstructionSelector::MarkAsRepresentation(MachineType rep, Node* node) {
       break;
     case kRepTagged:
       MarkAsReference(node);
+      break;
+    case kRepFloat32x4:
+      MarkAsFloat32x4(node);
+      break;
+    case kRepInt32x4:
+      MarkAsInt32x4(node);
+      break;
+    case kRepFloat64x2:
+      MarkAsFloat64x2(node);
       break;
     default:
       break;
@@ -796,6 +865,182 @@ void InstructionSelector::VisitNode(Node* node) {
     }
     case IrOpcode::kCheckedStore:
       return VisitCheckedStore(node);
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+    case IrOpcode::kFloat32x4Add:
+      return MarkAsFloat32x4(node), VisitFloat32x4Add(node);
+    case IrOpcode::kFloat32x4Sub:
+      return MarkAsFloat32x4(node), VisitFloat32x4Sub(node);
+    case IrOpcode::kFloat32x4Mul:
+      return MarkAsFloat32x4(node), VisitFloat32x4Mul(node);
+    case IrOpcode::kFloat32x4Div:
+      return MarkAsFloat32x4(node), VisitFloat32x4Div(node);
+    case IrOpcode::kFloat32x4Constructor:
+      return MarkAsFloat32x4(node), VisitFloat32x4Constructor(node);
+    case IrOpcode::kFloat32x4Min:
+      return MarkAsFloat32x4(node), VisitFloat32x4Min(node);
+    case IrOpcode::kFloat32x4Max:
+      return MarkAsFloat32x4(node), VisitFloat32x4Max(node);
+    case IrOpcode::kFloat32x4GetX:
+      return MarkAsDouble(node), VisitFloat32x4GetX(node);
+    case IrOpcode::kFloat32x4GetY:
+      return MarkAsDouble(node), VisitFloat32x4GetY(node);
+    case IrOpcode::kFloat32x4GetZ:
+      return MarkAsDouble(node), VisitFloat32x4GetZ(node);
+    case IrOpcode::kFloat32x4GetW:
+      return MarkAsDouble(node), VisitFloat32x4GetW(node);
+    case IrOpcode::kFloat32x4GetSignMask:
+      return VisitFloat32x4GetSignMask(node);
+    case IrOpcode::kFloat32x4Abs:
+      return MarkAsFloat32x4(node), VisitFloat32x4Abs(node);
+    case IrOpcode::kFloat32x4Reciprocal:
+      return MarkAsFloat32x4(node), VisitFloat32x4Reciprocal(node);
+    case IrOpcode::kFloat32x4ReciprocalSqrt:
+      return MarkAsFloat32x4(node), VisitFloat32x4ReciprocalSqrt(node);
+    case IrOpcode::kFloat32x4Splat:
+      return MarkAsFloat32x4(node), VisitFloat32x4Splat(node);
+    case IrOpcode::kFloat32x4Sqrt:
+      return MarkAsFloat32x4(node), VisitFloat32x4Sqrt(node);
+    case IrOpcode::kFloat32x4Scale:
+      return MarkAsFloat32x4(node), VisitFloat32x4Scale(node);
+    case IrOpcode::kFloat32x4WithX:
+      return MarkAsFloat32x4(node), VisitFloat32x4WithX(node);
+    case IrOpcode::kFloat32x4WithY:
+      return MarkAsFloat32x4(node), VisitFloat32x4WithY(node);
+    case IrOpcode::kFloat32x4WithZ:
+      return MarkAsFloat32x4(node), VisitFloat32x4WithZ(node);
+    case IrOpcode::kFloat32x4WithW:
+      return MarkAsFloat32x4(node), VisitFloat32x4WithW(node);
+    case IrOpcode::kFloat32x4Clamp:
+      return MarkAsFloat32x4(node), VisitFloat32x4Clamp(node);
+    case IrOpcode::kFloat32x4Swizzle:
+      return MarkAsFloat32x4(node), VisitFloat32x4Swizzle(node);
+    case IrOpcode::kFloat32x4Equal:
+      return MarkAsInt32x4(node), VisitFloat32x4Equal(node);
+    case IrOpcode::kFloat32x4NotEqual:
+      return MarkAsInt32x4(node), VisitFloat32x4NotEqual(node);
+    case IrOpcode::kFloat32x4GreaterThan:
+      return MarkAsInt32x4(node), VisitFloat32x4GreaterThan(node);
+    case IrOpcode::kFloat32x4GreaterThanOrEqual:
+      return MarkAsInt32x4(node), VisitFloat32x4GreaterThanOrEqual(node);
+    case IrOpcode::kFloat32x4LessThan:
+      return MarkAsInt32x4(node), VisitFloat32x4LessThan(node);
+    case IrOpcode::kFloat32x4LessThanOrEqual:
+      return MarkAsInt32x4(node), VisitFloat32x4LessThanOrEqual(node);
+    case IrOpcode::kFloat32x4Select:
+      return MarkAsFloat32x4(node), VisitFloat32x4Select(node);
+    case IrOpcode::kFloat32x4Shuffle:
+      return MarkAsFloat32x4(node), VisitFloat32x4Shuffle(node);
+    // int32x4
+    case IrOpcode::kInt32x4Add:
+      return MarkAsInt32x4(node), VisitInt32x4Add(node);
+    case IrOpcode::kInt32x4And:
+      return MarkAsInt32x4(node), VisitInt32x4And(node);
+    case IrOpcode::kInt32x4Sub:
+      return MarkAsInt32x4(node), VisitInt32x4Sub(node);
+    case IrOpcode::kInt32x4Mul:
+      return MarkAsInt32x4(node), VisitInt32x4Mul(node);
+    case IrOpcode::kInt32x4Or:
+      return MarkAsInt32x4(node), VisitInt32x4Or(node);
+    case IrOpcode::kInt32x4Xor:
+      return MarkAsInt32x4(node), VisitInt32x4Xor(node);
+    case IrOpcode::kInt32x4Constructor:
+      return MarkAsInt32x4(node), VisitInt32x4Constructor(node);
+    case IrOpcode::kInt32x4GetX:
+      return VisitInt32x4GetX(node);
+    case IrOpcode::kInt32x4GetY:
+      return VisitInt32x4GetY(node);
+    case IrOpcode::kInt32x4GetZ:
+      return VisitInt32x4GetZ(node);
+    case IrOpcode::kInt32x4GetW:
+      return VisitInt32x4GetW(node);
+    case IrOpcode::kInt32x4Bool:
+      return MarkAsInt32x4(node), VisitInt32x4Bool(node);
+    case IrOpcode::kInt32x4Select:
+      return MarkAsInt32x4(node), VisitInt32x4Select(node);
+    case IrOpcode::kInt32x4Shuffle:
+      return MarkAsInt32x4(node), VisitInt32x4Shuffle(node);
+    case IrOpcode::kInt32x4GetFlagX:
+      return VisitInt32x4GetFlagX(node);
+    case IrOpcode::kInt32x4GetFlagY:
+      return VisitInt32x4GetFlagY(node);
+    case IrOpcode::kInt32x4GetFlagZ:
+      return VisitInt32x4GetFlagZ(node);
+    case IrOpcode::kInt32x4GetFlagW:
+      return VisitInt32x4GetFlagW(node);
+    case IrOpcode::kInt32x4GetSignMask:
+      return VisitInt32x4GetSignMask(node);
+    case IrOpcode::kInt32x4Neg:
+      return MarkAsInt32x4(node), VisitInt32x4Neg(node);
+    case IrOpcode::kInt32x4Not:
+      return MarkAsInt32x4(node), VisitInt32x4Not(node);
+    case IrOpcode::kInt32x4Splat:
+      return MarkAsInt32x4(node), VisitInt32x4Splat(node);
+    case IrOpcode::kInt32x4Swizzle:
+      return MarkAsInt32x4(node), VisitInt32x4Swizzle(node);
+    case IrOpcode::kInt32x4ShiftLeft:
+      return MarkAsInt32x4(node), VisitInt32x4ShiftLeft(node);
+    case IrOpcode::kInt32x4ShiftRight:
+      return MarkAsInt32x4(node), VisitInt32x4ShiftRight(node);
+    case IrOpcode::kInt32x4ShiftRightArithmetic:
+      return MarkAsInt32x4(node), VisitInt32x4ShiftRightArithmetic(node);
+    case IrOpcode::kInt32x4BitsToFloat32x4:
+      return MarkAsFloat32x4(node), VisitInt32x4BitsToFloat32x4(node);
+    case IrOpcode::kInt32x4ToFloat32x4:
+      return MarkAsFloat32x4(node), VisitInt32x4ToFloat32x4(node);
+    case IrOpcode::kFloat32x4BitsToInt32x4:
+      return MarkAsInt32x4(node), VisitFloat32x4BitsToInt32x4(node);
+    case IrOpcode::kFloat32x4ToInt32x4:
+      return MarkAsInt32x4(node), VisitFloat32x4ToInt32x4(node);
+    case IrOpcode::kInt32x4Equal:
+      return MarkAsInt32x4(node), VisitInt32x4Equal(node);
+    case IrOpcode::kInt32x4GreaterThan:
+      return MarkAsInt32x4(node), VisitInt32x4GreaterThan(node);
+    case IrOpcode::kInt32x4LessThan:
+      return MarkAsInt32x4(node), VisitInt32x4LessThan(node);
+    case IrOpcode::kInt32x4WithX:
+      return MarkAsInt32x4(node), VisitInt32x4WithX(node);
+    case IrOpcode::kInt32x4WithY:
+      return MarkAsInt32x4(node), VisitInt32x4WithY(node);
+    case IrOpcode::kInt32x4WithZ:
+      return MarkAsInt32x4(node), VisitInt32x4WithZ(node);
+    case IrOpcode::kInt32x4WithW:
+      return MarkAsInt32x4(node), VisitInt32x4WithW(node);
+    // float64x2
+    case IrOpcode::kFloat64x2Add:
+      return MarkAsFloat64x2(node), VisitFloat64x2Add(node);
+    case IrOpcode::kFloat64x2Sub:
+      return MarkAsFloat64x2(node), VisitFloat64x2Sub(node);
+    case IrOpcode::kFloat64x2Mul:
+      return MarkAsFloat64x2(node), VisitFloat64x2Mul(node);
+    case IrOpcode::kFloat64x2Div:
+      return MarkAsFloat64x2(node), VisitFloat64x2Div(node);
+    case IrOpcode::kFloat64x2Constructor:
+      return MarkAsFloat64x2(node), VisitFloat64x2Constructor(node);
+    case IrOpcode::kFloat64x2Min:
+      return MarkAsFloat64x2(node), VisitFloat64x2Min(node);
+    case IrOpcode::kFloat64x2Max:
+      return MarkAsFloat64x2(node), VisitFloat64x2Max(node);
+    case IrOpcode::kFloat64x2GetX:
+      return MarkAsDouble(node), VisitFloat64x2GetX(node);
+    case IrOpcode::kFloat64x2GetY:
+      return MarkAsDouble(node), VisitFloat64x2GetY(node);
+    case IrOpcode::kFloat64x2GetSignMask:
+      return VisitFloat64x2GetSignMask(node);
+    case IrOpcode::kFloat64x2Abs:
+      return MarkAsFloat64x2(node), VisitFloat64x2Abs(node);
+    case IrOpcode::kFloat64x2Neg:
+      return MarkAsFloat64x2(node), VisitFloat64x2Neg(node);
+    case IrOpcode::kFloat64x2Sqrt:
+      return MarkAsFloat64x2(node), VisitFloat64x2Sqrt(node);
+    case IrOpcode::kFloat64x2Scale:
+      return MarkAsFloat64x2(node), VisitFloat64x2Scale(node);
+    case IrOpcode::kFloat64x2WithX:
+      return MarkAsFloat64x2(node), VisitFloat64x2WithX(node);
+    case IrOpcode::kFloat64x2WithY:
+      return MarkAsFloat64x2(node), VisitFloat64x2WithY(node);
+    case IrOpcode::kFloat64x2Clamp:
+      return MarkAsFloat64x2(node), VisitFloat64x2Clamp(node);
+#endif
     default:
       V8_Fatal(__FILE__, __LINE__, "Unexpected operator #%d:%s @ node #%d",
                node->opcode(), node->op()->mnemonic(), node->id());

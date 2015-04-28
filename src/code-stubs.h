@@ -141,9 +141,22 @@ namespace internal {
 #define CODE_STUB_LIST_MIPS(V)
 #endif
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+#define CODE_STUB_LIST_IA(V)   \
+  V(ToFloat32x4)               \
+  V(ToInt32x4)                 \
+  V(ToFloat64x2)               \
+  V(AllocateFloat32x4)         \
+  V(AllocateInt32x4)           \
+  V(AllocateFloat64x2)
+#else
+#define CODE_STUB_LIST_IA(V)
+#endif
+
 // Combined list of code stubs.
 #define CODE_STUB_LIST(V)         \
   CODE_STUB_LIST_ALL_PLATFORMS(V) \
+  CODE_STUB_LIST_IA(V)            \
   CODE_STUB_LIST_ARM(V)           \
   CODE_STUB_LIST_ARM64(V)         \
   CODE_STUB_LIST_PPC(V)           \
@@ -2324,6 +2337,41 @@ class AllocateHeapNumberStub FINAL : public HydrogenCodeStub {
 };
 
 
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+class AllocateFloat32x4Stub FINAL : public HydrogenCodeStub {
+ public:
+  explicit AllocateFloat32x4Stub(Isolate* isolate)
+      : HydrogenCodeStub(isolate) {}
+
+ private:
+  DEFINE_CALL_INTERFACE_DESCRIPTOR(AllocateFloat32x4);
+  DEFINE_HYDROGEN_CODE_STUB(AllocateFloat32x4, HydrogenCodeStub);
+};
+
+
+class AllocateInt32x4Stub FINAL : public HydrogenCodeStub {
+ public:
+  explicit AllocateInt32x4Stub(Isolate* isolate)
+      : HydrogenCodeStub(isolate) {}
+
+ private:
+  DEFINE_CALL_INTERFACE_DESCRIPTOR(AllocateInt32x4);
+  DEFINE_HYDROGEN_CODE_STUB(AllocateInt32x4, HydrogenCodeStub);
+};
+
+
+class AllocateFloat64x2Stub FINAL : public HydrogenCodeStub {
+ public:
+  explicit AllocateFloat64x2Stub(Isolate* isolate)
+      : HydrogenCodeStub(isolate) {}
+
+ private:
+  DEFINE_CALL_INTERFACE_DESCRIPTOR(AllocateFloat64x2);
+  DEFINE_HYDROGEN_CODE_STUB(AllocateFloat64x2, HydrogenCodeStub);
+};
+#endif
+
+
 class ArrayConstructorStubBase : public HydrogenCodeStub {
  public:
   ArrayConstructorStubBase(Isolate* isolate,
@@ -2739,6 +2787,35 @@ class ToNumberStub FINAL : public PlatformCodeStub {
   DEFINE_CALL_INTERFACE_DESCRIPTOR(ToNumber);
   DEFINE_PLATFORM_CODE_STUB(ToNumber, PlatformCodeStub);
 };
+
+
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+class ToFloat32x4Stub FINAL : public PlatformCodeStub {
+ public:
+  explicit ToFloat32x4Stub(Isolate* isolate) : PlatformCodeStub(isolate) {}
+
+  DEFINE_CALL_INTERFACE_DESCRIPTOR(ToFloat32x4);
+  DEFINE_PLATFORM_CODE_STUB(ToFloat32x4, PlatformCodeStub);
+};
+
+
+class ToInt32x4Stub FINAL : public PlatformCodeStub {
+ public:
+  explicit ToInt32x4Stub(Isolate* isolate) : PlatformCodeStub(isolate) {}
+
+  DEFINE_CALL_INTERFACE_DESCRIPTOR(ToInt32x4);
+  DEFINE_PLATFORM_CODE_STUB(ToInt32x4, PlatformCodeStub);
+};
+
+
+class ToFloat64x2Stub FINAL : public PlatformCodeStub {
+ public:
+  explicit ToFloat64x2Stub(Isolate* isolate) : PlatformCodeStub(isolate) {}
+
+  DEFINE_CALL_INTERFACE_DESCRIPTOR(ToFloat64x2);
+  DEFINE_PLATFORM_CODE_STUB(ToFloat64x2, PlatformCodeStub);
+};
+#endif
 
 
 class StringCompareStub : public PlatformCodeStub {

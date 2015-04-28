@@ -3251,6 +3251,48 @@ void SubStringStub::Generate(MacroAssembler* masm) {
 }
 
 
+void ToFloat32x4Stub::Generate(MacroAssembler* masm) {
+  // The ToFloat32x4Obj stub takes one argument in rax.
+  Label non_float32x4;
+  __ JumpIfSmi(rax, &non_float32x4, Label::kNear);
+  __ CmpObjectType(rax, FLOAT32x4_TYPE, rdi);
+  __ j(not_equal, &non_float32x4, Label::kNear);
+  __ Ret();
+
+  __ bind(&non_float32x4);
+  __ TailCallRuntime(Runtime::kThrowNotFloat32x4Error, 0, 1);
+  __ Ret();
+}
+
+
+void ToInt32x4Stub::Generate(MacroAssembler* masm) {
+  // The ToInt32x4Obj stub takes one argument in rax.
+  Label non_int32x4;
+  __ JumpIfSmi(rax, &non_int32x4, Label::kNear);
+  __ CmpObjectType(rax, INT32x4_TYPE, rdi);
+  __ j(not_equal, &non_int32x4, Label::kNear);
+  __ Ret();
+
+  __ bind(&non_int32x4);
+  __ TailCallRuntime(Runtime::kThrowNotInt32x4Error, 0, 1);
+  __ Ret();
+}
+
+
+void ToFloat64x2Stub::Generate(MacroAssembler* masm) {
+  // The ToFloat64x2Obj stub takes one argument in rax.
+  Label non_float64x2;
+  __ JumpIfSmi(rax, &non_float64x2, Label::kNear);
+  __ CmpObjectType(rax, FLOAT64x2_TYPE, rdi);
+  __ j(not_equal, &non_float64x2, Label::kNear);
+  __ Ret();
+
+  __ bind(&non_float64x2);
+  __ TailCallRuntime(Runtime::kThrowNotFloat64x2Error, 0, 1);
+  __ Ret();
+}
+
+
 void ToNumberStub::Generate(MacroAssembler* masm) {
   // The ToNumber stub takes one argument in rax.
   Label not_smi;

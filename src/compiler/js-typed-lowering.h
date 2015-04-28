@@ -36,6 +36,7 @@ class JSTypedLowering FINAL : public Reducer {
   Reduction ReduceJSMultiply(Node* node);
   Reduction ReduceJSComparison(Node* node);
   Reduction ReduceJSLoadProperty(Node* node);
+  Reduction ReduceJSLoadNamed(Node* node);
   Reduction ReduceJSStoreProperty(Node* node);
   Reduction ReduceJSLoadContext(Node* node);
   Reduction ReduceJSStoreContext(Node* node);
@@ -45,6 +46,11 @@ class JSTypedLowering FINAL : public Reducer {
   Reduction ReduceJSToBoolean(Node* node);
   Reduction ReduceJSToNumberInput(Node* input);
   Reduction ReduceJSToNumber(Node* node);
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+  Reduction ReduceJSToFloat32x4Obj(Node* node);
+  Reduction ReduceJSToInt32x4Obj(Node* node);
+  Reduction ReduceJSToFloat64x2Obj(Node* node);
+#endif
   Reduction ReduceJSToStringInput(Node* input);
   Reduction ReduceJSToString(Node* node);
   Reduction ReduceNumberBinop(Node* node, const Operator* numberOp);
@@ -66,6 +72,9 @@ class JSTypedLowering FINAL : public Reducer {
   CommonOperatorBuilder* common() const;
   SimplifiedOperatorBuilder* simplified() { return &simplified_; }
   MachineOperatorBuilder* machine() const;
+  Type* GetFloat32x4();
+  Type* GetInt32x4();
+  Type* GetFloat64x2();
 
   JSGraph* jsgraph_;
   SimplifiedOperatorBuilder simplified_;
@@ -73,6 +82,9 @@ class JSTypedLowering FINAL : public Reducer {
   Type* zero_range_;
   Type* one_range_;
   Type* zero_thirtyone_range_;
+  SetOncePointer<Type> float32x4_;
+  SetOncePointer<Type> int32x4_;
+  SetOncePointer<Type> float64x2_;
   Type* shifted_int32_ranges_[4];
 };
 
