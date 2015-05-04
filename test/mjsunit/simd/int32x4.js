@@ -994,3 +994,29 @@ function testArrayOfInt32x4() {
 }
 
 testArrayOfInt32x4();
+
+function testSIMDFromFloat64x2() {
+  var m = SIMD.int32x4(9, 10, 11, 12);
+  var nMask = SIMD.float64x2.fromInt32x4(m);
+  var n = SIMD.int32x4.fromFloat64x2(nMask);
+
+  assertEquals(9, n.x);
+  assertEquals(10, n.y);
+  assertEquals(0, n.z);
+  assertEquals(0, n.w);
+}
+
+testSIMDFromFloat64x2();
+
+function testSIMDFromFloat64x2Bits() {
+  var m = SIMD.int32x4(9, 10, 11, 12);
+  var nMask = SIMD.float64x2.fromInt32x4Bits(m);
+  var n = SIMD.int32x4.fromFloat64x2Bits(nMask);
+
+  assertEquals(9, n.x);
+  assertEquals(10, n.y);
+  assertEquals(11, n.z);
+  assertEquals(12, n.w);
+}
+
+testSIMDFromFloat64x2Bits();

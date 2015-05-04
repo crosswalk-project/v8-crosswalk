@@ -1680,7 +1680,7 @@ int Int32x4::kRuntimeAllocatorId() {
 
 int32_t Int32x4::getAt(int index) {
   DCHECK(index >= 0 && index < kLanes);
-  return get().storage[index];;
+  return get().storage[index];
 }
 
 
