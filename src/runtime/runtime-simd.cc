@@ -427,7 +427,8 @@ RUNTIME_FUNCTION(                                             \
     Runtime_##SOURCE_TYPE##FUNCTION##TARGET_TYPE) {           \
   HandleScope scope(isolate);                                 \
   DCHECK(args.length() == 1);                                 \
-  DCHECK(SOURCE_TYPE::value_t == TARGET_TYPE::value_t);       \
+  DCHECK(sizeof(SOURCE_TYPE::value_t) ==                      \
+      sizeof(TARGET_TYPE::value_t));                          \
                                                               \
   CONVERT_ARG_CHECKED(SOURCE_TYPE, a, 0);                     \
                                                               \
@@ -663,7 +664,7 @@ SIMD128_SHUFFLE_FUNCTIONS(DECLARE_SIMD_SHUFFLE_FUNCTION)
 
 RUNTIME_FUNCTION(Runtime_Float64x2Shuffle) {
   HandleScope scope(isolate);
-  DCHECK(args.length == 4);
+  DCHECK(args.length() == 4);
 
   CONVERT_ARG_CHECKED(Float64x2, a, 0);
   CONVERT_ARG_CHECKED(Float64x2, b, 1);
