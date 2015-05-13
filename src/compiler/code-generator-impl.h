@@ -35,19 +35,19 @@ class InstructionOperandConverter {
     return ToDoubleRegister(instr_->InputAt(index));
   }
 
-  DoubleRegister InputFloat32x4Register(int index) {
+  DoubleRegister InputFloat32x4Register(size_t index) {
     return ToSIMD128Register(instr_->InputAt(index));
   }
 
-  DoubleRegister InputInt32x4Register(int index) {
+  DoubleRegister InputInt32x4Register(size_t index) {
     return ToSIMD128Register(instr_->InputAt(index));
   }
 
-  DoubleRegister InputFloat64x2Register(int index) {
+  DoubleRegister InputFloat64x2Register(size_t index) {
     return ToSIMD128Register(instr_->InputAt(index));
   }
 
-  DoubleRegister InputSIMD128Register(int index) {
+  DoubleRegister InputSIMD128Register(size_t index) {
     return ToSIMD128Register(instr_->InputAt(index));
   }
 
