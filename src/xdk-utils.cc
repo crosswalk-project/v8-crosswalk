@@ -72,9 +72,8 @@ unsigned ClassNames::registerName(const char* name) {
   }
 
   unsigned counter;
-  HashMap::Entry* entry = char_to_idx_.Lookup(const_cast<char*>(name),
-      CharAddressHash(const_cast<char*>(name)),
-      true);
+  HashMap::Entry* entry = char_to_idx_.LookupOrInsert(const_cast<char*>(name),
+      CharAddressHash(const_cast<char*>(name)));
   if (entry->value == NULL) {
     counter = ++counter_;
     entry->value = reinterpret_cast<void*>(counter);
@@ -332,8 +331,8 @@ unsigned SymbolsStorage::registerSymInfo(size_t functionId,
   reserved_key_->line_ = line;
   reserved_key_->column_ = column;
 
-  HashMap::Entry* entry = symbols_.Lookup(reserved_key_,
-                                          SymInfoHash(*reserved_key_), true);
+  HashMap::Entry* entry = symbols_.LookupOrInsert(reserved_key_,
+                                          SymInfoHash(*reserved_key_));
   if (entry->value) {
     return reinterpret_cast<SymInfoValue*>(entry->value)->symId_;
   }
@@ -378,8 +377,8 @@ unsigned SymbolsStorage::FindOrRegisterFrame(JavaScriptFrame* frame) {
   // the address might be occupied by other function
   // thus we are verifying if the same function takes this place
   // before we take symbol info from the cache
-  HashMap::Entry* sym_entry = sym_info_hash_.Lookup(
-          reinterpret_cast<void*>(pc), AddressHash(pc), true);
+  HashMap::Entry* sym_entry = sym_info_hash_.LookupOrInsert(
+          reinterpret_cast<void*>(pc), AddressHash(pc));
   if (sym_entry->value == NULL ||
       (reinterpret_cast<SymbolCached*>(sym_entry->value)->function_ !=
         reinterpret_cast<uintptr_t>(frame->function()))) {
@@ -437,7 +436,7 @@ RuntimeInfo::RuntimeInfo(AggregatedChunks* aggregated_chunks):
 
 PostCollectedInfo* RuntimeInfo::FindPostCollectedInfo(Address addr) {
   HashMap::Entry* entry = working_set_hash_.Lookup(
-          reinterpret_cast<void*>(addr), AddressHash(addr), false);
+          reinterpret_cast<void*>(addr), AddressHash(addr));
   if (entry && entry->value) {
     PostCollectedInfo* info =
         reinterpret_cast<PostCollectedInfo*>(entry->value);
@@ -457,8 +456,8 @@ PostCollectedInfo* RuntimeInfo::AddPostCollectedInfo(Address addr,
     info_new = info;
   }
 
-  HashMap::Entry* entry = working_set_hash_.Lookup(
-          reinterpret_cast<void*>(addr), AddressHash(addr), true);
+  HashMap::Entry* entry = working_set_hash_.LookupOrInsert(
+          reinterpret_cast<void*>(addr), AddressHash(addr));
   DCHECK(entry);
   if (entry->value != NULL) {
     // compensation of the wrong deallocation place
@@ -561,9 +560,8 @@ void AggregatedChunks::addObjectToAggregated(PostCollectedInfo* info,
   reserved_key_->tsBegin_ = info->timeStamp_ - (info->timeStamp_ % bucketSize_);
   reserved_key_->tsEnd_ = td - (td % bucketSize_);
 
-  HashMap::Entry* aggregated_entry = aggregated_map_.Lookup(reserved_key_,
-                                                AggregatedHash(*reserved_key_),
-                                                true);
+  HashMap::Entry* aggregated_entry = aggregated_map_.LookupOrInsert(reserved_key_,
+                                                AggregatedHash(*reserved_key_));
   if (aggregated_entry->value) {
     // no need to store the latest record in the aggregated_keys_list_
     AggregatedValue* value =
