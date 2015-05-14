@@ -7052,14 +7052,18 @@ class Script: public Struct {
     Float32x4)                                                                 \
   V(SIMD.float64x2, clamp, Float64x2Clamp, Float64x2, Float64x2, Float64x2,    \
     Float64x2)                                                                 \
-  V(SIMD.int32x4, select, Int32x4Select, Int32x4, Int32x4, Int32x4, Int32x4)
+  V(SIMD.int32x4, select, Int32x4Select, Int32x4, Int32x4, Int32x4, Int32x4)   \
+  V(SIMD.float64x2, swizzle, Float64x2Swizzle, Float64x2, Float64x2,           \
+    Integer32, Integer32)
 
 #define SIMD_QUARTERNARY_OPERATIONS(V)                                         \
   V(SIMD, float32x4, Float32x4Constructor, Float32x4, Double, Double, Double,  \
     Double)                                                                    \
   V(SIMD, int32x4, Int32x4Constructor, Int32x4, Integer32, Integer32,          \
     Integer32, Integer32)                                                      \
-  V(SIMD.int32x4, bool, Int32x4Bool, Int32x4, Tagged, Tagged, Tagged, Tagged)
+  V(SIMD.int32x4, bool, Int32x4Bool, Int32x4, Tagged, Tagged, Tagged, Tagged)  \
+  V(SIMD.float64x2, shuffle, Float64x2Shuffle, Float64x2, Float64x2,           \
+    Float64x2, Integer32, Integer32)
 
 #define SIMD_QUINARY_OPERATIONS(V)                                             \
   V(SIMD.float32x4, swizzle, Float32x4Swizzle, Float32x4, Float32x4,           \
