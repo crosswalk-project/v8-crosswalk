@@ -453,14 +453,14 @@ HeapEntry* XDKSnapshotFiller::AddEntry(HeapThing thing,
   heap_entries_list_.Add(entry);
   HeapEntry* pEntry = &heap_entries_list_.last();
 
-  HashMap::Entry* cache_entry = heap_entries_.Lookup(thing, Hash(thing), true);
+  HashMap::Entry* cache_entry = heap_entries_.LookupOrInsert(thing, Hash(thing));
   DCHECK(cache_entry->value == NULL);
   int index = pEntry->index();
   cache_entry->value = reinterpret_cast<void*>(static_cast<intptr_t>(index));
 
   // TODO(amalyshe): it seems this storage might be optimized
-  HashMap::Entry* address_entry = index_to_address_.Lookup(
-      reinterpret_cast<void*>(index+1), HashInt(index+1), true);
+  HashMap::Entry* address_entry = index_to_address_.LookupOrInsert(
+      reinterpret_cast<void*>(index+1), HashInt(index+1));
   address_entry->value = reinterpret_cast<void*>(address);
 
   return pEntry;
@@ -468,7 +468,7 @@ HeapEntry* XDKSnapshotFiller::AddEntry(HeapThing thing,
 
 
 HeapEntry* XDKSnapshotFiller::FindEntry(HeapThing thing) {
-  HashMap::Entry* cache_entry = heap_entries_.Lookup(thing, Hash(thing), false);
+  HashMap::Entry* cache_entry = heap_entries_.Lookup(thing, Hash(thing));
   if (cache_entry == NULL) return NULL;
   return &heap_entries_list_[static_cast<int>(
       reinterpret_cast<intptr_t>(cache_entry->value))];
@@ -491,7 +491,7 @@ void XDKSnapshotFiller::SetIndexedReference(HeapGraphEdge::Type type,
   }
   HashMap::Entry* address_entry_child = index_to_address_.Lookup(
       reinterpret_cast<void*>(child_entry->index()+1),
-      HashInt(child_entry->index()+1), false);
+      HashInt(child_entry->index()+1));
   DCHECK(address_entry_child != NULL);
   if (!address_entry_child) {
     return;
@@ -503,7 +503,7 @@ void XDKSnapshotFiller::SetIndexedReference(HeapGraphEdge::Type type,
       allocation_tracker_->GetIndividualReteiners();
   // get the parent's address, constructor name and form the RefId
   HashMap::Entry* address_entry = index_to_address_.Lookup(
-      reinterpret_cast<void*>(parent+1), HashInt(parent+1), false);
+      reinterpret_cast<void*>(parent+1), HashInt(parent+1));
   DCHECK(address_entry != NULL);
   if (!address_entry) {
     return;
@@ -541,7 +541,7 @@ void XDKSnapshotFiller::SetNamedReference(HeapGraphEdge::Type type,
       allocation_tracker_->GetIndividualReteiners();
   // get the parent's address, constructor name and form the RefId
   HashMap::Entry* address_entry = index_to_address_.Lookup(
-      reinterpret_cast<void*>(parent+1), HashInt(parent+1), false);
+      reinterpret_cast<void*>(parent+1), HashInt(parent+1));
   DCHECK(address_entry != NULL);
   if (!address_entry) {
     return;
@@ -557,7 +557,7 @@ void XDKSnapshotFiller::SetNamedReference(HeapGraphEdge::Type type,
 
   HashMap::Entry* address_entry_child = index_to_address_.Lookup(
       reinterpret_cast<void*>(child_entry->index()+1),
-      HashInt(child_entry->index()+1), false);
+      HashInt(child_entry->index()+1));
   DCHECK(address_entry_child != NULL);
   if (!address_entry_child) {
     return;
