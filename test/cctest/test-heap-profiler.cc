@@ -2822,11 +2822,11 @@ class XDKHPOutputChecker {
         // format: symId, funcId, funcName, line, column
         s2_pos = symbols_std_.find("\n", s1_pos);
         if (s2_pos != symbols_std_.npos) {
-          int sym_id_e = symbols_std_.find(",", s1_pos);
+          auto sym_id_e = symbols_std_.find(",", s1_pos);
           std::string sym_id_s = symbols_std_.substr(s1_pos, sym_id_e - s1_pos);
           sym_id = atoi(sym_id_s.c_str());
-          int func_id_e = symbols_std_.find(",", sym_id_e + 1);
-          int finc_name_e = symbols_std_.find(",", func_id_e + 1);
+          auto func_id_e = symbols_std_.find(",", sym_id_e + 1);
+          auto finc_name_e = symbols_std_.find(",", func_id_e + 1);
           function_name = symbols_std_.substr(func_id_e + 1, finc_name_e -
               func_id_e - 1);
           symbols_[function_name] = sym_id;
@@ -2844,7 +2844,7 @@ class XDKHPOutputChecker {
         // format: typeId, typeName
         s2_pos = types_std_.find("\n", s1_pos);
         if (s2_pos != types_std_.npos) {
-          int type_id_e = types_std_.find(",", s1_pos);
+          auto type_id_e = types_std_.find(",", s1_pos);
           std::string sym_id_s = types_std_.substr(s1_pos, type_id_e - s1_pos);
           type_id = atoi(sym_id_s.c_str());
           type_name = types_std_.substr(type_id_e + 1, s2_pos - type_id_e - 1);
@@ -2863,17 +2863,17 @@ class XDKHPOutputChecker {
         // format: frameId, symbolId, parentId
         s2_pos = frames_std_.find("\n", s1_pos);
         if (s2_pos != frames_std_.npos) {
-          int frame_id_e = frames_std_.find(",", s1_pos);
+          auto frame_id_e = frames_std_.find(",", s1_pos);
           std::string frame_id_s = frames_std_.substr(s1_pos,
                                                       frame_id_e - s1_pos);
           frame_id = atoi(frame_id_s.c_str());
 
-          int symb_id_e = frames_std_.find(",", frame_id_e + 1);
+          auto symb_id_e = frames_std_.find(",", frame_id_e + 1);
           std::string symb_id_s = frames_std_.substr(frame_id_e + 1,
                                                     symb_id_e - frame_id_e - 1);
           symbol_id = atoi(symb_id_s.c_str());
 
-          int parent_id_e = frames_std_.find(",", symb_id_e + 1);
+          auto parent_id_e = frames_std_.find(",", symb_id_e + 1);
           std::string parent_id_s = frames_std_.substr(symb_id_e + 1,
                                                       s2_pos - parent_id_e - 1);
           parent_id = atoi(parent_id_s.c_str());
@@ -2900,27 +2900,27 @@ class XDKHPOutputChecker {
         // format: frameId, symbolId, parentId
         s2_pos = chunk_std.find("\n", s1_pos);
         if (s2_pos != chunk_std.npos) {
-          int c1_e = chunk_std.find(",", s1_pos);
+          auto c1_e = chunk_std.find(",", s1_pos);
           std::string c1_s = chunk_std.substr(s1_pos, c1_e - s1_pos);
           time_begin = atoi(c1_s.c_str());
 
-          int c2_e = chunk_std.find(",", c1_e + 1);
+          auto c2_e = chunk_std.find(",", c1_e + 1);
           std::string c2_s = chunk_std.substr(c1_e + 1, c2_e - c1_e - 1);
           time_end = atoi(c2_s.c_str());
 
-          int c3_e = chunk_std.find(",", c2_e + 1);
+          auto c3_e = chunk_std.find(",", c2_e + 1);
           std::string c3_s = chunk_std.substr(c2_e + 1, c3_e - c2_e - 1);
           frame_id = atoi(c3_s.c_str());
 
-          int c4_e = chunk_std.find(",", c3_e + 1);
+          auto c4_e = chunk_std.find(",", c3_e + 1);
           std::string c4_s = chunk_std.substr(c3_e + 1, c4_e - c3_e - 1);
           type_id = atoi(c4_s.c_str());
 
-          int c5_e = chunk_std.find(",", c4_e + 1);
+          auto c5_e = chunk_std.find(",", c4_e + 1);
           std::string c5_s = chunk_std.substr(c4_e + 1, c5_e - c4_e - 1);
           size = atoi(c5_s.c_str());
 
-          int c6_e = chunk_std.find(",", c5_e + 1);
+          auto c6_e = chunk_std.find(",", c5_e + 1);
           std::string c6_s = chunk_std.substr(c5_e + 1, c6_e - c5_e - 1);
           number_of_objects = atoi(c6_s.c_str());
 
