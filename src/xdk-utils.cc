@@ -560,8 +560,9 @@ void AggregatedChunks::addObjectToAggregated(PostCollectedInfo* info,
   reserved_key_->tsBegin_ = info->timeStamp_ - (info->timeStamp_ % bucketSize_);
   reserved_key_->tsEnd_ = td - (td % bucketSize_);
 
-  HashMap::Entry* aggregated_entry = aggregated_map_.LookupOrInsert(reserved_key_,
-                                                AggregatedHash(*reserved_key_));
+  HashMap::Entry* aggregated_entry =
+      aggregated_map_.LookupOrInsert(reserved_key_,
+                                     AggregatedHash(*reserved_key_));
   if (aggregated_entry->value) {
     // no need to store the latest record in the aggregated_keys_list_
     AggregatedValue* value =
