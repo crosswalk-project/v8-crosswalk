@@ -453,7 +453,8 @@ HeapEntry* XDKSnapshotFiller::AddEntry(HeapThing thing,
   heap_entries_list_.Add(entry);
   HeapEntry* pEntry = &heap_entries_list_.last();
 
-  HashMap::Entry* cache_entry = heap_entries_.LookupOrInsert(thing, Hash(thing));
+  HashMap::Entry* cache_entry =
+      heap_entries_.LookupOrInsert(thing, Hash(thing));
   DCHECK(cache_entry->value == NULL);
   int index = pEntry->index();
   cache_entry->value = reinterpret_cast<void*>(static_cast<intptr_t>(index));
