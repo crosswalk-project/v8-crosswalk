@@ -46,6 +46,7 @@ namespace v8 {
 namespace internal {
 
 bool CpuFeatures::SupportsCrankshaft() { return true; }
+bool CpuFeatures::SupportsSIMD128InCrankshaft() { return true; }
 
 
 static const byte kCallOpcode = 0xE8;

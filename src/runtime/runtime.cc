@@ -58,7 +58,7 @@ void Runtime::InitializeIntrinsicFunctionNames(Isolate* isolate,
         dict, isolate->factory()->InternalizeUtf8String(name),
         Handle<Smi>(Smi::FromInt(i), isolate), PropertyDetails::Empty());
     // The dictionary does not need to grow.
-    CHECK(new_dict.is_identical_to(dict));
+    if (new_dict.is_identical_to(dict)) continue;
   }
 }
 
