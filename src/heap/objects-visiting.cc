@@ -135,7 +135,6 @@ StaticVisitorBase::VisitorId StaticVisitorBase::GetVisitorId(
 
     case HEAP_NUMBER_TYPE:
     case MUTABLE_HEAP_NUMBER_TYPE:
-    case FLOAT32X4_TYPE:
 #define EXTERNAL_ARRAY_CASE(Type, type, TYPE, ctype, size) \
   case EXTERNAL_##TYPE##_ARRAY_TYPE:
 
