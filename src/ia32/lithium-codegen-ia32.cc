@@ -3026,13 +3026,49 @@ void LCodeGen::DoAccessArgumentsAt(LAccessArgumentsAt* instr) {
 }
 
 
+void LCodeGen::DoDeferredSIMD128ToTagged(LInstruction* instr,
+                                         Runtime::FunctionId id) {
+  // TODO(3095996): Get rid of this. For now, we need to make the
+  // result register contain a valid pointer because it is already
+  // contained in the register pointer map.
+  Register reg = ToRegister(instr->result());
+  __ Move(reg, Immediate(0));
+
+  PushSafepointRegistersScope scope(this);
+  __ mov(esi, Operand(ebp, StandardFrameConstants::kContextOffset));
+  __ CallRuntimeSaveDoubles(id);
+  RecordSafepointWithRegisters(
+      instr->pointer_map(), 0, Safepoint::kNoLazyDeopt);
+  __ StoreToSafepointRegisterSlot(reg, eax);
+}
+
+
+void LCodeGen::HandleExternalArrayOpRequiresTemp(
+    LOperand* key,
+    Representation key_representation,
+    ElementsKind elements_kind) {
+  if (ExternalArrayOpRequiresPreScale(key_representation, elements_kind)) {
+    int pre_shift_size = ElementsKindToShiftSize(elements_kind) -
+        static_cast<int>(maximal_scale_factor);
+    if (key_representation.IsSmi()) {
+      pre_shift_size -= kSmiTagSize;
+    }
+    DCHECK(pre_shift_size > 0);
+    __ shl(ToRegister(key), pre_shift_size);
+  } else {
+    __ SmiUntag(ToRegister(key));
+  }
+}
+
+
 void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
   ElementsKind elements_kind = instr->elements_kind();
   LOperand* key = instr->key();
   if (!key->IsConstantOperand() &&
       ExternalArrayOpRequiresTemp(instr->hydrogen()->key()->representation(),
                                   elements_kind)) {
-    __ SmiUntag(ToRegister(key));
+    HandleExternalArrayOpRequiresTemp(key,
+        instr->hydrogen()->key()->representation(), elements_kind);
   }
   Operand operand(BuildFastArrayOperand(
       instr->elements(),
@@ -3190,8 +3226,11 @@ Operand LCodeGen::BuildFastArrayOperand(
                    ((constant_value) << shift_size)
                        + base_offset);
   } else {
-    // Take the tag bit into account while computing the shift size.
-    if (key_representation.IsSmi() && (shift_size >= 1)) {
+    if (ExternalArrayOpRequiresPreScale(key_representation, elements_kind)) {
+      // Make sure the key is pre-scaled against maximal_scale_factor.
+      shift_size = static_cast<int>(maximal_scale_factor);
+    } else if (key_representation.IsSmi() && (shift_size >= 1)) {
+      // Take the tag bit into account while computing the shift size.
       shift_size -= kSmiTagSize;
     }
     ScaleFactor scale_factor = static_cast<ScaleFactor>(shift_size);
@@ -4121,8 +4160,8 @@ void LCodeGen::DoBoundsCheck(LBoundsCheck* instr) {
     cc = CommuteCondition(cc);
   } else if (instr->length()->IsConstantOperand()) {
     __ cmp(ToOperand(instr->index()),
-           ToImmediate(LConstantOperand::cast(instr->length()),
-                       instr->hydrogen()->index()->representation()));
+            ToImmediate(LConstantOperand::cast(instr->length()),
+                        instr->hydrogen()->index()->representation()));
   } else {
     __ cmp(ToRegister(instr->index()), ToOperand(instr->length()));
   }
@@ -4143,7 +4182,8 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
   if (!key->IsConstantOperand() &&
       ExternalArrayOpRequiresTemp(instr->hydrogen()->key()->representation(),
                                   elements_kind)) {
-    __ SmiUntag(ToRegister(key));
+    HandleExternalArrayOpRequiresTemp(key,
+        instr->hydrogen()->key()->representation(), elements_kind);
   }
   Operand operand(BuildFastArrayOperand(
       instr->elements(),

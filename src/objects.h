@@ -51,6 +51,9 @@
 //           - JSTypedArray
 //           - JSDataView
 //         - JSCollection
+//         - Float32x4
+//         - Float64x2
+//         - Int32x4
 //           - JSSet
 //           - JSMap
 //         - JSSetIterator
@@ -101,6 +104,9 @@
 //         - ExternalInt32Array
 //         - ExternalUint32Array
 //         - ExternalFloat32Array
+//         - ExternalFloat32x4Array
+//         - ExternalFloat64x2Array
+//         - ExternalInt32x4Array
 //     - Name
 //       - String
 //         - SeqString
@@ -463,6 +469,9 @@ const int kStubMinorKeyBits = kSmiValueSize - kStubMajorKeyBits - 1;
   V(JS_ARRAY_BUFFER_TYPE)                                       \
   V(JS_TYPED_ARRAY_TYPE)                                        \
   V(JS_DATA_VIEW_TYPE)                                          \
+  V(FLOAT32x4_TYPE)                                             \
+  V(FLOAT64x2_TYPE)                                             \
+  V(INT32x4_TYPE)                                               \
   V(JS_PROXY_TYPE)                                              \
   V(JS_SET_TYPE)                                                \
   V(JS_MAP_TYPE)                                                \
@@ -763,6 +772,9 @@ enum InstanceType {
   JS_ARRAY_BUFFER_TYPE,
   JS_TYPED_ARRAY_TYPE,
   JS_DATA_VIEW_TYPE,
+  FLOAT32x4_TYPE,
+  FLOAT64x2_TYPE,
+  INT32x4_TYPE,
   JS_SET_TYPE,
   JS_MAP_TYPE,
   JS_SET_ITERATOR_TYPE,
@@ -991,6 +1003,9 @@ template <class C> inline bool Is(Object* obj);
   V(JSArrayBufferView)             \
   V(JSTypedArray)                  \
   V(JSDataView)                    \
+  V(Float32x4)                     \
+  V(Float64x2)                     \
+  V(Int32x4)                       \
   V(JSProxy)                       \
   V(JSFunctionProxy)               \
   V(JSSet)                         \
@@ -4273,7 +4288,6 @@ class FreeSpace: public HeapObject {
   V(Uint8Clamped, uint8_clamped, UINT8_CLAMPED, uint8_t, 1)
 
 
-
 // An ExternalArray represents a fixed-size array of primitive values
 // which live outside the JavaScript heap. Its subclasses are used to
 // implement the CanvasArray types being defined in the WebGL
@@ -5642,6 +5656,9 @@ class Map: public HeapObject {
   inline bool is_extensible();
   inline void set_is_prototype_map(bool value);
   inline bool is_prototype_map() const;
+
+  void inline tempory_set_bit_field2(uint16_t value);
+  inline uint16_t tempory_bit_field2() const;
 
   inline void set_elements_kind(ElementsKind elements_kind) {
     DCHECK(static_cast<int>(elements_kind) < kElementsKindCount);
@@ -10074,6 +10091,115 @@ class JSDataView: public JSArrayBufferView {
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(JSDataView);
+};
+
+
+class Float32x4: public JSObject {
+ public:
+  typedef float32x4_value_t value_t;
+  static const int kValueSize = kFloat32x4Size;
+  static const InstanceType kInstanceType = FLOAT32x4_TYPE;
+  static inline const char* Name();
+  static inline int kRuntimeAllocatorId();
+
+  // [value]: the FixedFloat32Array with length 4.
+  DECL_ACCESSORS(value, Object)
+
+  // Casting.
+  DECLARE_CAST(Float32x4)
+
+  // Dispatched behavior.
+  void Float32x4Print(std::ostream& os);
+  DECLARE_VERIFIER(Float32x4)
+
+  // Helpers.
+  static const int kLanes = 4;
+  inline float getAt(int index);
+  inline float x() { return getAt(0); }
+  inline float y() { return getAt(1); }
+  inline float z() { return getAt(2); }
+  inline float w() { return getAt(3); }
+  inline float32x4_value_t get();
+  inline void set(float32x4_value_t f32x4);
+
+  // Layout description.
+  static const int kValueOffset = JSObject::kHeaderSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Float32x4);
+};
+
+
+class Float64x2: public JSObject {
+ public:
+  typedef float64x2_value_t value_t;
+  static const int kValueSize = kFloat64x2Size;
+  static const InstanceType kInstanceType = FLOAT64x2_TYPE;
+  static inline const char* Name();
+  static inline int kRuntimeAllocatorId();
+
+  // [value]: the FixedFloat64x2Array with length 1.
+  DECL_ACCESSORS(value, Object)
+
+  // Casting.
+  DECLARE_CAST(Float64x2)
+
+  // Dispatched behavior.
+  void Float64x2Print(std::ostream& os);
+  DECLARE_VERIFIER(Float64x2)
+
+  // Helpers.
+  static const int kLanes = 2;
+  inline double getAt(int index);
+  inline double x() { return getAt(0); }
+  inline double y() { return getAt(1); }
+  inline float64x2_value_t get();
+  inline void set(float64x2_value_t f64x2);
+
+  // Layout description.
+  static const int kValueOffset = JSObject::kHeaderSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Float64x2);
+};
+
+
+class Int32x4: public JSObject {
+ public:
+  typedef int32x4_value_t value_t;
+  static const int kValueSize = kInt32x4Size;
+  static const InstanceType kInstanceType = INT32x4_TYPE;
+  static inline const char* Name();
+  static inline int kRuntimeAllocatorId();
+
+  // [value]: the FixedInt32x4Array with length 1.
+  DECL_ACCESSORS(value, Object)
+
+  // Casting.
+  DECLARE_CAST(Int32x4)
+
+  // Dispatched behavior.
+  void Int32x4Print(std::ostream& os);
+  DECLARE_VERIFIER(Int32x4)
+
+  // Helpers.
+  static const int kLanes = 4;
+  inline int32_t getAt(int32_t index);
+  inline int32_t x() { return getAt(0); }
+  inline int32_t y() { return getAt(1); }
+  inline int32_t z() { return getAt(2); }
+  inline int32_t w() { return getAt(3); }
+  inline int32x4_value_t get();
+  inline void set(int32x4_value_t i32x4);
+
+  // Layout description.
+  static const int kValueOffset = JSObject::kHeaderSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(Int32x4);
 };
 
 
