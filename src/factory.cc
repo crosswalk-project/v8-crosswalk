@@ -1042,6 +1042,58 @@ Handle<HeapNumber> Factory::NewHeapNumber(double value,
 }
 
 
+Handle<Float32x4> Factory::NewFloat32x4(float32x4_value_t value,
+                                        PretenureFlag pretenure) {
+  Handle<JSFunction> constructor(
+      isolate()->native_context()->float32x4_function());
+  Handle<JSObject> jsobject = NewJSObject(constructor);
+  Handle<Float32x4> float32x4(Float32x4::cast(*jsobject));
+  Handle<FixedTypedArrayBase> storage =
+      this->NewFixedTypedArray(static_cast<int>(4),
+                               kExternalFloat32Array, true);
+  FixedFloat32Array::cast(*storage)->set(0, value.storage[0]);
+  FixedFloat32Array::cast(*storage)->set(1, value.storage[1]);
+  FixedFloat32Array::cast(*storage)->set(2, value.storage[2]);
+  FixedFloat32Array::cast(*storage)->set(3, value.storage[3]);
+  float32x4->set_value(*storage);
+  return float32x4;
+}
+
+
+Handle<Float64x2> Factory::NewFloat64x2(float64x2_value_t value,
+                                        PretenureFlag pretenure) {
+  Handle<JSFunction> constructor(
+      isolate()->native_context()->float64x2_function());
+  Handle<JSObject> jsobject = NewJSObject(constructor);
+  Handle<Float64x2> float64x2(Float64x2::cast(*jsobject));
+  Handle<FixedTypedArrayBase> storage =
+      this->NewFixedTypedArray(static_cast<int>(2),
+                               kExternalFloat64Array, true);
+  FixedFloat64Array::cast(*storage)->set(0, value.storage[0]);
+  FixedFloat64Array::cast(*storage)->set(1, value.storage[1]);
+  float64x2->set_value(*storage);
+  return float64x2;
+}
+
+
+Handle<Int32x4> Factory::NewInt32x4(int32x4_value_t value,
+                                    PretenureFlag pretenure) {
+  Handle<JSFunction> constructor(
+      isolate()->native_context()->int32x4_function());
+  Handle<JSObject> jsobject = NewJSObject(constructor);
+  Handle<Int32x4> int32x4(Int32x4::cast(*jsobject));
+  Handle<FixedTypedArrayBase> storage =
+      this->NewFixedTypedArray(static_cast<int>(4),
+                               kExternalInt32Array, true);
+  FixedInt32Array::cast(*storage)->set(0, value.storage[0]);
+  FixedInt32Array::cast(*storage)->set(1, value.storage[1]);
+  FixedInt32Array::cast(*storage)->set(2, value.storage[2]);
+  FixedInt32Array::cast(*storage)->set(3, value.storage[3]);
+  int32x4->set_value(*storage);
+  return int32x4;
+}
+
+
 Handle<Object> Factory::NewError(const char* maker,
                                  MessageTemplate::Template template_index,
                                  Handle<Object> arg0, Handle<Object> arg1,
@@ -1303,6 +1355,9 @@ Handle<JSFunction> Factory::NewFunction(Handle<String> name, Handle<Code> code,
   ElementsKind elements_kind =
       type == JS_ARRAY_TYPE ? FAST_SMI_ELEMENTS : FAST_HOLEY_SMI_ELEMENTS;
   Handle<Map> initial_map = NewMap(type, instance_size, elements_kind);
+  if (type == FLOAT32x4_TYPE) {
+    initial_map->set_is_extensible(false);
+  }
   if (!function->shared()->is_generator()) {
     if (prototype->IsTheHole()) {
       prototype = NewFunctionPrototype(function);
