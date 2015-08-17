@@ -3064,6 +3064,38 @@ void LCodeGen::DoAccessArgumentsAt(LAccessArgumentsAt* instr) {
 }
 
 
+void LCodeGen::DoDeferredSIMD128ToTagged(LInstruction* instr,
+                                         Runtime::FunctionId id) {
+  // TODO(3095996): Get rid of this. For now, we need to make the
+  // result register contain a valid pointer because it is already
+  // contained in the register pointer map.
+  Register reg = ToRegister(instr->result());
+  __ Move(reg, Smi::FromInt(0));
+
+  {
+    PushSafepointRegistersScope scope(this);
+    __ movp(rsi, Operand(rbp, StandardFrameConstants::kContextOffset));
+    __ CallRuntimeSaveDoubles(id);
+    RecordSafepointWithRegisters(
+        instr->pointer_map(), 0, Safepoint::kNoLazyDeopt);
+    __ movp(kScratchRegister, rax);
+  }
+  __ movp(reg, kScratchRegister);
+}
+
+
+void LCodeGen::HandleExternalArrayOpRequiresPreScale(
+    LOperand* key,
+    ElementsKind elements_kind) {
+  if (ExternalArrayOpRequiresPreScale(elements_kind)) {
+    int pre_shift_size = ElementsKindToShiftSize(elements_kind) -
+        static_cast<int>(maximal_scale_factor);
+    DCHECK(pre_shift_size > 0);
+    __ shll(ToRegister(key), Immediate(pre_shift_size));
+  }
+}
+
+
 void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
   ElementsKind elements_kind = instr->elements_kind();
   LOperand* key = instr->key();
@@ -3276,6 +3308,10 @@ Operand LCodeGen::BuildFastArrayOperand(
     // Guaranteed by ArrayInstructionInterface::KeyedAccessIndexRequirement().
     DCHECK(key_representation.IsInteger32());
 
+    if (ExternalArrayOpRequiresPreScale(elements_kind)) {
+      // Make sure the key is pre-scaled against maximal_scale_factor.
+      shift_size = static_cast<int>(maximal_scale_factor);
+    }
     ScaleFactor scale_factor = static_cast<ScaleFactor>(shift_size);
     return Operand(elements_pointer_reg,
                    ToRegister(key),
@@ -4312,6 +4348,7 @@ void LCodeGen::DoStoreKeyedExternalArray(LStoreKeyed* instr) {
       __ movsxlq(key_reg, key_reg);
     }
   }
+
   Operand operand(BuildFastArrayOperand(
       instr->elements(),
       key,

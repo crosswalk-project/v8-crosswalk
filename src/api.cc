@@ -6662,7 +6662,7 @@ size_t v8::TypedArray::Length() {
 }
 
 
-#define TYPED_ARRAY_NEW(Type, type, TYPE, ctype, size)                        \
+#define TYPED_ARRAY_NEW(Type, type, TYPE, ctype, size)                \
   Local<Type##Array> Type##Array::New(Local<ArrayBuffer> array_buffer,        \
                                       size_t byte_offset, size_t length) {    \
     i::Isolate* isolate = Utils::OpenHandle(*array_buffer)->GetIsolate();     \
@@ -6706,6 +6706,7 @@ size_t v8::TypedArray::Length() {
 
 TYPED_ARRAYS(TYPED_ARRAY_NEW)
 #undef TYPED_ARRAY_NEW
+
 
 Local<DataView> DataView::New(Local<ArrayBuffer> array_buffer,
                               size_t byte_offset, size_t byte_length) {
