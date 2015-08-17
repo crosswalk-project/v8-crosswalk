@@ -290,6 +290,19 @@ namespace internal {
   V(minus_zero_string, "-0")                                   \
   V(Array_string, "Array")                                     \
   V(Error_string, "Error")                                     \
+  V(float32x4_string, "Float32x4")                             \
+  V(float64x2_string, "Float64x2")                             \
+  V(int32x4_string, "Int32x4")                                 \
+  V(signMask, "signMask")                                      \
+  V(x, "x")                                                    \
+  V(y, "y")                                                    \
+  V(z, "z")                                                    \
+  V(w, "w")                                                    \
+  V(flagX, "flagX")                                            \
+  V(flagY, "flagY")                                            \
+  V(flagZ, "flagZ")                                            \
+  V(flagW, "flagW")                                            \
+  V(simd, "SIMD")                                              \
   V(RegExp_string, "RegExp")
 
 #define PRIVATE_SYMBOL_LIST(V)      \
@@ -1669,6 +1682,21 @@ class Heap {
   MUST_USE_RESULT AllocationResult
       AllocateHeapNumber(double value, MutableMode mode = IMMUTABLE,
                          PretenureFlag pretenure = NOT_TENURED);
+
+  // Allocated a Float32x4 from value.
+  MUST_USE_RESULT AllocationResult AllocateFloat32x4(
+      float32x4_value_t value,
+      PretenureFlag pretenure = NOT_TENURED);
+
+  // Allocated a Float64x2 from value.
+  MUST_USE_RESULT AllocationResult AllocateFloat64x2(
+      float64x2_value_t value,
+      PretenureFlag pretenure = NOT_TENURED);
+
+  // Allocated a Int32x4 from value.
+  MUST_USE_RESULT AllocationResult AllocateInt32x4(
+      int32x4_value_t value,
+      PretenureFlag pretenure = NOT_TENURED);
 
   // Allocate a byte array of the specified length
   MUST_USE_RESULT AllocationResult

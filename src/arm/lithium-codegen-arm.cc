@@ -3143,6 +3143,24 @@ void LCodeGen::DoAccessArgumentsAt(LAccessArgumentsAt* instr) {
 }
 
 
+void LCodeGen::DoDeferredSIMD128ToTagged(LInstruction* instr,
+                                         Runtime::FunctionId id) {
+  // TODO(3095996): Get rid of this. For now, we need to make the
+  // result register contain a valid pointer because it is already
+  // contained in the register pointer map.
+  Register reg = ToRegister(instr->result());
+  __ mov(reg, Operand::Zero());
+
+  PushSafepointRegistersScope scope(this);
+  __ ldr(cp, MemOperand(fp, StandardFrameConstants::kContextOffset));
+  __ CallRuntimeSaveDoubles(id);
+  RecordSafepointWithRegisters(
+      instr->pointer_map(), 0, Safepoint::kNoLazyDeopt);
+  __ sub(r0, r0, Operand(kHeapObjectTag));
+  __ StoreToSafepointRegisterSlot(r0, reg);
+}
+
+
 void LCodeGen::DoLoadKeyedExternalArray(LLoadKeyed* instr) {
   Register external_pointer = ToRegister(instr->elements());
   Register key = no_reg;
