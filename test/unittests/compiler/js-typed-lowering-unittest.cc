@@ -663,7 +663,6 @@ TEST_F(JSTypedLoweringTest, JSLoadPropertyFromExternalTypedArray) {
           graph()->NewNode(javascript()->LoadProperty(feedback, language_mode),
                            base, key, vector, context, EmptyFrameState(),
                            EmptyFrameState(), effect, control));
-
       Matcher<Node*> offset_matcher =
           element_size == 1
               ? key

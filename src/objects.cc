@@ -1323,6 +1323,21 @@ void HeapObject::HeapObjectShortPrint(std::ostream& os) {  // NOLINT
       os << '>';
       break;
     }
+    case FLOAT32x4_TYPE:
+      os << "<Float32x4: ";
+      Float32x4::cast(this)->Float32x4Print(os);
+      os << '>';
+      break;
+    case FLOAT64x2_TYPE:
+      os << "<Float64x2: ";
+      Float64x2::cast(this)->Float64x2Print(os);
+      os << '>';
+      break;
+    case INT32x4_TYPE:
+      os << "<Int32x4: ";
+      Int32x4::cast(this)->Int32x4Print(os);
+      os << '>';
+      break;
     case JS_PROXY_TYPE:
       os << "<JSProxy>";
       break;
@@ -1427,6 +1442,9 @@ void HeapObject::IterateBody(InstanceType type, int object_size,
     case JS_GLOBAL_OBJECT_TYPE:
     case JS_BUILTINS_OBJECT_TYPE:
     case JS_MESSAGE_OBJECT_TYPE:
+    case FLOAT32x4_TYPE:
+    case FLOAT64x2_TYPE:
+    case INT32x4_TYPE:
       JSObject::BodyDescriptor::IterateBody(this, object_size, v);
       break;
     case JS_FUNCTION_TYPE:
@@ -1513,6 +1531,45 @@ bool HeapNumber::HeapNumberBooleanValue() {
 
 void HeapNumber::HeapNumberPrint(std::ostream& os) {  // NOLINT
   os << value();
+}
+
+
+void Float32x4::Float32x4Print(std::ostream& os) {
+  // The Windows version of vsnprintf can allocate when printing a %g string
+  // into a buffer that may not be big enough.  We don't want random memory
+  // allocation when producing post-crash stack traces, so we print into a
+  // buffer that is plenty big enough for any floating point number, then
+  // print that using vsnprintf (which may truncate but never allocate if
+  // there is no more space in the buffer).
+  EmbeddedVector<char, 100> buffer;
+  SNPrintF(buffer, "%.16g %.16g %.16g %.16g", x(), y(), z(), w());
+  os << buffer.start();
+}
+
+
+void Int32x4::Int32x4Print(std::ostream& os) {
+  // The Windows version of vsnprintf can allocate when printing a %g string
+  // into a buffer that may not be big enough.  We don't want random memory
+  // allocation when producing post-crash stack traces, so we print into a
+  // buffer that is plenty big enough for any floating point number, then
+  // print that using vsnprintf (which may truncate but never allocate if
+  // there is no more space in the buffer).
+  EmbeddedVector<char, 100> buffer;
+  SNPrintF(buffer, "%u %u %u %u", x(), y(), z(), w());
+  os << buffer.start();
+}
+
+
+void Float64x2::Float64x2Print(std::ostream& os) {
+  // The Windows version of vsnprintf can allocate when printing a %g string
+  // into a buffer that may not be big enough.  We don't want random memory
+  // allocation when producing post-crash stack traces, so we print into a
+  // buffer that is plenty big enough for any floating point number, then
+  // print that using vsnprintf (which may truncate but never allocate if
+  // there is no more space in the buffer).
+  EmbeddedVector<char, 100> buffer;
+  SNPrintF(buffer, "%.16g %.16g", x(), y());
+  os << buffer.start();
 }
 
 
@@ -1701,6 +1758,9 @@ const char* Representation::Mnemonic() const {
     case kTagged: return "t";
     case kSmi: return "s";
     case kDouble: return "d";
+    case kFloat32x4: return "float32x4";
+    case kFloat64x2: return "float64x2";
+    case kInt32x4: return "int32x44";
     case kInteger32: return "i";
     case kHeapObject: return "h";
     case kExternal: return "x";
@@ -3279,7 +3339,8 @@ MaybeHandle<Object> Object::SetDataProperty(LookupIterator* it,
   // Convert the incoming value to a number for storing into typed arrays.
   if (it->IsElement() && (receiver->HasExternalArrayElements() ||
                           receiver->HasFixedTypedArrayElements())) {
-    if (!value->IsNumber() && !value->IsUndefined()) {
+    if (!value->IsNumber() && !value->IsFloat32x4() &&  !value->IsInt32x4() &&
+        !value->IsFloat64x2() && !value->IsUndefined()) {
       ASSIGN_RETURN_ON_EXCEPTION(it->isolate(), to_assign,
                                  Execution::ToNumber(it->isolate(), value),
                                  Object);
@@ -14172,7 +14233,8 @@ void GlobalObject::InvalidatePropertyCell(Handle<GlobalObject> global,
 }
 
 
-// TODO(ishell): rename to EnsureEmptyPropertyCell or something.
+
+// TODO(dcarney): rename to EnsureEmptyPropertyCell or something.
 Handle<PropertyCell> GlobalObject::EnsurePropertyCell(
     Handle<GlobalObject> global, Handle<Name> name) {
   DCHECK(!global->HasFastProperties());

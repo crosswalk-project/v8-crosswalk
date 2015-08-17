@@ -32,9 +32,12 @@
 //     - ExternalInt16ElementsAccessor
 //     - ExternalUint16ElementsAccessor
 //     - ExternalInt32ElementsAccessor
+//     - ExternalInt32x4ElementsAccessor
 //     - ExternalUint32ElementsAccessor
 //     - ExternalFloat32ElementsAccessor
+//     - ExternalFloat32x4ElementsAccessor
 //     - ExternalFloat64ElementsAccessor
+//     - ExternalFloat64x2ElementsAccessor
 //     - ExternalUint8ClampedElementsAccessor
 //     - FixedUint8ElementsAccessor
 //     - FixedInt8ElementsAccessor
@@ -42,8 +45,11 @@
 //     - FixedInt16ElementsAccessor
 //     - FixedUint32ElementsAccessor
 //     - FixedInt32ElementsAccessor
+//     - FixedInt32x4ElementsAccessor
 //     - FixedFloat32ElementsAccessor
+//     - FixedFloat32x4ElementsAccessor
 //     - FixedFloat64ElementsAccessor
+//     - FixedFloat64x2ElementsAccessor
 //     - FixedUint8ClampedElementsAccessor
 //   - DictionaryElementsAccessor
 //   - SloppyArgumentsElementsAccessor
