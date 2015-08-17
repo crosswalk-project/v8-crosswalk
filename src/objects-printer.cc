@@ -60,6 +60,15 @@ void HeapObject::HeapObjectPrint(std::ostream& os) {  // NOLINT
       HeapNumber::cast(this)->HeapNumberPrint(os);
       os << ">";
       break;
+    case FLOAT32x4_TYPE:
+      Float32x4::cast(this)->Float32x4Print(os);
+      break;
+    case FLOAT64x2_TYPE:
+      Float64x2::cast(this)->Float64x2Print(os);
+      break;
+    case INT32x4_TYPE:
+      Int32x4::cast(this)->Int32x4Print(os);
+      break;
     case FIXED_DOUBLE_ARRAY_TYPE:
       FixedDoubleArray::cast(this)->FixedDoubleArrayPrint(os);
       break;
@@ -308,6 +317,7 @@ void JSObject::PrintElements(std::ostream& os) {  // NOLINT
     DoPrintElements<Type>(os, elements()); \
     break;                                 \
   }
+
 
     PRINT_ELEMENTS(EXTERNAL_UINT8_CLAMPED_ELEMENTS, ExternalUint8ClampedArray)
     PRINT_ELEMENTS(EXTERNAL_INT8_ELEMENTS, ExternalInt8Array)

@@ -122,6 +122,7 @@ class LCodeGen: public LCodeGenBase {
                                    Register result,
                                    Register object,
                                    Register index);
+  void DoDeferredSIMD128ToTagged(LInstruction* instr, Runtime::FunctionId id);
 
   // Parallel move support.
   void DoParallelMove(LParallelMove* move);
