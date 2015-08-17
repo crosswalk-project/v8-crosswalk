@@ -47,7 +47,6 @@ namespace internal {
   V(Map, meta_map, MetaMap)                                                    \
   V(Map, heap_number_map, HeapNumberMap)                                       \
   V(Map, mutable_heap_number_map, MutableHeapNumberMap)                        \
-  V(Map, float32x4_map, Float32x4Map)                                          \
   V(Map, native_context_map, NativeContextMap)                                 \
   V(Map, fixed_array_map, FixedArrayMap)                                       \
   V(Map, code_map, CodeMap)                                                    \
@@ -347,7 +346,6 @@ namespace internal {
   V(MetaMap)                            \
   V(HeapNumberMap)                      \
   V(MutableHeapNumberMap)               \
-  V(Float32x4Map)                       \
   V(NativeContextMap)                   \
   V(FixedArrayMap)                      \
   V(CodeMap)                            \
@@ -1667,17 +1665,12 @@ class Heap {
                               bool alloc_props = true,
                               AllocationSite* allocation_site = NULL);
 
-  // Allocates a HeapNumber from value.
+  // Allocated a HeapNumber from value.
   MUST_USE_RESULT AllocationResult
       AllocateHeapNumber(double value, MutableMode mode = IMMUTABLE,
                          PretenureFlag pretenure = NOT_TENURED);
 
-  // Allocates a Float32x4 from the given lane values.
-  MUST_USE_RESULT AllocationResult
-  AllocateFloat32x4(float w, float x, float y, float z,
-                    PretenureFlag pretenure = NOT_TENURED);
-
-  // Allocates a byte array of the specified length
+  // Allocate a byte array of the specified length
   MUST_USE_RESULT AllocationResult
       AllocateByteArray(int length, PretenureFlag pretenure = NOT_TENURED);
 
