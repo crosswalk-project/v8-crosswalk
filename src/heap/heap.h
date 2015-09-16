@@ -290,9 +290,9 @@ namespace internal {
   V(minus_zero_string, "-0")                                   \
   V(Array_string, "Array")                                     \
   V(Error_string, "Error")                                     \
-  V(float32x4_string, "float32x4")                             \
-  V(float64x2_string, "float64x2")                             \
-  V(int32x4_string, "int32x4")                                 \
+  V(float32x4_string, "Float32x4")                             \
+  V(float64x2_string, "Float64x2")                             \
+  V(int32x4_string, "Int32x4")                                 \
   V(signMask, "signMask")                                      \
   V(x, "x")                                                    \
   V(y, "y")                                                    \

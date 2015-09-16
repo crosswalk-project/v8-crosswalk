@@ -31,7 +31,7 @@ function testCapturedObjectwithFloat32x4Field() {
   var deopt = { deopt:false };
   function constructor() {
     this.x = 1.1;
-    this.y = SIMD.float32x4(1,2,3,4);
+    this.y = SIMD.Float32x4(1,2,3,4);
   }
   function field(x) {
     var o = new constructor();
@@ -57,7 +57,7 @@ function testCapturedObjectwithInt32x4Field() {
   var deopt = { deopt:false };
   function constructor() {
     this.x = 1.1;
-    this.y = SIMD.int32x4(1,2,3,4);
+    this.y = SIMD.Int32x4(1,2,3,4);
   }
   function field(x) {
     var o = new constructor();

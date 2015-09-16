@@ -30,11 +30,11 @@
 function testSIMDAbs(i) {
   var a;
   if (i < 3) {
-    a = SIMD.float32x4(1, 1, 1, 1);
+    a = SIMD.Float32x4(1, 1, 1, 1);
   } else {
-    a = SIMD.int32x4(2, 2, 2, 2);
+    a = SIMD.Int32x4(2, 2, 2, 2);
   }
-  return SIMD.float32x4.abs(a);
+  return SIMD.Float32x4.abs(a);
 }
 
 function tryTestSIMDAbs(i) {
@@ -43,7 +43,7 @@ function tryTestSIMDAbs(i) {
     r = testSIMDAbs(i);
   } catch (o) {
     assertEquals(o instanceof TypeError, true);
-    assertEquals(o.message, "<unknown message this is not a float32x4 object.>");
+    assertEquals(o.message, "<unknown message this is not a Float32x4 object.>");
   }
 }
 

@@ -32,9 +32,9 @@ function testFloat32x4LoadAndStore() {
   for (var i = 0; i < 12; ++i)
     f32_array[i] = 1.0 + i;
 
-  var v1 = SIMD.float32x4.load(f32_array, 0);
-  var v2 = SIMD.float32x4.load(f32_array, 4);
-  var v3 = SIMD.float32x4.load(f32_array, 8);
+  var v1 = SIMD.Float32x4.load(f32_array, 0);
+  var v2 = SIMD.Float32x4.load(f32_array, 4);
+  var v3 = SIMD.Float32x4.load(f32_array, 8);
 
   assertEquals(1.0, v1.x);
   assertEquals(2.0, v1.y);
@@ -51,9 +51,9 @@ function testFloat32x4LoadAndStore() {
   assertEquals(11.0, v3.z);
   assertEquals(12.0, v3.w);
 
-  SIMD.float32x4.store(f32_array, 0, SIMD.float32x4(12.0, 11.0, 10.0, 9.0));
-  SIMD.float32x4.store(f32_array, 4, SIMD.float32x4(8.0, 7.0, 6.0, 5.0));
-  SIMD.float32x4.store(f32_array, 8, SIMD.float32x4(4.0, 3.0, 2.0, 1.0));
+  SIMD.Float32x4.store(f32_array, 0, SIMD.Float32x4(12.0, 11.0, 10.0, 9.0));
+  SIMD.Float32x4.store(f32_array, 4, SIMD.Float32x4(8.0, 7.0, 6.0, 5.0));
+  SIMD.Float32x4.store(f32_array, 8, SIMD.Float32x4(4.0, 3.0, 2.0, 1.0));
 
   for (var i = 0; i < 12; ++i)
     assertEquals(12.0 - i, f32_array[i]);
@@ -70,7 +70,7 @@ function testFloat32x4LoadXAndStoreX() {
     f32_array[i] = 1.0 + i;
 
   for (var i = 0; i < 12; ++i) {
-    var v = SIMD.float32x4.loadX(f32_array, i);
+    var v = SIMD.Float32x4.loadX(f32_array, i);
 
     assertEquals(1.0 + i, v.x);
     assertEquals(0.0, v.y);
@@ -79,7 +79,7 @@ function testFloat32x4LoadXAndStoreX() {
   }
 
   for (var i = 0; i < 12; ++i) {
-    SIMD.float32x4.storeX(f32_array, i, SIMD.float32x4(12.0 - i, 0.0, 0.0, 0.0));
+    SIMD.Float32x4.storeX(f32_array, i, SIMD.Float32x4(12.0 - i, 0.0, 0.0, 0.0));
   }
 
   for (var i = 0; i < 12; ++i)
@@ -97,7 +97,7 @@ function testFloat32x4LoadXYAndStoreXY() {
     f32_array[i] = 1.0 + i;
 
   for (var i = 0; i < 12; i += 2) {
-    var v = SIMD.float32x4.loadXY(f32_array, i);
+    var v = SIMD.Float32x4.loadXY(f32_array, i);
 
     assertEquals(1.0 + i, v.x);
     assertEquals(2.0 + i, v.y);
@@ -106,7 +106,7 @@ function testFloat32x4LoadXYAndStoreXY() {
   }
 
   for (var i = 0; i < 12; i += 2) {
-    SIMD.float32x4.storeXY(f32_array, i, SIMD.float32x4(12.0 - i, 11.0 - i, 0.0, 0.0));
+    SIMD.Float32x4.storeXY(f32_array, i, SIMD.Float32x4(12.0 - i, 11.0 - i, 0.0, 0.0));
   }
 
   for (var i = 0; i < 12; ++i)
@@ -124,7 +124,7 @@ function testFloat32x4LoadXYZAndStoreXYZ() {
     f32_array[i] = 1.0 + i;
 
   for (var i = 0; i < 12; i += 3) {
-    var v = SIMD.float32x4.loadXYZ(f32_array, i);
+    var v = SIMD.Float32x4.loadXYZ(f32_array, i);
 
     assertEquals(1.0 + i, v.x);
     assertEquals(2.0 + i, v.y);
@@ -133,7 +133,7 @@ function testFloat32x4LoadXYZAndStoreXYZ() {
   }
 
   for (var i = 0; i < 12; i += 3) {
-    SIMD.float32x4.storeXYZ(f32_array, i, SIMD.float32x4(12.0 - i, 11.0 - i, 10.0 - i, 0.0));
+    SIMD.Float32x4.storeXYZ(f32_array, i, SIMD.Float32x4(12.0 - i, 11.0 - i, 10.0 - i, 0.0));
   }
 
   for (var i = 0; i < 12; ++i)
@@ -152,9 +152,9 @@ function testFloat32x4LoadAndStoreFromInt8Array() {
 
   var i8_array = new Int8Array(f32_array.buffer);
 
-  var v1 = SIMD.float32x4.load(i8_array, 0);
-  var v2 = SIMD.float32x4.load(i8_array, 16);
-  var v3 = SIMD.float32x4.load(i8_array, 32);
+  var v1 = SIMD.Float32x4.load(i8_array, 0);
+  var v2 = SIMD.Float32x4.load(i8_array, 16);
+  var v3 = SIMD.Float32x4.load(i8_array, 32);
 
   assertEquals(1.0, v1.x);
   assertEquals(2.0, v1.y);
@@ -171,9 +171,9 @@ function testFloat32x4LoadAndStoreFromInt8Array() {
   assertEquals(11.0, v3.z);
   assertEquals(12.0, v3.w);
 
-  SIMD.float32x4.store(i8_array, 0, SIMD.float32x4(12.0, 11.0, 10.0, 9.0));
-  SIMD.float32x4.store(i8_array, 16, SIMD.float32x4(8.0, 7.0, 6.0, 5.0));
-  SIMD.float32x4.store(i8_array, 32, SIMD.float32x4(4.0, 3.0, 2.0, 1.0));
+  SIMD.Float32x4.store(i8_array, 0, SIMD.Float32x4(12.0, 11.0, 10.0, 9.0));
+  SIMD.Float32x4.store(i8_array, 16, SIMD.Float32x4(8.0, 7.0, 6.0, 5.0));
+  SIMD.Float32x4.store(i8_array, 32, SIMD.Float32x4(4.0, 3.0, 2.0, 1.0));
 
   for (var i = 0; i < 12; ++i)
     assertEquals(12.0 - i, f32_array[i]);
@@ -189,9 +189,9 @@ function testFloat64x2LoadAndStore() {
   for (var i = 0; i < 6; ++i)
     f64_array[i] = 1.0 + i;
 
-  var v1 = SIMD.float64x2.load(f64_array, 0);
-  var v2 = SIMD.float64x2.load(f64_array, 2);
-  var v3 = SIMD.float64x2.load(f64_array, 4);
+  var v1 = SIMD.Float64x2.load(f64_array, 0);
+  var v2 = SIMD.Float64x2.load(f64_array, 2);
+  var v3 = SIMD.Float64x2.load(f64_array, 4);
 
   assertEquals(1.0, v1.x);
   assertEquals(2.0, v1.y);
@@ -202,9 +202,9 @@ function testFloat64x2LoadAndStore() {
   assertEquals(5.0, v3.x);
   assertEquals(6.0, v3.y);
 
-  SIMD.float64x2.store(f64_array, 0, SIMD.float64x2(6.0, 5.0));
-  SIMD.float64x2.store(f64_array, 2, SIMD.float64x2(4.0, 3.0));
-  SIMD.float64x2.store(f64_array, 4, SIMD.float64x2(2.0, 1.0));
+  SIMD.Float64x2.store(f64_array, 0, SIMD.Float64x2(6.0, 5.0));
+  SIMD.Float64x2.store(f64_array, 2, SIMD.Float64x2(4.0, 3.0));
+  SIMD.Float64x2.store(f64_array, 4, SIMD.Float64x2(2.0, 1.0));
 
   for (var i = 0; i < 6; ++i)
     assertEquals(6.0 - i, f64_array[i]);
@@ -220,9 +220,9 @@ function testInt32x4LoadAndStore() {
     for (var i = 0; i < 12; ++i)
     i32_array[i] = 1 + i;
 
-  var v1 = SIMD.int32x4.load(i32_array, 0);
-  var v2 = SIMD.int32x4.load(i32_array, 4);
-  var v3 = SIMD.int32x4.load(i32_array, 8);
+  var v1 = SIMD.Int32x4.load(i32_array, 0);
+  var v2 = SIMD.Int32x4.load(i32_array, 4);
+  var v3 = SIMD.Int32x4.load(i32_array, 8);
 
   assertEquals(1, v1.x);
   assertEquals(2, v1.y);
@@ -239,9 +239,9 @@ function testInt32x4LoadAndStore() {
   assertEquals(11, v3.z);
   assertEquals(12, v3.w);
 
-  SIMD.int32x4.store(i32_array, 0, SIMD.int32x4(12, 11, 10, 9));
-  SIMD.int32x4.store(i32_array, 4, SIMD.int32x4(8, 7, 6, 5));
-  SIMD.int32x4.store(i32_array, 8, SIMD.int32x4(4, 3, 2, 1));
+  SIMD.Int32x4.store(i32_array, 0, SIMD.Int32x4(12, 11, 10, 9));
+  SIMD.Int32x4.store(i32_array, 4, SIMD.Int32x4(8, 7, 6, 5));
+  SIMD.Int32x4.store(i32_array, 8, SIMD.Int32x4(4, 3, 2, 1));
 
   for (var i = 0; i < 12; ++i)
     assertEquals(12.0 - i, i32_array[i]);

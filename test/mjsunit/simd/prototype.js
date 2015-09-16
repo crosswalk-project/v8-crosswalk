@@ -28,13 +28,13 @@
 // Flags: --simd-object --allow-natives-syntax
 
 function testFloat32x4Prototype() {
-  var a4 = SIMD.float32x4(1.0, -2.0, 3.0, -4.0);
-  SIMD.float32x4.prototype = {};
+  var a4 = SIMD.Float32x4(1.0, -2.0, 3.0, -4.0);
+  SIMD.Float32x4.prototype = {};
   try {
     var x = a4.x;
   } catch (o) {
     assertEquals(o instanceof TypeError, true);
-    assertEquals(o.message, "<unknown message this is not a float32x4 object.>");
+    assertEquals(o.message, "<unknown message this is not a Float32x4 object.>");
   }
 }
 
@@ -44,13 +44,13 @@ testFloat32x4Prototype();
 testFloat32x4Prototype();
 
 function testInt32x4Prototype() {
-  var a4 = SIMD.int32x4(1.0, -2.0, 3.0, -4.0);
-  SIMD.int32x4.prototype = {};
+  var a4 = SIMD.Int32x4(1.0, -2.0, 3.0, -4.0);
+  SIMD.Int32x4.prototype = {};
   try {
     var x = a4.x;
   } catch (o) {
     assertEquals(o instanceof TypeError, true);
-    assertEquals(o.message, "<unknown message this is not a int32x4 object.>");
+    assertEquals(o.message, "<unknown message this is not a Int32x4 object.>");
   }
 }
 

@@ -28,11 +28,11 @@
 // Flags: --simd-object --allow-natives-syntax
 
 function testConstructor() {
-  var f4 = SIMD.float64x2(1.0, 2.0);
+  var f4 = SIMD.Float64x2(1.0, 2.0);
   assertEquals(1.0, f4.x);
   assertEquals(2.0, f4.y);
 
-  f4 = SIMD.float64x2(1.1, 2.2);
+  f4 = SIMD.Float64x2(1.1, 2.2);
   assertEquals(1.1, f4.x);
   assertEquals(2.2, f4.y);
 }
@@ -43,13 +43,13 @@ testConstructor();
 testConstructor();
 
 function testCheck() {
-  var f2 = SIMD.float64x2(1.0, 2.0);
-  var f2_new = SIMD.float64x2.check(f2);
+  var f2 = SIMD.Float64x2(1.0, 2.0);
+  var f2_new = SIMD.Float64x2.check(f2);
   assertEquals(f2_new.x, f2.x);
   assertEquals(f2_new.y, f2.y);
 
-  f2 = SIMD.float64x2(1.1, 2.2);
-  f2_new = SIMD.float64x2.check(f2);
+  f2 = SIMD.Float64x2(1.1, 2.2);
+  f2_new = SIMD.Float64x2.check(f2);
   assertEquals(f2_new.x, f2.x);
   assertEquals(f2_new.y, f2.y);
 }
@@ -60,7 +60,7 @@ testCheck();
 testCheck();
 
 function testZeroConstructor() {
-  var z4 = SIMD.float64x2.zero();
+  var z4 = SIMD.Float64x2.zero();
   assertEquals(0.0, z4.x);
   assertEquals(0.0, z4.y);
 }
@@ -71,7 +71,7 @@ testZeroConstructor();
 testZeroConstructor();
 
 function testSplatConstructor() {
-  var z4 = SIMD.float64x2.splat(5.0);
+  var z4 = SIMD.Float64x2.splat(5.0);
   assertEquals(5.0, z4.x);
   assertEquals(5.0, z4.y);
 }
@@ -82,10 +82,10 @@ testSplatConstructor();
 testSplatConstructor();
 
 function testTypeof() {
-  var z4 = SIMD.float64x2.zero();
+  var z4 = SIMD.Float64x2.zero();
   assertEquals(typeof(z4), "object");
 
-  var new_z4 = new SIMD.float64x2(0, 0);
+  var new_z4 = new SIMD.Float64x2(0, 0);
   assertEquals(typeof(new_z4), "object");
   assertEquals(typeof(new_z4.valueOf()), "object");
   assertEquals(Object.prototype.toString.call(new_z4), "[object Object]");
@@ -94,11 +94,11 @@ function testTypeof() {
 testTypeof();
 
 function testSignMaskGetter() {
-  var a = SIMD.float64x2(-1.0, -2.0);
+  var a = SIMD.Float64x2(-1.0, -2.0);
   assertEquals(0x3, a.signMask);
-  var b = SIMD.float64x2(1.0, 2.0);
+  var b = SIMD.Float64x2(1.0, 2.0);
   assertEquals(0x0, b.signMask);
-  var c = SIMD.float64x2(1.0, -2.0);
+  var c = SIMD.Float64x2(1.0, -2.0);
   assertEquals(0x2, c.signMask);
 }
 
@@ -108,8 +108,8 @@ testSignMaskGetter();
 testSignMaskGetter();
 
 function testSIMDAbs() {
-  var a4 = SIMD.float64x2(1.0, -1.0);
-  var b4 = SIMD.float64x2.abs(a4);
+  var a4 = SIMD.Float64x2(1.0, -1.0);
+  var b4 = SIMD.Float64x2.abs(a4);
 
   assertEquals(1.0, b4.x);
   assertEquals(1.0, b4.y);
@@ -121,8 +121,8 @@ testSIMDAbs();
 testSIMDAbs();
 
 function testSIMDNeg() {
-  var a4 = SIMD.float64x2(1.0, -1.0);
-  var b4 = SIMD.float64x2.neg(a4);
+  var a4 = SIMD.Float64x2(1.0, -1.0);
+  var b4 = SIMD.Float64x2.neg(a4);
 
   assertEquals(-1.0, b4.x);
   assertEquals(1.0, b4.y);
@@ -134,9 +134,9 @@ testSIMDNeg();
 testSIMDNeg();
 
 function testSIMDAdd() {
-  var a4 = SIMD.float64x2(1.0, 1.0);
-  var b4 = SIMD.float64x2(2.0, 2.0);
-  var c4 = SIMD.float64x2.add(a4, b4);
+  var a4 = SIMD.Float64x2(1.0, 1.0);
+  var b4 = SIMD.Float64x2(2.0, 2.0);
+  var c4 = SIMD.Float64x2.add(a4, b4);
 
   assertEquals(3.0, c4.x);
   assertEquals(3.0, c4.y);
@@ -148,9 +148,9 @@ testSIMDAdd();
 testSIMDAdd();
 
 function testSIMDSub() {
-  var a4 = SIMD.float64x2(1.0, 1.0);
-  var b4 = SIMD.float64x2(2.0, 2.0);
-  var c4 = SIMD.float64x2.sub(a4, b4);
+  var a4 = SIMD.Float64x2(1.0, 1.0);
+  var b4 = SIMD.Float64x2(2.0, 2.0);
+  var c4 = SIMD.Float64x2.sub(a4, b4);
 
   assertEquals(-1.0, c4.x);
   assertEquals(-1.0, c4.y);
@@ -162,9 +162,9 @@ testSIMDSub();
 testSIMDSub();
 
 function testSIMDMul() {
-  var a4 = SIMD.float64x2(1.0, 1.0);
-  var b4 = SIMD.float64x2(2.0, 2.0);
-  var c4 = SIMD.float64x2.mul(a4, b4);
+  var a4 = SIMD.Float64x2(1.0, 1.0);
+  var b4 = SIMD.Float64x2(2.0, 2.0);
+  var c4 = SIMD.Float64x2.mul(a4, b4);
 
   assertEquals(2.0, c4.x);
   assertEquals(2.0, c4.y);
@@ -176,9 +176,9 @@ testSIMDMul();
 testSIMDMul();
 
 function testSIMDDiv() {
-  var a4 = SIMD.float64x2(1.0, 1.0);
-  var b4 = SIMD.float64x2(2.0, 2.0);
-  var c4 = SIMD.float64x2.div(a4, b4);
+  var a4 = SIMD.Float64x2(1.0, 1.0);
+  var b4 = SIMD.Float64x2(2.0, 2.0);
+  var c4 = SIMD.Float64x2.div(a4, b4);
 
   assertEquals(0.5, c4.x);
   assertEquals(0.5, c4.y);
@@ -190,10 +190,10 @@ testSIMDDiv();
 testSIMDDiv();
 
 function testSIMDClamp() {
-  var m = SIMD.float64x2(1.0, -2.0);
-  var lo = SIMD.float64x2(0.0, 0.0);
-  var hi = SIMD.float64x2(2.0, 2.0);
-  m = SIMD.float64x2.clamp(m, lo, hi);
+  var m = SIMD.Float64x2(1.0, -2.0);
+  var lo = SIMD.Float64x2(0.0, 0.0);
+  var hi = SIMD.Float64x2(2.0, 2.0);
+  m = SIMD.Float64x2.clamp(m, lo, hi);
   assertEquals(1.0, m.x);
   assertEquals(0.0, m.y);
 }
@@ -204,9 +204,9 @@ testSIMDClamp();
 testSIMDClamp();
 
 function testSIMDMin() {
-  var m = SIMD.float64x2(1.0, 2.0);
-  var n = SIMD.float64x2(1.0, 0.0);
-  m = SIMD.float64x2.min(m, n);
+  var m = SIMD.Float64x2(1.0, 2.0);
+  var n = SIMD.Float64x2(1.0, 0.0);
+  m = SIMD.Float64x2.min(m, n);
   assertEquals(1.0, m.x);
   assertEquals(0.0, m.y);
 }
@@ -217,9 +217,9 @@ testSIMDMin();
 testSIMDMin();
 
 function testSIMDMax() {
-  var m = SIMD.float64x2(1.0, 2.0);
-  var n = SIMD.float64x2(1.0, 0.0);
-  m = SIMD.float64x2.max(m, n);
+  var m = SIMD.Float64x2(1.0, 2.0);
+  var n = SIMD.Float64x2(1.0, 0.0);
+  m = SIMD.Float64x2.max(m, n);
   assertEquals(1.0, m.x);
   assertEquals(2.0, m.y);
 }
@@ -230,8 +230,8 @@ testSIMDMax();
 testSIMDMax();
 
 function testSIMDScale() {
-  var m = SIMD.float64x2(1.0, -2.0);
-  m = SIMD.float64x2.scale(m, 20.0);
+  var m = SIMD.Float64x2(1.0, -2.0);
+  m = SIMD.Float64x2.scale(m, 20.0);
   assertEquals(20.0, m.x);
   assertEquals(-40.0, m.y);
 }
@@ -242,8 +242,8 @@ testSIMDScale();
 testSIMDScale();
 
 function testSIMDSqrt() {
-  var m = SIMD.float64x2(1.0, 4.0);
-  m = SIMD.float64x2.sqrt(m);
+  var m = SIMD.Float64x2(1.0, 4.0);
+  m = SIMD.Float64x2.sqrt(m);
   assertEquals(1.0, m.x);
   assertEquals(2.0, m.y);
 }
@@ -254,12 +254,12 @@ testSIMDSqrt();
 testSIMDSqrt();
 
 function testSIMDSetters() {
-  var f = SIMD.float64x2.zero();
+  var f = SIMD.Float64x2.zero();
   assertEquals(0.0, f.x);
   assertEquals(0.0, f.y);
-  f = SIMD.float64x2.withX(f, 4.0);
+  f = SIMD.Float64x2.withX(f, 4.0);
   assertEquals(4.0, f.x);
-  f = SIMD.float64x2.withY(f, 3.0);
+  f = SIMD.Float64x2.withY(f, 3.0);
   assertEquals(3.0, f.y);
 }
 
@@ -269,12 +269,12 @@ testSIMDSetters();
 testSIMDSetters();
 
 function testSIMDShuffle() {
-  var a = SIMD.float64x2(1.0, 2.0);
-  var b = SIMD.float64x2(3.0, 4.0);
-  var xx = SIMD.float64x2.shuffle(a, b, 0, 2);
-  var xy = SIMD.float64x2.shuffle(a, b, 0, 3);
-  var yx = SIMD.float64x2.shuffle(a, b, 1, 0);
-  var yy = SIMD.float64x2.shuffle(a, b, 1, 3);
+  var a = SIMD.Float64x2(1.0, 2.0);
+  var b = SIMD.Float64x2(3.0, 4.0);
+  var xx = SIMD.Float64x2.shuffle(a, b, 0, 2);
+  var xy = SIMD.Float64x2.shuffle(a, b, 0, 3);
+  var yx = SIMD.Float64x2.shuffle(a, b, 1, 2);
+  var yy = SIMD.Float64x2.shuffle(a, b, 1, 3);
 
   assertEquals(1.0, xx.x);
   assertEquals(3.0, xx.y);
@@ -292,19 +292,20 @@ testSIMDShuffle();
 testSIMDShuffle();
 
 function testSIMDSwizzle() {
-  var a = SIMD.float64x2(1.0, 2.0);
-  var xx = SIMD.float64x2.swizzle(a, 0, 0);
-  var xy = SIMD.float64x2.swizzle(a, 0, 1);
-  var yx = SIMD.float64x2.swizzle(a, 1, 0);
-  var yy = SIMD.float64x2.swizzle(a, 1, 1);
-  assertEquals(1.0, xx.x);
-  assertEquals(1.0, xx.y);
-  assertEquals(1.0, xy.x);
-  assertEquals(2.0, xy.y);
-  assertEquals(2.0, yx.x);
-  assertEquals(1.0, yx.y);
-  assertEquals(2.0, yy.x);
-  assertEquals(2.0, yy.y);
+  var a = SIMD.Float64x2(1.0, 2.0);
+  var xx = SIMD.Float64x2.swizzle(a, 0, 0);
+  var xy = SIMD.Float64x2.swizzle(a, 0, 1);
+  var yx = SIMD.Float64x2.swizzle(a, 1, 0);
+  var yy = SIMD.Float64x2.swizzle(a, 1, 1);
+
+  assertEquals(xx.x, 1.0);
+  assertEquals(xx.y, 1.0);
+  assertEquals(xy.x, 1.0);
+  assertEquals(xy.y, 2.0);
+  assertEquals(yx.x, 2.0);
+  assertEquals(yx.y, 1.0);
+  assertEquals(yy.x, 2.0);
+  assertEquals(yy.y, 2.0);
 }
 
 testSIMDSwizzle();
