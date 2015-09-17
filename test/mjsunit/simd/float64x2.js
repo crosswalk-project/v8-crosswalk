@@ -273,7 +273,7 @@ function testSIMDShuffle() {
   var b = SIMD.Float64x2(3.0, 4.0);
   var xx = SIMD.Float64x2.shuffle(a, b, 0, 2);
   var xy = SIMD.Float64x2.shuffle(a, b, 0, 3);
-  var yx = SIMD.Float64x2.shuffle(a, b, 1, 2);
+  var yx = SIMD.Float64x2.shuffle(a, b, 1, 0);
   var yy = SIMD.Float64x2.shuffle(a, b, 1, 3);
 
   assertEquals(1.0, xx.x);
@@ -297,15 +297,14 @@ function testSIMDSwizzle() {
   var xy = SIMD.Float64x2.swizzle(a, 0, 1);
   var yx = SIMD.Float64x2.swizzle(a, 1, 0);
   var yy = SIMD.Float64x2.swizzle(a, 1, 1);
-
-  assertEquals(xx.x, 1.0);
-  assertEquals(xx.y, 1.0);
-  assertEquals(xy.x, 1.0);
-  assertEquals(xy.y, 2.0);
-  assertEquals(yx.x, 2.0);
-  assertEquals(yx.y, 1.0);
-  assertEquals(yy.x, 2.0);
-  assertEquals(yy.y, 2.0);
+  assertEquals(1.0, xx.x);
+  assertEquals(1.0, xx.y);
+  assertEquals(1.0, xy.x);
+  assertEquals(2.0, xy.y);
+  assertEquals(2.0, yx.x);
+  assertEquals(1.0, yx.y);
+  assertEquals(2.0, yy.x);
+  assertEquals(2.0, yy.y);
 }
 
 testSIMDSwizzle();
