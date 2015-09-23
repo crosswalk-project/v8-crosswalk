@@ -28,8 +28,8 @@
 // Flags: --simd-object --allow-natives-syntax
 /*
 function testdeopt(a, b) {
-  var a4 = SIMD.float32x4(1.0, -2.0, 3.0, -4.0);
-  var b4 = SIMD.float32x4.abs(a4);
+  var a4 = SIMD.Float32x4(1.0, -2.0, 3.0, -4.0);
+  var b4 = SIMD.Float32x4.abs(a4);
 
   if (a > 0) {
     a = 0;
@@ -47,4 +47,33 @@ testdeopt(1, 1);
 testdeopt(1, 1);
 %OptimizeFunctionOnNextCall(testdeopt);
 testdeopt(0, 1);
+
+function testdeopt2() {
+  var a4 = SIMD.Float32x4(1.0, -1.0, 1.0, -1.0);
+  var b4 = SIMD.Float32x4.abs(a4);
+
+  assertEquals(1.0, b4.x);
+  assertEquals(1.0, b4.y);
+  assertEquals(1.0, b4.z);
+  assertEquals(1.0, b4.w);
+
+  var new_a4 = new SIMD.Float32x4(1.0, -1.0, 1.0, -1.0);
+  var new_b4 = SIMD.Float32x4.abs(new_a4);
+
+  assertEquals(1.0, new_b4.x);
+  assertEquals(1.0, new_b4.y);
+  assertEquals(1.0, new_b4.z);
+  assertEquals(1.0, new_b4.w);
+
+  // Verifying deoptimization
+  assertEquals(1.0, b4.x);
+  assertEquals(1.0, b4.y);
+  assertEquals(1.0, b4.z);
+  assertEquals(1.0, b4.w);
+}
+
+testdeopt2();
+testdeopt2();
+%OptimizeFunctionOnNextCall(testdeopt2);
+testdeopt2();
 */

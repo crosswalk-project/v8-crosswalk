@@ -28,7 +28,7 @@
 // Flags: --simd-object --allow-natives-syntax
 
 function testObject() {
-  var a = SIMD.float32x4.zero();
+  var a = SIMD.Float32x4.zero();
   var b = Object(a);
   assertEquals(0, b.x);
   assertEquals(0, b.y);
@@ -46,7 +46,7 @@ testObject();
 
 
 function testNumber() {
-  var a = SIMD.float32x4.zero();
+  var a = SIMD.Float32x4.zero();
   var b = Number(a);
   assertEquals(NaN, b);
 }
@@ -58,9 +58,9 @@ testNumber();
 
 
 function testString() {
-  var a = SIMD.float32x4.zero();
+  var a = SIMD.Float32x4.zero();
   var b = String(a);
-  assertEquals("float32x4(0,0,0,0)", b);
+  assertEquals("Float32x4(0,0,0,0)", b);
 }
 
 testString();
@@ -70,7 +70,7 @@ testString();
 
 
 function testBoolean() {
-  var a = SIMD.float32x4.zero();
+  var a = SIMD.Float32x4.zero();
   var b = Boolean(a);
   assertEquals(true, b);
 }

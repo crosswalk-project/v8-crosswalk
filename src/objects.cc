@@ -1758,9 +1758,9 @@ const char* Representation::Mnemonic() const {
     case kTagged: return "t";
     case kSmi: return "s";
     case kDouble: return "d";
-    case kFloat32x4: return "float32x4";
-    case kFloat64x2: return "float64x2";
-    case kInt32x4: return "int32x44";
+    case kFloat32x4: return "Float32x4";
+    case kFloat64x2: return "Float64x2";
+    case kInt32x4: return "Int32x4";
     case kInteger32: return "i";
     case kHeapObject: return "h";
     case kExternal: return "x";

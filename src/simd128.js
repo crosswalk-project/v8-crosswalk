@@ -35,16 +35,16 @@ var GlobalArray = global.Array;
 var GlobalArrayBuffer = global.ArrayBuffer;
 
 var $SIMD = global.SIMD;
-var $Float32x4 = $SIMD.float32x4;
-var $Float64x2 = $SIMD.float64x2;
-var $Int32x4 = $SIMD.int32x4;
+var $Float32x4 = $SIMD.Float32x4;
+var $Float64x2 = $SIMD.Float64x2;
+var $Int32x4 = $SIMD.Int32x4;
 var GlobalObject = global.Object;
 
 
 macro SIMD128_DATA_TYPES(FUNCTION)
-FUNCTION(Float32x4, float32x4)
-FUNCTION(Float64x2, float64x2)
-FUNCTION(Int32x4, int32x4)
+FUNCTION(Float32x4, Float32x4)
+FUNCTION(Float64x2, Float64x2)
+FUNCTION(Int32x4, Int32x4)
 endmacro
 
 macro DECLARE_DATA_TYPE_COMMON_FUNCTION(NAME, TYPE)
@@ -62,17 +62,17 @@ SIMD128_DATA_TYPES(DECLARE_DATA_TYPE_COMMON_FUNCTION)
 
 function StringfyFloat32x4JS() {
   CheckFloat32x4(this);
-  return "float32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
+  return "Float32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
 }
 
 function StringfyFloat64x2JS() {
   CheckFloat64x2(this);
-  return "float64x2(" + this.x + "," + this.y + ")";
+  return "Float64x2(" + this.x + "," + this.y + ")";
 }
 
 function StringfyInt32x4JS() {
   CheckInt32x4(this);
-  return "int32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
+  return "Int32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
 }
 
 macro SIMD128_DATA_TYPE_FUNCTIONS(FUNCTION)
@@ -554,7 +554,7 @@ function SetUpSIMD() {
   %ToFastProperties($SIMD);
 
   // Set up non-enumerable properties of the SIMD float32x4 object.
-  utils.InstallFunctions($SIMD.float32x4, DONT_ENUM, [
+  utils.InstallFunctions($SIMD.Float32x4, DONT_ENUM, [
     // Float32x4 operations
     "check", Float32x4CheckJS,
     "load", Float32x4LoadXYZWJS,
@@ -609,7 +609,7 @@ function SetUpSIMD() {
   ]);
 
   // Set up non-enumerable properties of the SIMD float64x2 object.
-  utils.InstallFunctions($SIMD.float64x2, DONT_ENUM, [
+  utils.InstallFunctions($SIMD.Float64x2, DONT_ENUM, [
     // Float64x2 operations
     "check", Float64x2CheckJS,
     "load", Float64x2LoadXYJS,
@@ -644,7 +644,7 @@ function SetUpSIMD() {
   ]);
 
   // Set up non-enumerable properties of the SIMD int32x4 object.
-    utils.InstallFunctions($SIMD.int32x4, DONT_ENUM, [
+    utils.InstallFunctions($SIMD.Int32x4, DONT_ENUM, [
     // Int32x4 operations
     "check", Int32x4CheckJS,
     "load", Int32x4LoadXYZWJS,

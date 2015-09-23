@@ -1520,18 +1520,18 @@ void Genesis::InitializeExperimentalGlobal() {
         static_cast<PropertyAttributes>(DONT_ENUM | DONT_DELETE | READ_ONLY);
     // --- f l o a t 3 2 x 4 ---
     Handle<JSFunction> float32x4_fun =
-        InstallFunction(simd_object, "float32x4", FLOAT32x4_TYPE,
+        InstallFunction(simd_object, "Float32x4", FLOAT32x4_TYPE,
                         Float32x4::kSize,
                         isolate()->initial_object_prototype(),
                         Builtins::kIllegal);
-    Handle<String> float32x4 = factory()->InternalizeUtf8String("float32x4");
+    Handle<String> float32x4 = factory()->InternalizeUtf8String("Float32x4");
     JSObject::SetOwnPropertyIgnoreAttributes(
         simd_object, float32x4, float32x4_fun, attributes).Check();
     native_context()->set_float32x4_function(*float32x4_fun);
 
     // --- f l o a t 6 4 x 2 ---
     Handle<JSFunction> float64x2_fun =
-        InstallFunction(simd_object, "float64x2", FLOAT64x2_TYPE,
+        InstallFunction(simd_object, "Float64x2", FLOAT64x2_TYPE,
                         Float64x2::kSize,
                         isolate()->initial_object_prototype(),
                         Builtins::kIllegal);
@@ -1539,7 +1539,7 @@ void Genesis::InitializeExperimentalGlobal() {
 
     // --- i n t 3 2 x 4 ---
     Handle<JSFunction> int32x4_fun =
-        InstallFunction(simd_object, "int32x4", INT32x4_TYPE,
+        InstallFunction(simd_object, "Int32x4", INT32x4_TYPE,
                         Int32x4::kSize,
                         isolate()->initial_object_prototype(),
                         Builtins::kIllegal);

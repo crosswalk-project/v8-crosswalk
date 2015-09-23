@@ -28,12 +28,12 @@
 // Flags: --simd-object --allow-natives-syntax
 
 function testArithmeticOperators() {
-  var a = SIMD.float64x2.zero();
-  var b = SIMD.float64x2.zero();
+  var a = SIMD.Float64x2.zero();
+  var b = SIMD.Float64x2.zero();
   var c;
 
   c = a + b;
-  assertEquals('float64x2(0,0)float64x2(0,0)', c);
+  assertEquals('Float64x2(0,0)Float64x2(0,0)', c);
   c = a++;
   assertEquals(NaN, c);
   c = a - b;
@@ -55,8 +55,8 @@ testArithmeticOperators();
 
 
 function testBitwiseOperators() {
-  var a = SIMD.float64x2.zero();
-  var b = SIMD.float64x2.zero();
+  var a = SIMD.Float64x2.zero();
+  var b = SIMD.Float64x2.zero();
   var c;
   c = a | b;
   assertEquals(0, c);
@@ -81,11 +81,11 @@ testBitwiseOperators();
 
 
 function testAssignmentOperators() {
-  var a = SIMD.float64x2.zero();
-  var b = SIMD.float64x2.zero();
+  var a = SIMD.Float64x2.zero();
+  var b = SIMD.Float64x2.zero();
   var c = a;
   c += b;
-  assertEquals('float64x2(0,0)float64x2(0,0)', c);
+  assertEquals('Float64x2(0,0)Float64x2(0,0)', c);
   c -= b;
   assertEquals(NaN, c);
   c *= b;
@@ -116,13 +116,13 @@ testAssignmentOperators();
 
 
 function testStringOperators() {
-  var a = SIMD.float64x2.zero();
+  var a = SIMD.Float64x2.zero();
   var b = "0";
   var c = a;
   c += b;
-  assertEquals("float64x2(0,0)0", c);
+  assertEquals("Float64x2(0,0)0", c);
   c = b + a;
-  assertEquals("0float64x2(0,0)", c);
+  assertEquals("0Float64x2(0,0)", c);
 }
 
 testStringOperators();
@@ -132,8 +132,8 @@ testStringOperators();
 
 
 function testComparisionOperators() {
-  var a = SIMD.float64x2.zero();
-  var b = SIMD.float64x2.zero();
+  var a = SIMD.Float64x2.zero();
+  var b = SIMD.Float64x2.zero();
   assertEquals(false, a == b);
   assertEquals(true, a != b);
   assertEquals(false, a === b);
@@ -152,8 +152,8 @@ testComparisionOperators();
 
 
 function testLogicalOperators() {
-  var a = SIMD.float64x2.zero();
-  var b = SIMD.float64x2.splat(1);
+  var a = SIMD.Float64x2.zero();
+  var b = SIMD.Float64x2.splat(1);
   assertEquals(1, (a && b).x);
   assertEquals(1, (a && b).y);
   assertEquals(0, (a || b).x);

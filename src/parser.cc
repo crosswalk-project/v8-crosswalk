@@ -618,7 +618,7 @@ bool ParserTraits::BuildSIMD128LoadStoreExpression(
             type_literal->raw_value()->AsString()) {
           const AstRawString* type_literal_raw_string =
               type_literal->raw_value()->AsString();
-          if (type_literal_raw_string->IsOneByteEqualTo("float32x4")) {
+          if (type_literal_raw_string->IsOneByteEqualTo("Float32x4")) {
             Literal* op_literal = prop->key()->AsLiteral();
             if (op_literal && op_literal->raw_value() &&
                 op_literal->raw_value()->AsString()) {
@@ -667,7 +667,7 @@ bool ParserTraits::BuildSIMD128LoadStoreExpression(
                     factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
               }
             }
-          } else if (type_literal_raw_string->IsOneByteEqualTo("int32x4")) {
+          } else if (type_literal_raw_string->IsOneByteEqualTo("Int32x4")) {
             Literal* op_literal = prop->key()->AsLiteral();
             if (op_literal && op_literal->raw_value() &&
                 op_literal->raw_value()->AsString()) {
@@ -716,7 +716,7 @@ bool ParserTraits::BuildSIMD128LoadStoreExpression(
                     factory->NewStringLiteral(op_str, RelocInfo::kNoPosition);
               }
             }
-          } else if (type_literal_raw_string->IsOneByteEqualTo("float64x2")) {
+          } else if (type_literal_raw_string->IsOneByteEqualTo("Float64x2")) {
             Literal* op_literal = prop->key()->AsLiteral();
             if (op_literal && op_literal->raw_value() &&
                 op_literal->raw_value()->AsString()) {

@@ -1579,7 +1579,7 @@ ACCESSORS(Int32x4, value, Object, kValueOffset)
 
 
 const char* Float32x4::Name() {
-  return "float32x4";
+  return "Float32x4";
 }
 
 
@@ -1613,7 +1613,7 @@ void Float32x4::set(float32x4_value_t f32x4) {
 
 
 const char* Float64x2::Name() {
-  return "float64x2";
+  return "Float64x2";
 }
 
 
@@ -1642,7 +1642,7 @@ void Float64x2::set(float64x2_value_t f64x2) {
 
 
 const char* Int32x4::Name() {
-  return "int32x4";
+  return "Int32x4";
 }
 
 
