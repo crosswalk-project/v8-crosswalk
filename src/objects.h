@@ -6596,6 +6596,8 @@ class Script: public Struct {
   V(SIMD.Float32x4, lessThanOrEqual, Float32x4LessThanOrEqual, Int32x4,        \
     Float32x4, Float32x4)                                                      \
   V(SIMD.Float32x4, scale, Float32x4Scale, Float32x4, Float32x4, Double)       \
+  V(SIMD.Float32x4, extractLane, Float32x4ExtractLane, Double, Float32x4,      \
+    Integer32)                                                                 \
   V(SIMD.Float64x2, add, Float64x2Add, Float64x2, Float64x2, Float64x2)        \
   V(SIMD.Float64x2, div, Float64x2Div, Float64x2, Float64x2, Float64x2)        \
   V(SIMD.Float64x2, max, Float64x2Max, Float64x2, Float64x2, Float64x2)        \
@@ -6603,6 +6605,8 @@ class Script: public Struct {
   V(SIMD.Float64x2, mul, Float64x2Mul, Float64x2, Float64x2, Float64x2)        \
   V(SIMD.Float64x2, sub, Float64x2Sub, Float64x2, Float64x2, Float64x2)        \
   V(SIMD.Float64x2, scale, Float64x2Scale, Float64x2, Float64x2, Double)       \
+  V(SIMD.Float64x2, extractLane, Float64x2ExtractLane, Double, Float64x2,      \
+    Integer32)                                                                 \
   V(SIMD, Float64x2, Float64x2Constructor, Float64x2, Double, Double)          \
   V(SIMD.Int32x4, add, Int32x4Add, Int32x4, Int32x4, Int32x4)                  \
   V(SIMD.Int32x4, and, Int32x4And, Int32x4, Int32x4, Int32x4)                  \
@@ -6614,6 +6618,8 @@ class Script: public Struct {
   V(SIMD.Int32x4, withFlagY, Int32x4WithFlagY, Int32x4, Int32x4, Tagged)       \
   V(SIMD.Int32x4, withFlagZ, Int32x4WithFlagZ, Int32x4, Int32x4, Tagged)       \
   V(SIMD.Int32x4, withFlagW, Int32x4WithFlagW, Int32x4, Int32x4, Tagged)       \
+  V(SIMD.Int32x4, extractLane, Int32x4ExtractLane, Integer32, Int32x4,         \
+    Integer32)                                                                 \
   V(SIMD.Int32x4, greaterThan, Int32x4GreaterThan, Int32x4, Int32x4, Int32x4)  \
   V(SIMD.Int32x4, equal, Int32x4Equal, Int32x4, Int32x4, Int32x4)              \
   V(SIMD.Int32x4, lessThan, Int32x4LessThan, Int32x4, Int32x4, Int32x4)        \
@@ -6633,7 +6639,13 @@ class Script: public Struct {
     Float64x2)                                                                 \
   V(SIMD.Int32x4, select, Int32x4Select, Int32x4, Int32x4, Int32x4, Int32x4)   \
   V(SIMD.Float64x2, swizzle, Float64x2Swizzle, Float64x2, Float64x2,           \
-    Integer32, Integer32)
+    Integer32, Integer32)                                                      \
+  V(SIMD.Float32x4, replaceLane, Float32x4ReplaceLane, Float32x4, Float32x4,   \
+    Integer32, Double)                                                         \
+  V(SIMD.Int32x4, replaceLane, Int32x4ReplaceLane, Int32x4, Int32x4,           \
+    Integer32, Integer32)                                                      \
+  V(SIMD.Float64x2, replaceLane, Float64x2ReplaceLane, Float64x2, Float64x2,   \
+    Integer32, Double)
 
 #define SIMD_QUARTERNARY_OPERATIONS(V)                                         \
   V(SIMD, Float32x4, Float32x4Constructor, Float32x4, Double, Double, Double,  \

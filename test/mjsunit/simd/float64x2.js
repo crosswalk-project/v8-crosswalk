@@ -322,7 +322,9 @@ function testSIMDExtractLane() {
 }
 
 testSIMDExtractLane();
-
+testSIMDExtractLane();
+%OptimizeFunctionOnNextCall(testSIMDExtractLane);
+testSIMDExtractLane();
 
 function testSIMDReplaceLane() {
   var m = SIMD.Float64x2(1.0, 2.0);
@@ -333,4 +335,7 @@ function testSIMDReplaceLane() {
   assertEquals(6.0, SIMD.Float64x2.extractLane(b, 1));
 }
 
+testSIMDReplaceLane();
+testSIMDReplaceLane();
+%OptimizeFunctionOnNextCall(testSIMDReplaceLane);
 testSIMDReplaceLane();
