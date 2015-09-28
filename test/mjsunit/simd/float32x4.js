@@ -750,3 +750,6 @@ function testSIMDReplaceLane() {
 }
 
 testSIMDReplaceLane();
+testSIMDReplaceLane();
+%OptimizeFunctionOnNextCall(testSIMDReplaceLane);
+testSIMDReplaceLane();
