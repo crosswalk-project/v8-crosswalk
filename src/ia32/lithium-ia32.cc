@@ -2967,16 +2967,24 @@ LInstruction* LChunkBuilder::DoBinarySIMDOperation(
           new(zone()) LBinarySIMDOperation(left, right, instr->op());
       return DefineAsRegister(result);
     }
+    case kFloat32x4ExtractLane:
     case kFloat32x4Shuffle:
+    case kInt32x4ExtractLane:
     case kInt32x4Shuffle:
     case kInt32x4ShiftLeft:
     case kInt32x4ShiftRight:
-    case kInt32x4ShiftRightArithmetic: {
+    case kInt32x4ShiftRightArithmetic:
+    case kFloat64x2ExtractLane: {
       LOperand* left = UseRegisterAtStart(instr->left());
       LOperand* right = UseOrConstant(instr->right());
       LBinarySIMDOperation* result =
           new(zone()) LBinarySIMDOperation(left, right, instr->op());
-      return AssignEnvironment(DefineSameAsFirst(result));
+      if (instr->op() == kFloat32x4ExtractLane ||
+          instr->op() == kInt32x4ExtractLane ||
+          instr->op() == kFloat64x2ExtractLane)
+        return AssignEnvironment(DefineAsRegister(result));
+      else
+        return AssignEnvironment(DefineSameAsFirst(result));
     }
     case kFloat32x4LessThan:
     case kFloat32x4LessThanOrEqual:
@@ -3033,6 +3041,15 @@ LInstruction* LChunkBuilder::DoTernarySIMDOperation(
       LOperand* third = UseOrConstant(instr->third());
       LTernarySIMDOperation* result =
           new(zone()) LTernarySIMDOperation(first, second, third, instr->op());
+      return AssignEnvironment(DefineSameAsFirst(result));
+    }
+    case kFloat32x4ReplaceLane:
+    case kInt32x4ReplaceLane:
+    case kFloat64x2ReplaceLane: {
+      LOperand* second = UseOrConstant(instr->second());
+      LOperand* third = UseRegisterAtStart(instr->third());
+      LTernarySIMDOperation* result =
+        new(zone()) LTernarySIMDOperation(first, second, third, instr->op());
       return AssignEnvironment(DefineSameAsFirst(result));
     }
     default:
