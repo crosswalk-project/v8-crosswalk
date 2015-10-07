@@ -756,7 +756,9 @@ class RegisterValues {
 
   intptr_t registers_[Register::kNumRegisters];
   double double_registers_[DoubleRegister::kMaxNumRegisters];
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64 || V8_TARGET_ARCH_ARM
   simd128_value_t simd128_registers_[SIMD128Register::kMaxNumRegisters];
+#endif
 };
 
 
