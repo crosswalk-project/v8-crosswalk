@@ -134,10 +134,10 @@ RUNTIME_FUNCTION(Runtime_Float32x4GetSignMask) {
   HandleScope scope(isolate);
   DCHECK(args.length() == 1);
   CONVERT_ARG_CHECKED(Float32x4, self, 0);
-  float32_uint32 x(self->x());
-  float32_uint32 y(self->y());
-  float32_uint32 z(self->z());
-  float32_uint32 w(self->w());
+  float32_uint32 x(self->getLane(0));
+  float32_uint32 y(self->getLane(1));
+  float32_uint32 z(self->getLane(2));
+  float32_uint32 w(self->getLane(3));
   uint32_t mx = (x.u & 0x80000000) >> 31;
   uint32_t my = (y.u & 0x80000000) >> 31;
   uint32_t mz = (z.u & 0x80000000) >> 31;
@@ -151,8 +151,8 @@ RUNTIME_FUNCTION(Runtime_Float64x2GetSignMask) {
   HandleScope scope(isolate);
   DCHECK(args.length() == 1);
   CONVERT_ARG_CHECKED(Float64x2, self, 0);
-  float64_uint64 x(self->x());
-  float64_uint64 y(self->y());
+  float64_uint64 x(self->getLane(0));
+  float64_uint64 y(self->getLane(1));
   uint64_t mx = x.u >> 63;
   uint64_t my = y.u >> 63;
   uint32_t value = uint32_t(mx | (my << 1));
@@ -164,10 +164,10 @@ RUNTIME_FUNCTION(Runtime_Int32x4GetSignMask) {
   HandleScope scope(isolate);
   DCHECK(args.length() == 1);
   CONVERT_ARG_CHECKED(Int32x4, self, 0);
-  uint32_t mx = (self->x() & 0x80000000) >> 31;
-  uint32_t my = (self->y() & 0x80000000) >> 31;
-  uint32_t mz = (self->z() & 0x80000000) >> 31;
-  uint32_t mw = (self->w() & 0x80000000) >> 31;
+  uint32_t mx = (self->getLane(0) & 0x80000000) >> 31;
+  uint32_t my = (self->getLane(1) & 0x80000000) >> 31;
+  uint32_t mz = (self->getLane(2) & 0x80000000) >> 31;
+  uint32_t mw = (self->getLane(3) & 0x80000000) >> 31;
   uint32_t value = mx | (my << 1) | (mz << 2) | (mw << 3);
   return *isolate->factory()->NewNumberFromUint(value);
 }
@@ -177,37 +177,27 @@ RUNTIME_FUNCTION(Runtime_Int32x4GetSignMask) {
   VALUE->LANE()
 
 
-#define LANE_FLAG(VALUE, LANE)  \
-  VALUE->LANE() != 0
+#define LANE_FLAG(VALUE, INDEX)  \
+  VALUE->getLane(INDEX) != 0
 
 
 #define SIMD128_LANE_ACCESS_FUNCTIONS(V)                      \
-  V(Float32x4, GetX, NewNumber, x, LANE_VALUE)       \
-  V(Float32x4, GetY, NewNumber, y, LANE_VALUE)       \
-  V(Float32x4, GetZ, NewNumber, z, LANE_VALUE)       \
-  V(Float32x4, GetW, NewNumber, w, LANE_VALUE)       \
-  V(Float64x2, GetX, NewNumber, x, LANE_VALUE)       \
-  V(Float64x2, GetY, NewNumber, y, LANE_VALUE)       \
-  V(Int32x4, GetX, NewNumberFromInt, x, LANE_VALUE)            \
-  V(Int32x4, GetY, NewNumberFromInt, y, LANE_VALUE)            \
-  V(Int32x4, GetZ, NewNumberFromInt, z, LANE_VALUE)            \
-  V(Int32x4, GetW, NewNumberFromInt, w, LANE_VALUE)            \
-  V(Int32x4, GetFlagX, ToBoolean, x, LANE_FLAG)               \
-  V(Int32x4, GetFlagY, ToBoolean, y, LANE_FLAG)               \
-  V(Int32x4, GetFlagZ, ToBoolean, z, LANE_FLAG)               \
-  V(Int32x4, GetFlagW, ToBoolean, w, LANE_FLAG)
+  V(Int32x4, GetFlagX, ToBoolean, 0, LANE_FLAG)               \
+  V(Int32x4, GetFlagY, ToBoolean, 1, LANE_FLAG)               \
+  V(Int32x4, GetFlagZ, ToBoolean, 2, LANE_FLAG)               \
+  V(Int32x4, GetFlagW, ToBoolean, 3, LANE_FLAG)
 
 
 #define DECLARE_SIMD_LANE_ACCESS_FUNCTION(                    \
-    TYPE, NAME, HEAP_FUNCTION, LANE, ACCESS_FUNCTION)         \
-RUNTIME_FUNCTION(Runtime_##TYPE##NAME) {        \
+    TYPE, NAME, HEAP_FUNCTION, INDEX, ACCESS_FUNCTION)        \
+RUNTIME_FUNCTION(Runtime_##TYPE##NAME) {                      \
   HandleScope scope(isolate);                                 \
   DCHECK(args.length() == 1);                                 \
                                                               \
   CONVERT_ARG_CHECKED(TYPE, a, 0);                            \
                                                               \
   return *isolate->factory()->HEAP_FUNCTION(                  \
-      ACCESS_FUNCTION(a, LANE));                              \
+      ACCESS_FUNCTION(a, INDEX));                             \
 }
 
 
@@ -290,7 +280,7 @@ RUNTIME_FUNCTION(Runtime_##TYPE##FUNCTION) {    \
                                                               \
   TYPE::value_t result;                                       \
   for (int i = 0; i < TYPE::kLanes; i++) {                    \
-    result.storage[i] = FUNCTION(a->getAt(i));                \
+    result.storage[i] = FUNCTION(a->getLane(i));                \
   }                                                           \
                                                               \
   RETURN_##TYPE##_RESULT(result);                             \
@@ -361,11 +351,11 @@ RUNTIME_FUNCTION(                                             \
   TARGET_TYPE::value_t result;                                \
   if (SOURCE_TYPE::kLanes > TARGET_TYPE::kLanes) {            \
     for (int i = 0; i < TARGET_TYPE::kLanes; i++) {           \
-      FUNCTION(a->getAt(i), &result.storage[i]);              \
+      FUNCTION(a->getLane(i), &result.storage[i]);              \
     }                                                         \
   } else {                                                    \
     for (int i = 0; i < SOURCE_TYPE::kLanes; i++) {           \
-      FUNCTION(a->getAt(i), &result.storage[i]);              \
+      FUNCTION(a->getLane(i), &result.storage[i]);              \
     }                                                         \
     int j = TARGET_TYPE::kLanes - SOURCE_TYPE::kLanes;        \
     if (j > 0) {                                              \
@@ -537,7 +527,7 @@ RUNTIME_FUNCTION(Runtime_##TYPE##FUNCTION) {    \
                                                               \
   RETURN_TYPE::value_t result;                                \
   for (int i = 0; i < TYPE::kLanes; i++) {                    \
-    result.storage[i] = FUNCTION(a->getAt(i), b->getAt(i));   \
+    result.storage[i] = FUNCTION(a->getLane(i), b->getLane(i));   \
   }                                                           \
                                                               \
   RETURN_##RETURN_TYPE##_RESULT(result);                      \
@@ -545,6 +535,28 @@ RUNTIME_FUNCTION(Runtime_##TYPE##FUNCTION) {    \
 
 
 SIMD128_BINARY_FUNCTIONS(DECLARE_SIMD_BINARY_FUNCTION)
+
+
+#define SIMD_BINARY_EXTRACTLANE_FUNCTIONS(V)                 \
+  V(Float32x4, ExtractLane, NewNumber)                       \
+  V(Float64x2, ExtractLane, NewNumber)                       \
+  V(Int32x4, ExtractLane, NewNumber)
+
+
+#define DECLARE_SIMD_BINARY_EXTRACTLANE_FUNCTION(            \
+    TYPE, NAME, HEAP_FUNCTION)                               \
+RUNTIME_FUNCTION(Runtime_##TYPE##NAME) {                     \
+  HandleScope scope(isolate);                                \
+  DCHECK(args.length() == 2);                                \
+                                                             \
+  CONVERT_ARG_CHECKED(TYPE, a, 0);                           \
+  RUNTIME_ASSERT(args[1]->IsNumber());                       \
+  uint32_t x = NumberToUint32(args[1]);                      \
+  return *isolate->factory()->HEAP_FUNCTION(a->getLane(x)); \
+}
+
+
+SIMD_BINARY_EXTRACTLANE_FUNCTIONS(DECLARE_SIMD_BINARY_EXTRACTLANE_FUNCTION)
 
 
 #define SIMD128_SWIZZLE_FUNCTIONS(V)                          \
@@ -568,10 +580,10 @@ RUNTIME_FUNCTION(Runtime_##TYPE##Swizzle) {                   \
   uint32_t w = NumberToUint32(args[4]);                       \
                                                               \
   TYPE::value_t result;                                       \
-  result.storage[0] = a->getAt(x & 0x3);                      \
-  result.storage[1] = a->getAt(y & 0x3);                      \
-  result.storage[2] = a->getAt(z & 0x3);                      \
-  result.storage[3] = a->getAt(w & 0x3);                      \
+  result.storage[0] = a->getLane(x & 0x3);                      \
+  result.storage[1] = a->getLane(y & 0x3);                      \
+  result.storage[2] = a->getLane(z & 0x3);                      \
+  result.storage[3] = a->getLane(w & 0x3);                      \
                                                               \
   RETURN_##TYPE##_RESULT(result);                             \
 }
@@ -591,8 +603,8 @@ RUNTIME_FUNCTION(Runtime_Float64x2Swizzle) {
   uint32_t y = NumberToUint32(args[2]);
 
   float64x2_value_t result;
-  result.storage[0] = a->getAt(x & 0x1);
-  result.storage[1] = a->getAt(y & 0x1);
+  result.storage[0] = a->getLane(x & 0x1);
+  result.storage[1] = a->getLane(y & 0x1);
   RETURN_Float64x2_RESULT(result);
 }
 
@@ -620,13 +632,13 @@ RUNTIME_FUNCTION(Runtime_##TYPE##Shuffle) {                   \
                                                               \
   TYPE::value_t result;                                       \
   result.storage[0] = x < 4 ?                                 \
-      a->getAt(x & 0x3) : b->getAt((x - 4) & 0x3);            \
+      a->getLane(x & 0x3) : b->getLane((x - 4) & 0x3);            \
   result.storage[1] = y < 4 ?                                 \
-      a->getAt(y & 0x3) : b->getAt((y - 4) & 0x3);            \
+      a->getLane(y & 0x3) : b->getLane((y - 4) & 0x3);            \
   result.storage[2] = z < 4 ?                                 \
-      a->getAt(z & 0x3) : b->getAt((z - 4) & 0x3);            \
+      a->getLane(z & 0x3) : b->getLane((z - 4) & 0x3);            \
   result.storage[3] = w < 4 ?                                 \
-      a->getAt(w & 0x3) : b->getAt((w - 4) & 0x3);            \
+      a->getLane(w & 0x3) : b->getLane((w - 4) & 0x3);            \
                                                               \
   RETURN_##TYPE##_RESULT(result);                             \
 }
@@ -648,9 +660,9 @@ RUNTIME_FUNCTION(Runtime_Float64x2Shuffle) {
 
   float64x2_value_t result;
   result.storage[0] = x < 2 ?
-      a->getAt(x & 0x1) : b->getAt((x - 2) & 0x1);
+      a->getLane(x & 0x1) : b->getLane((x - 2) & 0x1);
   result.storage[1] = y < 2 ?
-      a->getAt(y & 0x1) : b->getAt((y - 2) & 0x1);
+      a->getLane(y & 0x1) : b->getLane((y - 2) & 0x1);
 
   RETURN_Float64x2_RESULT(result);
 }
@@ -665,10 +677,10 @@ RUNTIME_FUNCTION(Runtime_Float32x4Scale) {
 
   float _s = static_cast<float>(args.number_at(1));
   float32x4_value_t result;
-  result.storage[0] = self->x() * _s;
-  result.storage[1] = self->y() * _s;
-  result.storage[2] = self->z() * _s;
-  result.storage[3] = self->w() * _s;
+  result.storage[0] = self->getLane(0) * _s;
+  result.storage[1] = self->getLane(1) * _s;
+  result.storage[2] = self->getLane(2) * _s;
+  result.storage[3] = self->getLane(3) * _s;
 
   RETURN_Float32x4_RESULT(result);
 }
@@ -683,8 +695,8 @@ RUNTIME_FUNCTION(Runtime_Float64x2Scale) {
 
   double _s = args.number_at(1);
   float64x2_value_t result;
-  result.storage[0] = self->x() * _s;
-  result.storage[1] = self->y() * _s;
+  result.storage[0] = self->getLane(0) * _s;
+  result.storage[1] = self->getLane(1) * _s;
 
   RETURN_Float64x2_RESULT(result);
 }
@@ -709,16 +721,6 @@ RUNTIME_FUNCTION(Runtime_Float64x2Scale) {
   int32_t x = flag ? -1 : 0;
 
 #define SIMD128_SET_LANE_FUNCTIONS(V)                         \
-  V(Float32x4, WithX, ARG_TO_FLOAT32, 0)                      \
-  V(Float32x4, WithY, ARG_TO_FLOAT32, 1)                      \
-  V(Float32x4, WithZ, ARG_TO_FLOAT32, 2)                      \
-  V(Float32x4, WithW, ARG_TO_FLOAT32, 3)                      \
-  V(Float64x2, WithX, ARG_TO_FLOAT64, 0)                      \
-  V(Float64x2, WithY, ARG_TO_FLOAT64, 1)                      \
-  V(Int32x4, WithX, ARG_TO_INT32, 0)                          \
-  V(Int32x4, WithY, ARG_TO_INT32, 1)                          \
-  V(Int32x4, WithZ, ARG_TO_INT32, 2)                          \
-  V(Int32x4, WithW, ARG_TO_INT32, 3)                          \
   V(Int32x4, WithFlagX, ARG_TO_BOOLEAN, 0)                    \
   V(Int32x4, WithFlagY, ARG_TO_BOOLEAN, 1)                    \
   V(Int32x4, WithFlagZ, ARG_TO_BOOLEAN, 2)                    \
@@ -737,7 +739,7 @@ RUNTIME_FUNCTION(Runtime_##TYPE##NAME) {        \
   TYPE::value_t result;                                       \
   for (int i = 0; i < TYPE::kLanes; i++) {                    \
     if (i != LANE)                                            \
-      result.storage[i] = a->getAt(i);                        \
+      result.storage[i] = a->getLane(i);                        \
     else                                                      \
       result.storage[i] = value;                              \
   }                                                           \
@@ -749,6 +751,53 @@ RUNTIME_FUNCTION(Runtime_##TYPE##NAME) {        \
 SIMD128_SET_LANE_FUNCTIONS(DECLARE_SIMD_SET_LANE_FUNCTION)
 
 
+#define TERNARY_ARG_TO_FLOAT32(x)   \
+  CONVERT_DOUBLE_ARG_CHECKED(t, 2); \
+  float x = static_cast<float>(t);
+
+
+#define TERNARY_ARG_TO_FLOAT64(x)   \
+  CONVERT_DOUBLE_ARG_CHECKED(x, 2); \
+
+
+#define TERNARY_ARG_TO_INT32(x)        \
+  RUNTIME_ASSERT(args[2]->IsNumber()); \
+  int32_t x = NumberToInt32(args[2]);
+
+
+#define SIMD_TERNARY_REPLACELANE_FUNCTIONS(V)                 \
+  V(Float32x4, ReplaceLane, TERNARY_ARG_TO_FLOAT32)           \
+  V(Float64x2, ReplaceLane, TERNARY_ARG_TO_FLOAT64)           \
+  V(Int32x4, ReplaceLane, TERNARY_ARG_TO_INT32)
+
+
+#define DECLARE_SIMD_TERNARY_REPLACELANE_FUNCTION(            \
+    TYPE, NAME, ARG_FUNCTION)                                 \
+RUNTIME_FUNCTION(Runtime_##TYPE##NAME) {                      \
+  HandleScope scope(isolate);                                 \
+  DCHECK(args.length() == 3);                                 \
+                                                              \
+  CONVERT_ARG_CHECKED(TYPE, a, 0);                            \
+  RUNTIME_ASSERT(args[1]->IsNumber());                        \
+  uint32_t lane = NumberToUint32(args[1]);                    \
+  ARG_FUNCTION(value);                                        \
+                                                              \
+  TYPE::value_t result;                                       \
+  for (int i = 0; i < TYPE::kLanes; i++) {                    \
+    if (i != lane)                                            \
+      result.storage[i] = a->getLane(i);                        \
+    else                                                      \
+      result.storage[i] = value;                              \
+  }                                                           \
+                                                              \
+  RETURN_##TYPE##_RESULT(result);                             \
+}
+
+
+SIMD_TERNARY_REPLACELANE_FUNCTIONS(DECLARE_SIMD_TERNARY_REPLACELANE_FUNCTION)
+
+
+
 RUNTIME_FUNCTION(Runtime_Float32x4Clamp) {
   HandleScope scope(isolate);
   DCHECK(args.length() == 3);
@@ -758,14 +807,18 @@ RUNTIME_FUNCTION(Runtime_Float32x4Clamp) {
   CONVERT_ARG_CHECKED(Float32x4, hi, 2);
 
   float32x4_value_t result;
-  float _x = self->x() > lo->x() ? self->x() : lo->x();
-  float _y = self->y() > lo->y() ? self->y() : lo->y();
-  float _z = self->z() > lo->z() ? self->z() : lo->z();
-  float _w = self->w() > lo->w() ? self->w() : lo->w();
-  result.storage[0] = _x > hi->x() ? hi->x() : _x;
-  result.storage[1] = _y > hi->y() ? hi->y() : _y;
-  result.storage[2] = _z > hi->z() ? hi->z() : _z;
-  result.storage[3] = _w > hi->w() ? hi->w() : _w;
+  float _x =
+    self->getLane(0) > lo->getLane(0) ? self->getLane(0) : lo->getLane(0);
+  float _y =
+    self->getLane(1) > lo->getLane(1) ? self->getLane(1) : lo->getLane(1);
+  float _z =
+    self->getLane(2) > lo->getLane(2) ? self->getLane(2) : lo->getLane(2);
+  float _w =
+    self->getLane(3) > lo->getLane(3) ? self->getLane(3) : lo->getLane(3);
+  result.storage[0] = _x > hi->getLane(0) ? hi->getLane(0) : _x;
+  result.storage[1] = _y > hi->getLane(1) ? hi->getLane(1) : _y;
+  result.storage[2] = _z > hi->getLane(2) ? hi->getLane(2) : _z;
+  result.storage[3] = _w > hi->getLane(3) ? hi->getLane(3) : _w;
 
   RETURN_Float32x4_RESULT(result);
 }
@@ -780,10 +833,12 @@ RUNTIME_FUNCTION(Runtime_Float64x2Clamp) {
   CONVERT_ARG_CHECKED(Float64x2, hi, 2);
 
   float64x2_value_t result;
-  double _x = self->x() > lo->x() ? self->x() : lo->x();
-  double _y = self->y() > lo->y() ? self->y() : lo->y();
-  result.storage[0] = _x > hi->x() ? hi->x() : _x;
-  result.storage[1] = _y > hi->y() ? hi->y() : _y;
+  double _x =
+    self->getLane(0) > lo->getLane(0) ? self->getLane(0) : lo->getLane(0);
+  double _y =
+    self->getLane(1) > lo->getLane(1) ? self->getLane(1) : lo->getLane(1);
+  result.storage[0] = _x > hi->getLane(0) ? hi->getLane(0) : _x;
+  result.storage[1] = _y > hi->getLane(1) ? hi->getLane(1) : _y;
 
   RETURN_Float64x2_RESULT(result);
 }
@@ -799,8 +854,10 @@ RUNTIME_FUNCTION(Runtime_Float32x4ShuffleMix) {
 
   uint32_t m = NumberToUint32(args[2]);
   float32x4_value_t result;
-  float data1[4] = { first->x(), first->y(), first->z(), first->w() };
-  float data2[4] = { second->x(), second->y(), second->z(), second->w() };
+  float data1[4] = { first->getLane(0), first->getLane(1),
+    first->getLane(2), first->getLane(3) };
+  float data2[4] = { second->getLane(0), second->getLane(1),
+    second->getLane(2), second->getLane(3) };
   result.storage[0] = data1[m & 0x3];
   result.storage[1] = data1[(m >> 2) & 0x3];
   result.storage[2] = data2[(m >> 4) & 0x3];
@@ -818,19 +875,19 @@ RUNTIME_FUNCTION(Runtime_Float32x4Select) {
   CONVERT_ARG_CHECKED(Float32x4, tv, 1);
   CONVERT_ARG_CHECKED(Float32x4, fv, 2);
 
-  uint32_t _maskX = self->x();
-  uint32_t _maskY = self->y();
-  uint32_t _maskZ = self->z();
-  uint32_t _maskW = self->w();
+  uint32_t _maskX = self->getLane(0);
+  uint32_t _maskY = self->getLane(1);
+  uint32_t _maskZ = self->getLane(2);
+  uint32_t _maskW = self->getLane(3);
   // Extract floats and interpret them as masks.
-  float32_uint32 tvx(tv->x());
-  float32_uint32 tvy(tv->y());
-  float32_uint32 tvz(tv->z());
-  float32_uint32 tvw(tv->w());
-  float32_uint32 fvx(fv->x());
-  float32_uint32 fvy(fv->y());
-  float32_uint32 fvz(fv->z());
-  float32_uint32 fvw(fv->w());
+  float32_uint32 tvx(tv->getLane(0));
+  float32_uint32 tvy(tv->getLane(1));
+  float32_uint32 tvz(tv->getLane(2));
+  float32_uint32 tvw(tv->getLane(3));
+  float32_uint32 fvx(fv->getLane(0));
+  float32_uint32 fvy(fv->getLane(1));
+  float32_uint32 fvz(fv->getLane(2));
+  float32_uint32 fvw(fv->getLane(3));
   // Perform select.
   float32_uint32 tempX((_maskX & tvx.u) | (~_maskX & fvx.u));
   float32_uint32 tempY((_maskY & tvy.u) | (~_maskY & fvy.u));
@@ -855,16 +912,16 @@ RUNTIME_FUNCTION(Runtime_Int32x4Select) {
   CONVERT_ARG_CHECKED(Int32x4, tv, 1);
   CONVERT_ARG_CHECKED(Int32x4, fv, 2);
 
-  uint32_t _maskX = self->x();
-  uint32_t _maskY = self->y();
-  uint32_t _maskZ = self->z();
-  uint32_t _maskW = self->w();
+  uint32_t _maskX = self->getLane(0);
+  uint32_t _maskY = self->getLane(1);
+  uint32_t _maskZ = self->getLane(2);
+  uint32_t _maskW = self->getLane(3);
 
   int32x4_value_t result;
-  result.storage[0] = (_maskX & tv->x()) | (~_maskX & fv->x());
-  result.storage[1] = (_maskY & tv->y()) | (~_maskY & fv->y());
-  result.storage[2] = (_maskZ & tv->z()) | (~_maskZ & fv->z());
-  result.storage[3] = (_maskW & tv->w()) | (~_maskW & fv->w());
+  result.storage[0] = (_maskX & tv->getLane(0)) | (~_maskX & fv->getLane(0));
+  result.storage[1] = (_maskY & tv->getLane(1)) | (~_maskY & fv->getLane(1));
+  result.storage[2] = (_maskZ & tv->getLane(2)) | (~_maskZ & fv->getLane(2));
+  result.storage[3] = (_maskW & tv->getLane(3)) | (~_maskW & fv->getLane(3));
 
   RETURN_Int32x4_RESULT(result);
 }

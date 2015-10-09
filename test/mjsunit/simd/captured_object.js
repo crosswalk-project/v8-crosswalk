@@ -38,10 +38,10 @@ function testCapturedObjectwithFloat32x4Field() {
     o.x = x;
     deopt.deopt;
     assertEquals(x, o.x);
-    assertEquals(o.y.x, 1);
-    assertEquals(o.y.y, 2);
-    assertEquals(o.y.z, 3);
-    assertEquals(o.y.w, 4);
+    assertEquals(SIMD.Float32x4.extractLane(o.y, 0), 1);
+    assertEquals(SIMD.Float32x4.extractLane(o.y, 1), 2);
+    assertEquals(SIMD.Float32x4.extractLane(o.y, 2), 3);
+    assertEquals(SIMD.Float32x4.extractLane(o.y, 3), 4);
   }
   field(1); field(2);
   // TODO(ningxin): fails in x64 test.
@@ -64,10 +64,10 @@ function testCapturedObjectwithInt32x4Field() {
     o.x = x;
     deopt.deopt;
     assertEquals(x, o.x);
-    assertEquals(o.y.x, 1);
-    assertEquals(o.y.y, 2);
-    assertEquals(o.y.z, 3);
-    assertEquals(o.y.w, 4);
+    assertEquals(SIMD.Int32x4.extractLane(o.y, 0), 1);
+    assertEquals(SIMD.Int32x4.extractLane(o.y, 1), 2);
+    assertEquals(SIMD.Int32x4.extractLane(o.y, 2), 3);
+    assertEquals(SIMD.Int32x4.extractLane(o.y, 3), 4);
   }
   field(1); field(2);
   // TODO(ningxin): fix the failures.

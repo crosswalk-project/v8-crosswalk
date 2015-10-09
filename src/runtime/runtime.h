@@ -731,10 +731,8 @@ namespace internal {
   F(Float32x4Swizzle, 5, 1)                    \
   F(Float32x4Shuffle, 6, 1)                    \
   F(Float32x4Scale, 2, 1)                      \
-  F(Float32x4WithX, 2, 1)                      \
-  F(Float32x4WithY, 2, 1)                      \
-  F(Float32x4WithZ, 2, 1)                      \
-  F(Float32x4WithW, 2, 1)                      \
+  F(Float32x4ExtractLane, 2, 1)                \
+  F(Float32x4ReplaceLane, 3, 1)                \
   F(Float32x4Clamp, 3, 1)                      \
   F(Float32x4Select, 3, 1)                     \
   F(Float64x2LoadX, 2, 1)                      \
@@ -755,8 +753,8 @@ namespace internal {
   F(Float64x2Mul, 2, 1)                        \
   F(Float64x2Sub, 2, 1)                        \
   F(Float64x2Scale, 2, 1)                      \
-  F(Float64x2WithX, 2, 1)                      \
-  F(Float64x2WithY, 2, 1)                      \
+  F(Float64x2ExtractLane, 2, 1)                \
+  F(Float64x2ReplaceLane, 3, 1)                \
   F(Float64x2Clamp, 3, 1)                      \
   F(Float64x2Swizzle, 3, 1)                    \
   F(Float64x2Shuffle, 4, 1)                    \
@@ -782,33 +780,21 @@ namespace internal {
   F(Int32x4Mul, 2, 1)                          \
   F(Int32x4Swizzle, 5, 1)                      \
   F(Int32x4Shuffle, 6, 1)                      \
-  F(Int32x4WithX, 2, 1)                        \
-  F(Int32x4WithY, 2, 1)                        \
-  F(Int32x4WithZ, 2, 1)                        \
-  F(Int32x4WithW, 2, 1)                        \
   F(Int32x4WithFlagX, 2, 1)                    \
   F(Int32x4WithFlagY, 2, 1)                    \
   F(Int32x4WithFlagZ, 2, 1)                    \
   F(Int32x4WithFlagW, 2, 1)                    \
+  F(Int32x4ExtractLane, 2, 1)                  \
+  F(Int32x4ReplaceLane, 3, 1)                  \
   F(Int32x4GreaterThan, 2, 1)                  \
   F(Int32x4Equal, 2, 1)                        \
   F(Int32x4LessThan, 2, 1)                     \
   F(Int32x4Select, 3, 1)                       \
   F(CreateFloat32x4, 4, 1)                     \
-  F(Float32x4GetX, 1, 1)                       \
-  F(Float32x4GetY, 1, 1)                       \
-  F(Float32x4GetZ, 1, 1)                       \
-  F(Float32x4GetW, 1, 1)                       \
   F(Float32x4GetSignMask, 1, 1)                \
   F(CreateFloat64x2, 2, 1)                     \
-  F(Float64x2GetX, 1, 1)                       \
-  F(Float64x2GetY, 1, 1)                       \
   F(Float64x2GetSignMask, 1, 1)                \
   F(CreateInt32x4, 4, 1)                       \
-  F(Int32x4GetX, 1, 1)                         \
-  F(Int32x4GetY, 1, 1)                         \
-  F(Int32x4GetZ, 1, 1)                         \
-  F(Int32x4GetW, 1, 1)                         \
   F(Int32x4GetFlagX, 1, 1)                     \
   F(Int32x4GetFlagY, 1, 1)                     \
   F(Int32x4GetFlagZ, 1, 1)                     \

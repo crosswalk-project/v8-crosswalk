@@ -30,10 +30,10 @@
 function testObject() {
   var a = SIMD.Float32x4.zero();
   var b = Object(a);
-  assertEquals(0, b.x);
-  assertEquals(0, b.y);
-  assertEquals(0, b.z);
-  assertEquals(0, b.w);
+  assertEquals(0, SIMD.Float32x4.extractLane(b, 0));
+  assertEquals(0, SIMD.Float32x4.extractLane(b, 1));
+  assertEquals(0, SIMD.Float32x4.extractLane(b, 2));
+  assertEquals(0, SIMD.Float32x4.extractLane(b, 3));
   assertEquals(typeof(b), "object");
   assertEquals(typeof(b.valueOf()), "object");
   assertEquals(Object.prototype.toString.call(b), "[object Object]");
