@@ -34,10 +34,10 @@ function testSIMDAbs() {
     b4 = SIMD.Float32x4.abs(a4);
   }
 
-  assertEquals(1.0, b4.x);
-  assertEquals(2.0, b4.y);
-  assertEquals(3.0, b4.z);
-  assertEquals(4.0, b4.w);
+  assertEquals(1.0, SIMD.Float32x4.extractLane(b4, 0));
+  assertEquals(2.0, SIMD.Float32x4.extractLane(b4, 1));
+  assertEquals(3.0, SIMD.Float32x4.extractLane(b4, 2));
+  assertEquals(4.0, SIMD.Float32x4.extractLane(b4, 3));
 }
 
 testSIMDAbs();

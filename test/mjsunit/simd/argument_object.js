@@ -44,10 +44,10 @@ function testArgumentsObjectwithFloat32x4Field() {
     assertSame(h, args[7]);
     assertSame(i, args[8]);
     assertSame(j, args[9]);
-    assertEquals(1, args[10].x);
-    assertEquals(2, args[10].y);
-    assertEquals(3, args[10].z);
-    assertEquals(4, args[10].w);
+    assertEquals(1, SIMD.Float32x4.extractLane(args[10], 0));
+    assertEquals(2, SIMD.Float32x4.extractLane(args[10], 1));
+    assertEquals(3, SIMD.Float32x4.extractLane(args[10], 2));
+    assertEquals(4, SIMD.Float32x4.extractLane(args[10], 3));
   }
 
   var a = 0.5;
@@ -92,10 +92,10 @@ function testArgumentsObjectwithInt32x4Field() {
     assertSame(h, args[7]);
     assertSame(i, args[8]);
     assertSame(j, args[9]);
-    assertEquals(1, args[10].x);
-    assertEquals(2, args[10].y);
-    assertEquals(3, args[10].z);
-    assertEquals(4, args[10].w);
+    assertEquals(1, SIMD.Int32x4.extractLane(args[10], 0);
+    assertEquals(2, SIMD.Int32x4.extractLane(args[10], 1);
+    assertEquals(3, SIMD.Int32x4.extractLane(args[10], 2);
+    assertEquals(4, SIMD.Int32x4.extractLane(args[10], 3);
   }
 
   var a = 0.5;

@@ -6684,28 +6684,6 @@ static BuiltinFunctionId NameToId(Isolate* isolate, Handle<String> name,
       DCHECK(type == INT32x4_TYPE);
       id = kInt32x4GetSignMask;
     }
-  } else if (name->Equals(isolate->heap()->x())) {
-    if (type == FLOAT32x4_TYPE) {
-      id = kFloat32x4GetX;
-    } else if (type == FLOAT64x2_TYPE) {
-      id = kFloat64x2GetX;
-    } else {
-      DCHECK(type == INT32x4_TYPE);
-      id = kInt32x4GetX;
-    }
-  } else if (name->Equals(isolate->heap()->y())) {
-    if (type == FLOAT32x4_TYPE) {
-      id = kFloat32x4GetY;
-    } else if (type == FLOAT64x2_TYPE) {
-      id = kFloat64x2GetY;
-    } else {
-      DCHECK(type == INT32x4_TYPE);
-      id = kInt32x4GetY;
-    }
-  } else if (name->Equals(isolate->heap()->z())) {
-    id = type == FLOAT32x4_TYPE ? kFloat32x4GetZ : kInt32x4GetZ;
-  } else if (name->Equals(isolate->heap()->w())) {
-    id = type == FLOAT32x4_TYPE ? kFloat32x4GetW : kInt32x4GetW;
   } else if (name->Equals(isolate->heap()->flagX())) {
     DCHECK(type == INT32x4_TYPE);
     id = kInt32x4GetFlagX;
