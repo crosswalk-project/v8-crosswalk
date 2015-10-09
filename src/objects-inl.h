@@ -1588,7 +1588,7 @@ int Float32x4::kRuntimeAllocatorId() {
 }
 
 
-float Float32x4::getAt(int index) {
+float Float32x4::getLane(int index) {
   DCHECK(index >= 0 && index < kLanes);
   return get().storage[index];
 }
@@ -1622,7 +1622,7 @@ int Float64x2::kRuntimeAllocatorId() {
 }
 
 
-double Float64x2::getAt(int index) {
+double Float64x2::getLane(int index) {
   DCHECK(index >= 0 && index < kLanes);
   return get().storage[index];
 }
@@ -1651,7 +1651,7 @@ int Int32x4::kRuntimeAllocatorId() {
 }
 
 
-int32_t Int32x4::getAt(int index) {
+int32_t Int32x4::getLane(int index) {
   DCHECK(index >= 0 && index < kLanes);
   return get().storage[index];
 }

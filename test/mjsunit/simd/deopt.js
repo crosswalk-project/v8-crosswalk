@@ -37,10 +37,10 @@ function testdeopt(a, b) {
     a += b; //deopt
   }
 
-  assertEquals(1.0, b4.x);
-  assertEquals(2.0, b4.y);
-  assertEquals(3.0, b4.z);
-  assertEquals(4.0, b4.w);
+  assertEquals(1.0, SIMD.Float32x4.extractLane(b4, 0));
+  assertEquals(2.0, SIMD.Float32x4.extractLane(b4, 1));
+  assertEquals(3.0, SIMD.Float32x4.extractLane(b4, 2));
+  assertEquals(4.0, SIMD.Float32x4.extractLane(b4, 3));
 }
 
 testdeopt(1, 1);
@@ -52,24 +52,24 @@ function testdeopt2() {
   var a4 = SIMD.Float32x4(1.0, -1.0, 1.0, -1.0);
   var b4 = SIMD.Float32x4.abs(a4);
 
-  assertEquals(1.0, b4.x);
-  assertEquals(1.0, b4.y);
-  assertEquals(1.0, b4.z);
-  assertEquals(1.0, b4.w);
+  assertEquals(1.0, SIMD.Float32x4.extractLane(b4, 0));
+  assertEquals(1.0, SIMD.Float32x4.extractLane(b4, 1));
+  assertEquals(1.0, SIMD.Float32x4.extractLane(b4, 2));
+  assertEquals(1.0, SIMD.Float32x4.extractLane(b4, 3));
 
   var new_a4 = new SIMD.Float32x4(1.0, -1.0, 1.0, -1.0);
   var new_b4 = SIMD.Float32x4.abs(new_a4);
 
-  assertEquals(1.0, new_b4.x);
-  assertEquals(1.0, new_b4.y);
-  assertEquals(1.0, new_b4.z);
-  assertEquals(1.0, new_b4.w);
+  assertEquals(1.0, SIMD.Float32x4.extractLane(new_b4, 0));
+  assertEquals(1.0, SIMD.Float32x4.extractLane(new_b4, 1));
+  assertEquals(1.0, SIMD.Float32x4.extractLane(new_b4, 2));
+  assertEquals(1.0, SIMD.Float32x4.extractLane(new_b4, 3));
 
   // Verifying deoptimization
-  assertEquals(1.0, b4.x);
-  assertEquals(1.0, b4.y);
-  assertEquals(1.0, b4.z);
-  assertEquals(1.0, b4.w);
+  assertEquals(1.0, SIMD.Float32x4.extractLane(b4, 0));
+  assertEquals(1.0, SIMD.Float32x4.extractLane(b4, 1));
+  assertEquals(1.0, SIMD.Float32x4.extractLane(b4, 1));
+  assertEquals(1.0, SIMD.Float32x4.extractLane(b4, 3));
 }
 
 testdeopt2();

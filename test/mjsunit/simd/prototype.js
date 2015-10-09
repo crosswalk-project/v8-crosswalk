@@ -31,7 +31,7 @@ function testFloat32x4Prototype() {
   var a4 = SIMD.Float32x4(1.0, -2.0, 3.0, -4.0);
   SIMD.Float32x4.prototype = {};
   try {
-    var x = a4.x;
+    var x = SIMD.Float32x4.extractLane(a4, 0);
   } catch (o) {
     assertEquals(o instanceof TypeError, true);
     assertEquals(o.message, "<unknown message this is not a Float32x4 object.>");
@@ -47,7 +47,7 @@ function testInt32x4Prototype() {
   var a4 = SIMD.Int32x4(1.0, -2.0, 3.0, -4.0);
   SIMD.Int32x4.prototype = {};
   try {
-    var x = a4.x;
+    var x = SIMD.Int32x4.extractLane(a4, 0);
   } catch (o) {
     assertEquals(o instanceof TypeError, true);
     assertEquals(o.message, "<unknown message this is not a Int32x4 object.>");
