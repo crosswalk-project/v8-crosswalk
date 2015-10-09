@@ -1542,7 +1542,8 @@ void Float32x4::Float32x4Print(std::ostream& os) {
   // print that using vsnprintf (which may truncate but never allocate if
   // there is no more space in the buffer).
   EmbeddedVector<char, 100> buffer;
-  SNPrintF(buffer, "%.16g %.16g %.16g %.16g", x(), y(), z(), w());
+  SNPrintF(buffer, "%.16g %.16g %.16g %.16g",
+  getLane(0), getLane(1), getLane(2), getLane(3));
   os << buffer.start();
 }
 
@@ -1555,7 +1556,8 @@ void Int32x4::Int32x4Print(std::ostream& os) {
   // print that using vsnprintf (which may truncate but never allocate if
   // there is no more space in the buffer).
   EmbeddedVector<char, 100> buffer;
-  SNPrintF(buffer, "%u %u %u %u", x(), y(), z(), w());
+  SNPrintF(buffer, "%u %u %u %u",
+    getLane(0), getLane(1), getLane(2), getLane(3));
   os << buffer.start();
 }
 
@@ -1568,7 +1570,7 @@ void Float64x2::Float64x2Print(std::ostream& os) {
   // print that using vsnprintf (which may truncate but never allocate if
   // there is no more space in the buffer).
   EmbeddedVector<char, 100> buffer;
-  SNPrintF(buffer, "%.16g %.16g", x(), y());
+  SNPrintF(buffer, "%.16g %.16g", getLane(0), getLane(1));
   os << buffer.start();
 }
 

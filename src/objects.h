@@ -6569,19 +6569,9 @@ class Script: public Struct {
 #define SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(V)                           \
   V(SIMD.Float32x4.prototype, signMask, Float32x4GetSignMask, Integer32,       \
     Float32x4)                                                                 \
-  V(SIMD.Float32x4.prototype, x, Float32x4GetX, Double, Float32x4)             \
-  V(SIMD.Float32x4.prototype, y, Float32x4GetY, Double, Float32x4)             \
-  V(SIMD.Float32x4.prototype, z, Float32x4GetZ, Double, Float32x4)             \
-  V(SIMD.Float32x4.prototype, w, Float32x4GetW, Double, Float32x4)             \
   V(SIMD.Float64x2.prototype, signMask, Float64x2GetSignMask, Integer32,       \
     Float64x2)                                                                 \
-  V(SIMD.Float64x2.prototype, x, Float64x2GetX, Double, Float64x2)             \
-  V(SIMD.Float64x2.prototype, y, Float64x2GetY, Double, Float64x2)             \
   V(SIMD.Int32x4.prototype, signMask, Int32x4GetSignMask, Integer32, Int32x4)  \
-  V(SIMD.Int32x4.prototype, x, Int32x4GetX, Integer32, Int32x4)                \
-  V(SIMD.Int32x4.prototype, y, Int32x4GetY, Integer32, Int32x4)                \
-  V(SIMD.Int32x4.prototype, z, Int32x4GetZ, Integer32, Int32x4)                \
-  V(SIMD.Int32x4.prototype, w, Int32x4GetW, Integer32, Int32x4)                \
   V(SIMD.Int32x4.prototype, flagX, Int32x4GetFlagX, Tagged, Int32x4)           \
   V(SIMD.Int32x4.prototype, flagY, Int32x4GetFlagY, Tagged, Int32x4)           \
   V(SIMD.Int32x4.prototype, flagZ, Int32x4GetFlagZ, Tagged, Int32x4)           \
@@ -6606,10 +6596,6 @@ class Script: public Struct {
   V(SIMD.Float32x4, lessThanOrEqual, Float32x4LessThanOrEqual, Int32x4,        \
     Float32x4, Float32x4)                                                      \
   V(SIMD.Float32x4, scale, Float32x4Scale, Float32x4, Float32x4, Double)       \
-  V(SIMD.Float32x4, withX, Float32x4WithX, Float32x4, Float32x4, Double)       \
-  V(SIMD.Float32x4, withY, Float32x4WithY, Float32x4, Float32x4, Double)       \
-  V(SIMD.Float32x4, withZ, Float32x4WithZ, Float32x4, Float32x4, Double)       \
-  V(SIMD.Float32x4, withW, Float32x4WithW, Float32x4, Float32x4, Double)       \
   V(SIMD.Float64x2, add, Float64x2Add, Float64x2, Float64x2, Float64x2)        \
   V(SIMD.Float64x2, div, Float64x2Div, Float64x2, Float64x2, Float64x2)        \
   V(SIMD.Float64x2, max, Float64x2Max, Float64x2, Float64x2, Float64x2)        \
@@ -6617,8 +6603,6 @@ class Script: public Struct {
   V(SIMD.Float64x2, mul, Float64x2Mul, Float64x2, Float64x2, Float64x2)        \
   V(SIMD.Float64x2, sub, Float64x2Sub, Float64x2, Float64x2, Float64x2)        \
   V(SIMD.Float64x2, scale, Float64x2Scale, Float64x2, Float64x2, Double)       \
-  V(SIMD.Float64x2, withX, Float64x2WithX, Float64x2, Float64x2, Double)       \
-  V(SIMD.Float64x2, withY, Float64x2WithY, Float64x2, Float64x2, Double)       \
   V(SIMD, Float64x2, Float64x2Constructor, Float64x2, Double, Double)          \
   V(SIMD.Int32x4, add, Int32x4Add, Int32x4, Int32x4, Int32x4)                  \
   V(SIMD.Int32x4, and, Int32x4And, Int32x4, Int32x4, Int32x4)                  \
@@ -6626,10 +6610,6 @@ class Script: public Struct {
   V(SIMD.Int32x4, or, Int32x4Or, Int32x4, Int32x4, Int32x4)                    \
   V(SIMD.Int32x4, sub, Int32x4Sub, Int32x4, Int32x4, Int32x4)                  \
   V(SIMD.Int32x4, xor, Int32x4Xor, Int32x4, Int32x4, Int32x4)                  \
-  V(SIMD.Int32x4, withX, Int32x4WithX, Int32x4, Int32x4, Integer32)            \
-  V(SIMD.Int32x4, withY, Int32x4WithY, Int32x4, Int32x4, Integer32)            \
-  V(SIMD.Int32x4, withZ, Int32x4WithZ, Int32x4, Int32x4, Integer32)            \
-  V(SIMD.Int32x4, withW, Int32x4WithW, Int32x4, Int32x4, Integer32)            \
   V(SIMD.Int32x4, withFlagX, Int32x4WithFlagX, Int32x4, Int32x4, Tagged)       \
   V(SIMD.Int32x4, withFlagY, Int32x4WithFlagY, Int32x4, Int32x4, Tagged)       \
   V(SIMD.Int32x4, withFlagZ, Int32x4WithFlagZ, Int32x4, Int32x4, Tagged)       \
@@ -10380,11 +10360,7 @@ class Float32x4: public JSObject {
 
   // Helpers.
   static const int kLanes = 4;
-  inline float getAt(int index);
-  inline float x() { return getAt(0); }
-  inline float y() { return getAt(1); }
-  inline float z() { return getAt(2); }
-  inline float w() { return getAt(3); }
+  inline float getLane(int index);
   inline float32x4_value_t get();
   inline void set(float32x4_value_t f32x4);
 
@@ -10417,9 +10393,7 @@ class Float64x2: public JSObject {
 
   // Helpers.
   static const int kLanes = 2;
-  inline double getAt(int index);
-  inline double x() { return getAt(0); }
-  inline double y() { return getAt(1); }
+  inline double getLane(int index);
   inline float64x2_value_t get();
   inline void set(float64x2_value_t f64x2);
 
@@ -10452,11 +10426,7 @@ class Int32x4: public JSObject {
 
   // Helpers.
   static const int kLanes = 4;
-  inline int32_t getAt(int32_t index);
-  inline int32_t x() { return getAt(0); }
-  inline int32_t y() { return getAt(1); }
-  inline int32_t z() { return getAt(2); }
-  inline int32_t w() { return getAt(3); }
+  inline int32_t getLane(int32_t index);
   inline int32x4_value_t get();
   inline void set(int32x4_value_t i32x4);
 

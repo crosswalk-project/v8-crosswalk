@@ -29,12 +29,12 @@
 
 function testConstructor() {
   var f4 = SIMD.Float64x2(1.0, 2.0);
-  assertEquals(1.0, f4.x);
-  assertEquals(2.0, f4.y);
+  assertEquals(1.0, SIMD.Float64x2.extractLane(f4, 0));
+  assertEquals(2.0, SIMD.Float64x2.extractLane(f4, 1));
 
   f4 = SIMD.Float64x2(1.1, 2.2);
-  assertEquals(1.1, f4.x);
-  assertEquals(2.2, f4.y);
+  assertEquals(1.1, SIMD.Float64x2.extractLane(f4, 0));
+  assertEquals(2.2, SIMD.Float64x2.extractLane(f4, 1));
 }
 
 testConstructor();
@@ -45,13 +45,13 @@ testConstructor();
 function testCheck() {
   var f2 = SIMD.Float64x2(1.0, 2.0);
   var f2_new = SIMD.Float64x2.check(f2);
-  assertEquals(f2_new.x, f2.x);
-  assertEquals(f2_new.y, f2.y);
+  assertEquals(SIMD.Float64x2.extractLane(f2_new, 0), SIMD.Float64x2.extractLane(f2, 0));
+  assertEquals(SIMD.Float64x2.extractLane(f2_new, 1), SIMD.Float64x2.extractLane(f2, 1));
 
   f2 = SIMD.Float64x2(1.1, 2.2);
   f2_new = SIMD.Float64x2.check(f2);
-  assertEquals(f2_new.x, f2.x);
-  assertEquals(f2_new.y, f2.y);
+  assertEquals(SIMD.Float64x2.extractLane(f2_new, 0), SIMD.Float64x2.extractLane(f2, 0));
+  assertEquals(SIMD.Float64x2.extractLane(f2_new, 1), SIMD.Float64x2.extractLane(f2, 1));
 }
 
 testCheck();
@@ -61,8 +61,8 @@ testCheck();
 
 function testZeroConstructor() {
   var z4 = SIMD.Float64x2.zero();
-  assertEquals(0.0, z4.x);
-  assertEquals(0.0, z4.y);
+  assertEquals(0.0, SIMD.Float64x2.extractLane(z4, 0));
+  assertEquals(0.0, SIMD.Float64x2.extractLane(z4, 1));
 }
 
 testZeroConstructor();
@@ -72,8 +72,8 @@ testZeroConstructor();
 
 function testSplatConstructor() {
   var z4 = SIMD.Float64x2.splat(5.0);
-  assertEquals(5.0, z4.x);
-  assertEquals(5.0, z4.y);
+  assertEquals(5.0, SIMD.Float64x2.extractLane(z4, 0));
+  assertEquals(5.0, SIMD.Float64x2.extractLane(z4, 1));
 }
 
 testSplatConstructor();
@@ -111,8 +111,8 @@ function testSIMDAbs() {
   var a4 = SIMD.Float64x2(1.0, -1.0);
   var b4 = SIMD.Float64x2.abs(a4);
 
-  assertEquals(1.0, b4.x);
-  assertEquals(1.0, b4.y);
+  assertEquals(1.0, SIMD.Float64x2.extractLane(b4, 0));
+  assertEquals(1.0, SIMD.Float64x2.extractLane(b4, 1));
 }
 
 testSIMDAbs();
@@ -124,8 +124,8 @@ function testSIMDNeg() {
   var a4 = SIMD.Float64x2(1.0, -1.0);
   var b4 = SIMD.Float64x2.neg(a4);
 
-  assertEquals(-1.0, b4.x);
-  assertEquals(1.0, b4.y);
+  assertEquals(-1.0, SIMD.Float64x2.extractLane(b4, 0));
+  assertEquals(1.0, SIMD.Float64x2.extractLane(b4, 1));
 }
 
 testSIMDNeg();
@@ -138,8 +138,8 @@ function testSIMDAdd() {
   var b4 = SIMD.Float64x2(2.0, 2.0);
   var c4 = SIMD.Float64x2.add(a4, b4);
 
-  assertEquals(3.0, c4.x);
-  assertEquals(3.0, c4.y);
+  assertEquals(3.0, SIMD.Float64x2.extractLane(c4, 0));
+  assertEquals(3.0, SIMD.Float64x2.extractLane(c4, 1));
 }
 
 testSIMDAdd();
@@ -152,8 +152,8 @@ function testSIMDSub() {
   var b4 = SIMD.Float64x2(2.0, 2.0);
   var c4 = SIMD.Float64x2.sub(a4, b4);
 
-  assertEquals(-1.0, c4.x);
-  assertEquals(-1.0, c4.y);
+  assertEquals(-1.0, SIMD.Float64x2.extractLane(c4, 0));
+  assertEquals(-1.0, SIMD.Float64x2.extractLane(c4, 1));
 }
 
 testSIMDSub();
@@ -166,8 +166,8 @@ function testSIMDMul() {
   var b4 = SIMD.Float64x2(2.0, 2.0);
   var c4 = SIMD.Float64x2.mul(a4, b4);
 
-  assertEquals(2.0, c4.x);
-  assertEquals(2.0, c4.y);
+  assertEquals(2.0, SIMD.Float64x2.extractLane(c4, 0));
+  assertEquals(2.0, SIMD.Float64x2.extractLane(c4, 1));
 }
 
 testSIMDMul();
@@ -180,8 +180,8 @@ function testSIMDDiv() {
   var b4 = SIMD.Float64x2(2.0, 2.0);
   var c4 = SIMD.Float64x2.div(a4, b4);
 
-  assertEquals(0.5, c4.x);
-  assertEquals(0.5, c4.y);
+  assertEquals(0.5, SIMD.Float64x2.extractLane(c4, 0));
+  assertEquals(0.5, SIMD.Float64x2.extractLane(c4, 1));
 }
 
 testSIMDDiv();
@@ -194,8 +194,8 @@ function testSIMDClamp() {
   var lo = SIMD.Float64x2(0.0, 0.0);
   var hi = SIMD.Float64x2(2.0, 2.0);
   m = SIMD.Float64x2.clamp(m, lo, hi);
-  assertEquals(1.0, m.x);
-  assertEquals(0.0, m.y);
+  assertEquals(1.0, SIMD.Float64x2.extractLane(m, 0));
+  assertEquals(0.0, SIMD.Float64x2.extractLane(m, 1));
 }
 
 testSIMDClamp();
@@ -207,8 +207,8 @@ function testSIMDMin() {
   var m = SIMD.Float64x2(1.0, 2.0);
   var n = SIMD.Float64x2(1.0, 0.0);
   m = SIMD.Float64x2.min(m, n);
-  assertEquals(1.0, m.x);
-  assertEquals(0.0, m.y);
+  assertEquals(1.0, SIMD.Float64x2.extractLane(m, 0));
+  assertEquals(0.0, SIMD.Float64x2.extractLane(m, 1));
 }
 
 testSIMDMin();
@@ -220,8 +220,8 @@ function testSIMDMax() {
   var m = SIMD.Float64x2(1.0, 2.0);
   var n = SIMD.Float64x2(1.0, 0.0);
   m = SIMD.Float64x2.max(m, n);
-  assertEquals(1.0, m.x);
-  assertEquals(2.0, m.y);
+  assertEquals(1.0, SIMD.Float64x2.extractLane(m, 0));
+  assertEquals(2.0, SIMD.Float64x2.extractLane(m, 1));
 }
 
 testSIMDMax();
@@ -232,8 +232,8 @@ testSIMDMax();
 function testSIMDScale() {
   var m = SIMD.Float64x2(1.0, -2.0);
   m = SIMD.Float64x2.scale(m, 20.0);
-  assertEquals(20.0, m.x);
-  assertEquals(-40.0, m.y);
+  assertEquals(20.0, SIMD.Float64x2.extractLane(m, 0));
+  assertEquals(-40.0, SIMD.Float64x2.extractLane(m, 1));
 }
 
 testSIMDScale();
@@ -244,8 +244,8 @@ testSIMDScale();
 function testSIMDSqrt() {
   var m = SIMD.Float64x2(1.0, 4.0);
   m = SIMD.Float64x2.sqrt(m);
-  assertEquals(1.0, m.x);
-  assertEquals(2.0, m.y);
+  assertEquals(1.0, SIMD.Float64x2.extractLane(m, 0));
+  assertEquals(2.0, SIMD.Float64x2.extractLane(m, 1));
 }
 
 testSIMDSqrt();
@@ -255,12 +255,12 @@ testSIMDSqrt();
 
 function testSIMDSetters() {
   var f = SIMD.Float64x2.zero();
-  assertEquals(0.0, f.x);
-  assertEquals(0.0, f.y);
-  f = SIMD.Float64x2.withX(f, 4.0);
-  assertEquals(4.0, f.x);
-  f = SIMD.Float64x2.withY(f, 3.0);
-  assertEquals(3.0, f.y);
+  assertEquals(0.0, SIMD.Float64x2.extractLane(f, 0));
+  assertEquals(0.0, SIMD.Float64x2.extractLane(f, 1));
+  f = SIMD.Float64x2.replaceLane(f, 0, 4.0);
+  assertEquals(4.0, SIMD.Float64x2.extractLane(f, 0));
+  f = SIMD.Float64x2.replaceLane(f, 1, 3.0);
+  assertEquals(3.0, SIMD.Float64x2.extractLane(f, 1));
 }
 
 testSIMDSetters();
@@ -276,14 +276,14 @@ function testSIMDShuffle() {
   var yx = SIMD.Float64x2.shuffle(a, b, 1, 0);
   var yy = SIMD.Float64x2.shuffle(a, b, 1, 3);
 
-  assertEquals(1.0, xx.x);
-  assertEquals(3.0, xx.y);
-  assertEquals(1.0, xy.x);
-  assertEquals(4.0, xy.y);
-  assertEquals(2.0, yx.x);
-  assertEquals(1.0, yx.y);
-  assertEquals(2.0, yy.x);
-  assertEquals(4.0, yy.y);
+  assertEquals(1.0, SIMD.Float64x2.extractLane(xx, 0));
+  assertEquals(3.0, SIMD.Float64x2.extractLane(xx, 1));
+  assertEquals(1.0, SIMD.Float64x2.extractLane(xy, 0));
+  assertEquals(4.0, SIMD.Float64x2.extractLane(xy, 1));
+  assertEquals(2.0, SIMD.Float64x2.extractLane(yx, 0));
+  assertEquals(1.0, SIMD.Float64x2.extractLane(yx, 1));
+  assertEquals(2.0, SIMD.Float64x2.extractLane(yy, 0));
+  assertEquals(4.0, SIMD.Float64x2.extractLane(yy, 1));
 }
 
 testSIMDShuffle();
@@ -297,17 +297,40 @@ function testSIMDSwizzle() {
   var xy = SIMD.Float64x2.swizzle(a, 0, 1);
   var yx = SIMD.Float64x2.swizzle(a, 1, 0);
   var yy = SIMD.Float64x2.swizzle(a, 1, 1);
-  assertEquals(1.0, xx.x);
-  assertEquals(1.0, xx.y);
-  assertEquals(1.0, xy.x);
-  assertEquals(2.0, xy.y);
-  assertEquals(2.0, yx.x);
-  assertEquals(1.0, yx.y);
-  assertEquals(2.0, yy.x);
-  assertEquals(2.0, yy.y);
+  assertEquals(1.0, SIMD.Float64x2.extractLane(xx, 0));
+  assertEquals(1.0, SIMD.Float64x2.extractLane(xx, 1));
+  assertEquals(1.0, SIMD.Float64x2.extractLane(xy, 0));
+  assertEquals(2.0, SIMD.Float64x2.extractLane(xy, 1));
+  assertEquals(2.0, SIMD.Float64x2.extractLane(yx, 0));
+  assertEquals(1.0, SIMD.Float64x2.extractLane(yx, 1));
+  assertEquals(2.0, SIMD.Float64x2.extractLane(yy, 0));
+  assertEquals(2.0, SIMD.Float64x2.extractLane(yy, 1));
 }
 
 testSIMDSwizzle();
 testSIMDSwizzle();
 %OptimizeFunctionOnNextCall(testSIMDSwizzle);
 testSIMDSwizzle();
+
+function testSIMDExtractLane() {
+  var m = SIMD.Float64x2(1.0, 2.0);
+  var x = SIMD.Float64x2.extractLane(m, 0);
+  var y = SIMD.Float64x2.extractLane(m ,1);
+
+  assertEquals(1.0, x);
+  assertEquals(2.0, y);
+}
+
+testSIMDExtractLane();
+
+
+function testSIMDReplaceLane() {
+  var m = SIMD.Float64x2(1.0, 2.0);
+  var a = SIMD.Float64x2.replaceLane(m, 0, 5.0);
+  var b = SIMD.Float64x2.replaceLane(m, 1, 6.0);
+
+  assertEquals(5.0, SIMD.Float64x2.extractLane(a, 0));
+  assertEquals(6.0, SIMD.Float64x2.extractLane(b, 1));
+}
+
+testSIMDReplaceLane();
