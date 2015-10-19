@@ -27,6 +27,7 @@
 
 // Flags: --simd-object --allow-natives-syntax
 
+
 function testConstructor() {
   var f4 = SIMD.Float32x4(1.0, 2.0, 3.0, 4.0);
   assertEquals(1.0, SIMD.Float32x4.extractLane(f4, 0));
@@ -753,3 +754,26 @@ testSIMDReplaceLane();
 testSIMDReplaceLane();
 %OptimizeFunctionOnNextCall(testSIMDReplaceLane);
 testSIMDReplaceLane();
+
+function testSIMDMaxNum() {
+  var m = SIMD.Float32x4(1.0, 2.0, 5.0, 6.0);
+  var n = SIMD.Float32x4(0.0, 4.0, 5.0, 7.0);
+  var m = SIMD.Float32x4.maxNum(m, n);
+  assertEquals(1.0, SIMD.Float32x4.extractLane(m, 0));
+  assertEquals(4.0, SIMD.Float32x4.extractLane(m, 1));
+  assertEquals(5.0, SIMD.Float32x4.extractLane(m, 2));
+  assertEquals(7.0, SIMD.Float32x4.extractLane(m, 3));
+}
+testSIMDMaxNum();
+
+
+function testSIMDMinNum() {
+  var m = SIMD.Float32x4(1.0, 2.0, 5.0, 6.0);
+  var n = SIMD.Float32x4(0.0, 4.0, 5.0, 7.0);
+  var m = SIMD.Float32x4.minNum(m, n);
+  assertEquals(1.0, SIMD.Float32x4.extractLane(m, 0));
+  assertEquals(2.0, SIMD.Float32x4.extractLane(m, 1));
+  assertEquals(5.0, SIMD.Float32x4.extractLane(m, 2));
+  assertEquals(6.0, SIMD.Float32x4.extractLane(m, 3));
+}
+testSIMDMaxNum();
