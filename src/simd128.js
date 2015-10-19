@@ -248,7 +248,9 @@ macro SIMD128_BINARY_FUNCTIONS(FUNCTION)
 FUNCTION(Float32x4, Add)
 FUNCTION(Float32x4, Div)
 FUNCTION(Float32x4, Max)
+FUNCTION(Float32x4, MaxNum)
 FUNCTION(Float32x4, Min)
+FUNCTION(Float32x4, MinNum)
 FUNCTION(Float32x4, Mul)
 FUNCTION(Float32x4, Sub)
 FUNCTION(Float32x4, Equal)
@@ -629,7 +631,9 @@ function SetUpSIMD() {
     "add", Float32x4AddJS,
     "div", Float32x4DivJS,
     "max", Float32x4MaxJS,
+    "maxNum", Float32x4MaxNumJS,
     "min", Float32x4MinJS,
+    "minNum", Float32x4MinNumJS,
     "mul", Float32x4MulJS,
     "sub", Float32x4SubJS,
     "lessThan", Float32x4LessThanJS,
