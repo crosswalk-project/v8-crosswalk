@@ -6587,7 +6587,9 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
     case kFloat32x4Mul:
     case kFloat32x4Div:
     case kFloat32x4Min:
-    case kFloat32x4Max: {
+    case kFloat32x4MinNum:
+    case kFloat32x4Max:
+    case kFloat32x4MaxNum: {
       DCHECK(instr->left()->Equals(instr->result()));
       DCHECK(instr->hydrogen()->left()->representation().IsFloat32x4());
       DCHECK(instr->hydrogen()->right()->representation().IsFloat32x4());
@@ -6607,9 +6609,11 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
           __ divps(left_reg, right_reg);
           break;
         case kFloat32x4Min:
+        case kFloat32x4MinNum:
           __ minps(left_reg, right_reg);
           break;
         case kFloat32x4Max:
+        case kFloat32x4MaxNum:
           __ maxps(left_reg, right_reg);
           break;
         default:

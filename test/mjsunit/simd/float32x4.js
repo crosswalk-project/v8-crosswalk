@@ -765,7 +765,9 @@ function testSIMDMaxNum() {
   assertEquals(7.0, SIMD.Float32x4.extractLane(m, 3));
 }
 testSIMDMaxNum();
-
+testSIMDMaxNum();
+%OptimizeFunctionOnNextCall(testSIMDMaxNum);
+testSIMDMaxNum();
 
 function testSIMDMinNum() {
   var m = SIMD.Float32x4(1.0, 2.0, 5.0, 6.0);
@@ -776,4 +778,7 @@ function testSIMDMinNum() {
   assertEquals(5.0, SIMD.Float32x4.extractLane(m, 2));
   assertEquals(6.0, SIMD.Float32x4.extractLane(m, 3));
 }
+testSIMDMaxNum();
+testSIMDMaxNum();
+%OptimizeFunctionOnNextCall(testSIMDMaxNum);
 testSIMDMaxNum();
