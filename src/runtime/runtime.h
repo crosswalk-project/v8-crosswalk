@@ -719,7 +719,9 @@ namespace internal {
   F(Float32x4Add, 2, 1)                        \
   F(Float32x4Div, 2, 1)                        \
   F(Float32x4Max, 2, 1)                        \
+  F(Float32x4MaxNum, 2, 1)                     \
   F(Float32x4Min, 2, 1)                        \
+  F(Float32x4MinNum, 2, 1)                     \
   F(Float32x4Mul, 2, 1)                        \
   F(Float32x4Sub, 2, 1)                        \
   F(Float32x4Equal, 2, 1)                      \
