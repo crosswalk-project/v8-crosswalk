@@ -1370,7 +1370,9 @@ LInstruction* LChunkBuilder::DoBinarySIMDOperation(
     case kFloat32x4Add:
     case kFloat32x4Div:
     case kFloat32x4Max:
+    case kFloat32x4MaxNum:
     case kFloat32x4Min:
+    case kFloat32x4MinNum:
     case kFloat32x4Mul:
     case kFloat32x4Sub:
     case kFloat32x4Scale:
