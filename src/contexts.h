@@ -82,7 +82,9 @@ enum BindingFlags {
   V(STRING_FUNCTION_PROTOTYPE_MAP_INDEX, Map, string_function_prototype_map)   \
   V(SYMBOL_FUNCTION_INDEX, JSFunction, symbol_function)                        \
   V(FLOAT32X4_FUNCTION_INDEX, JSFunction, float32x4_function)                  \
+  V(FLOAT64x2_FUNCTION_INDEX, JSFunction, float64x2_function)                  \
   V(INT32X4_FUNCTION_INDEX, JSFunction, int32x4_function)                      \
+  V(BOOL64x2_FUNCTION_INDEX, JSFunction, bool64x2_function)                    \
   V(BOOL32X4_FUNCTION_INDEX, JSFunction, bool32x4_function)                    \
   V(INT16X8_FUNCTION_INDEX, JSFunction, int16x8_function)                      \
   V(BOOL16X8_FUNCTION_INDEX, JSFunction, bool16x8_function)                    \

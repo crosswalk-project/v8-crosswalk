@@ -891,7 +891,9 @@ template <class C> inline bool Is(Object* obj);
   V(MutableHeapNumber)             \
   V(Simd128Value)                  \
   V(Float32x4)                     \
+  V(Float64x2)                     \
   V(Int32x4)                       \
+  V(Bool64x2)                      \
   V(Bool32x4)                      \
   V(Int16x8)                       \
   V(Bool16x8)                      \
@@ -1618,7 +1620,9 @@ class Simd128Value : public HeapObject {
 // V has parameters (TYPE, Type, type, lane count, lane type)
 #define SIMD128_TYPES(V)                       \
   V(FLOAT32X4, Float32x4, float32x4, 4, float) \
+  V(FLOAT64x2, Float64x2, float64x2, 2, double)\
   V(INT32X4, Int32x4, int32x4, 4, int32_t)     \
+  V(BOOL64x2, Bool64x2, bool64x2, 2, bool)     \
   V(BOOL32X4, Bool32x4, bool32x4, 4, bool)     \
   V(INT16X8, Int16x8, int16x8, 8, int16_t)     \
   V(BOOL16X8, Bool16x8, bool16x8, 8, bool)     \

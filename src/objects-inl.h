@@ -1593,6 +1593,7 @@ SIMD128_TYPES(SIMD128_VALUE_EQUALS)
   }
 
 SIMD128_NUMERIC_LANE_FNS(Float32x4, float, 4, FLOAT, kFloatSize)
+SIMD128_NUMERIC_LANE_FNS(Float64x2, double, 2, DOUBLE, kDoubleSize)
 SIMD128_NUMERIC_LANE_FNS(Int32x4, int32_t, 4, INT32, kInt32Size)
 SIMD128_NUMERIC_LANE_FNS(Int16x8, int16_t, 8, INT16, kShortSize)
 SIMD128_NUMERIC_LANE_FNS(Int8x16, int8_t, 16, INT8, kCharSize)
@@ -1614,6 +1615,7 @@ SIMD128_NUMERIC_LANE_FNS(Int8x16, int8_t, 16, INT8, kCharSize)
     SIMD128_WRITE_LANE(lane_count, field_type, field_size, int_val)       \
   }
 
+SIMD128_BOOLEAN_LANE_FNS(Bool64x2, int64_t, 2, INT64, kInt64Size)
 SIMD128_BOOLEAN_LANE_FNS(Bool32x4, int32_t, 4, INT32, kInt32Size)
 SIMD128_BOOLEAN_LANE_FNS(Bool16x8, int16_t, 8, INT16, kShortSize)
 SIMD128_BOOLEAN_LANE_FNS(Bool8x16, int8_t, 16, INT8, kCharSize)
@@ -3235,6 +3237,7 @@ void SeededNumberDictionary::set_requires_slow_elements() {
 
 CAST_ACCESSOR(AccessorInfo)
 CAST_ACCESSOR(ArrayList)
+CAST_ACCESSOR(Bool64x2)
 CAST_ACCESSOR(Bool16x8)
 CAST_ACCESSOR(Bool32x4)
 CAST_ACCESSOR(Bool8x16)
@@ -3257,6 +3260,7 @@ CAST_ACCESSOR(FixedArrayBase)
 CAST_ACCESSOR(FixedDoubleArray)
 CAST_ACCESSOR(FixedTypedArrayBase)
 CAST_ACCESSOR(Float32x4)
+CAST_ACCESSOR(Float64x2)
 CAST_ACCESSOR(Foreign)
 CAST_ACCESSOR(GlobalDictionary)
 CAST_ACCESSOR(GlobalObject)

@@ -44,8 +44,7 @@ function isValidSimdString(string, value, type, lanes) {
   return true;
 }
 
-
-var simdTypeNames = ['Float32x4', 'Int32x4', 'Bool32x4',
+var simdTypeNames = ['Float32x4', 'Float64x2', 'Int32x4', 'Bool64x2', 'Bool32x4',
                                   'Int16x8', 'Bool16x8',
                                   'Int8x16', 'Bool8x16'];
 
@@ -191,6 +190,14 @@ function TestCoercions(type, lanes) {
       test(-Number.MAX_VALUE, -Infinity);
       test(Number.MIN_VALUE, 0);
       break;
+    case 'Float64x2':
+      test(0, 0);
+      test(-0, -0);
+      test(NaN, NaN);
+      test(null, 0);
+      test(undefined, NaN);
+      test("5.25", 5.25);
+      break;
     case 'Int32x4':
       test(Infinity, 0);
       test(-Infinity, 0);
@@ -320,6 +327,7 @@ function TestEquality(type, lanes) {
 
   switch (type) {
     case 'Float32x4':
+    case 'Float64x2':
       test(1, 2.5);
       test(1, 1);
       test(0, 0);
@@ -371,6 +379,7 @@ function TestSameValue(type, lanes) {
 
   switch (type) {
     case 'Float32x4':
+    case 'Float64x2':
       test(1, 2.5);
       test(1, 1);
       test(0, 0);

@@ -735,6 +735,16 @@ bool Object::SameValue(Object* other) {
         if (std::signbit(x) != std::signbit(y)) return false;
       }
       return true;
+    } else if (IsFloat64x2() && other->IsFloat64x2()) {
+      Float64x2* a = Float64x2::cast(this);
+      Float64x2* b = Float64x2::cast(other);
+      for (int i = 0; i < 2; i++) {
+        double x = a->get_lane(i);
+        double y = b->get_lane(i);
+        if (x != y && !(std::isnan(x) && std::isnan(y))) return false;
+        if (std::signbit(x) != std::signbit(y)) return false;
+      }
+      return true;
     } else {
       Simd128Value* a = Simd128Value::cast(this);
       Simd128Value* b = Simd128Value::cast(other);
@@ -768,6 +778,18 @@ bool Object::SameValueZero(Object* other) {
       for (int i = 0; i < 4; i++) {
         float x = a->get_lane(i);
         float y = b->get_lane(i);
+        // Implements the ES6 SameValueZero operation for floating point types.
+        // http://www.ecma-international.org/ecma-262/6.0/#sec-samevaluezero
+        if (x != y && !(std::isnan(x) && std::isnan(y))) return false;
+        // SameValueZero doesn't distinguish between 0 and -0.
+      }
+      return true;
+    } else if (IsFloat64x2() && other->IsFloat64x2()) {
+      Float64x2* a = Float64x2::cast(this);
+      Float64x2* b = Float64x2::cast(other);
+      for (int i = 0; i < 2; i++) {
+        double x = a->get_lane(i);
+        double y = b->get_lane(i);
         // Implements the ES6 SameValueZero operation for floating point types.
         // http://www.ecma-international.org/ecma-262/6.0/#sec-samevaluezero
         if (x != y && !(std::isnan(x) && std::isnan(y))) return false;
