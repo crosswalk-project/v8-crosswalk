@@ -154,10 +154,10 @@ testComparisionOperators();
 function testLogicalOperators() {
   var a = SIMD.Float64x2.zero();
   var b = SIMD.Float64x2.splat(1);
-  assertEquals(1, (a && b).x);
-  assertEquals(1, (a && b).y);
-  assertEquals(0, (a || b).x);
-  assertEquals(0, (a || b).y);
+  assertEquals(1, SIMD.Float64x2.extractLane((a && b), 0));
+  assertEquals(1, SIMD.Float64x2.extractLane((a && b), 1));
+  assertEquals(0, SIMD.Float64x2.extractLane((a || b), 0));
+  assertEquals(0, SIMD.Float64x2.extractLane((a || b), 1));
   assertEquals(false, !a);
 }
 
