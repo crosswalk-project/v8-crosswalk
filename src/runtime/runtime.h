@@ -576,6 +576,14 @@ namespace internal {
   F(CreateBool16x8, 8, 1)                      \
   F(CreateInt8x16, 16, 1)                      \
   F(CreateBool8x16, 16, 1)                     \
+  F(Float32x4LoadX, 2, 1)                      \
+  F(Float32x4LoadXY, 2, 1)                     \
+  F(Float32x4LoadXYZ, 2, 1)                    \
+  F(Float32x4LoadXYZW, 2, 1)                   \
+  F(Float32x4StoreX, 3, 1)                     \
+  F(Float32x4StoreXY, 3, 1)                    \
+  F(Float32x4StoreXYZ, 3, 1)                   \
+  F(Float32x4StoreXYZW, 3, 1)                  \
   F(Float32x4Check, 1, 1)                      \
   F(Float32x4ExtractLane, 2, 1)                \
   F(Float32x4ReplaceLane, 3, 1)                \
@@ -605,6 +613,14 @@ namespace internal {
   F(Float32x4FromInt32x4Bits, 1, 1)            \
   F(Float32x4FromInt16x8Bits, 1, 1)            \
   F(Float32x4FromInt8x16Bits, 1, 1)            \
+  F(Int32x4LoadX, 2, 1)                        \
+  F(Int32x4LoadXY, 2, 1)                       \
+  F(Int32x4LoadXYZ, 2, 1)                      \
+  F(Int32x4LoadXYZW, 2, 1)                     \
+  F(Int32x4StoreX, 3, 1)                       \
+  F(Int32x4StoreXY, 3, 1)                      \
+  F(Int32x4StoreXYZ, 3, 1)                     \
+  F(Int32x4StoreXYZW, 3, 1)                    \
   F(Int32x4Check, 1, 1)                        \
   F(Int32x4ExtractLane, 2, 1)                  \
   F(Int32x4ReplaceLane, 3, 1)                  \
