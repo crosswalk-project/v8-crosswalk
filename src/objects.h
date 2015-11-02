@@ -6581,7 +6581,9 @@ class Script: public Struct {
   V(SIMD.Float32x4, add, Float32x4Add, Float32x4, Float32x4, Float32x4)        \
   V(SIMD.Float32x4, div, Float32x4Div, Float32x4, Float32x4, Float32x4)        \
   V(SIMD.Float32x4, max, Float32x4Max, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.Float32x4, maxNum, Float32x4MaxNum, Float32x4, Float32x4, Float32x4)  \
   V(SIMD.Float32x4, min, Float32x4Min, Float32x4, Float32x4, Float32x4)        \
+  V(SIMD.Float32x4, minNum, Float32x4MinNum, Float32x4, Float32x4, Float32x4)  \
   V(SIMD.Float32x4, mul, Float32x4Mul, Float32x4, Float32x4, Float32x4)        \
   V(SIMD.Float32x4, sub, Float32x4Sub, Float32x4, Float32x4, Float32x4)        \
   V(SIMD.Float32x4, equal, Float32x4Equal, Int32x4, Float32x4, Float32x4)      \

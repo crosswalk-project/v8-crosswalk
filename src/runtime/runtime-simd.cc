@@ -486,11 +486,23 @@ static inline T Xor(T a, T b) {
 }
 
 
+static inline float MaxNum(float a, float b) {
+  return Max(a, b);
+}
+
+
+static inline float MinNum(float a, float b) {
+  return Min(a, b);
+}
+
+
 #define SIMD128_BINARY_FUNCTIONS(V)                           \
   V(Float32x4, Add, Float32x4)                                \
   V(Float32x4, Div, Float32x4)                                \
   V(Float32x4, Max, Float32x4)                                \
+  V(Float32x4, MaxNum, Float32x4)                             \
   V(Float32x4, Min, Float32x4)                                \
+  V(Float32x4, MinNum, Float32x4)                             \
   V(Float32x4, Mul, Float32x4)                                \
   V(Float32x4, Sub, Float32x4)                                \
   V(Float32x4, Equal, Int32x4)                                \
