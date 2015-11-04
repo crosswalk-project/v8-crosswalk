@@ -46,7 +46,9 @@ namespace internal {
   V(Map, heap_number_map, HeapNumberMap)                                       \
   V(Map, mutable_heap_number_map, MutableHeapNumberMap)                        \
   V(Map, float32x4_map, Float32x4Map)                                          \
+  V(Map, float64x2_map, Float64x2Map)                                          \
   V(Map, int32x4_map, Int32x4Map)                                              \
+  V(Map, bool64x2_map, Bool64x2Map)                                            \
   V(Map, bool32x4_map, Bool32x4Map)                                            \
   V(Map, int16x8_map, Int16x8Map)                                              \
   V(Map, bool16x8_map, Bool16x8Map)                                            \
@@ -217,8 +219,12 @@ namespace internal {
   V(eval_string, "eval")                                       \
   V(float32x4_string, "float32x4")                             \
   V(Float32x4_string, "Float32x4")                             \
+  V(float64x2_string, "float64x2")                             \
+  V(Float64x2_string, "Float64x2")                             \
   V(int32x4_string, "int32x4")                                 \
   V(Int32x4_string, "Int32x4")                                 \
+  V(bool64x2_string, "bool64x2")                               \
+  V(Bool64x2_string, "Bool64x2")                               \
   V(bool32x4_string, "bool32x4")                               \
   V(Bool32x4_string, "Bool32x4")                               \
   V(int16x8_string, "int16x8")                                 \

@@ -958,7 +958,7 @@ RUNTIME_FUNCTION(Runtime_EstimateNumberOfElements) {
         ++holes;
       }
     }
-    int estimate = static_cast<int>((kNumberOfHoleCheckSamples - holes) /
+    int estimate = static_cast<int>((kNumberOfHoleCheckSamples - holes)/
                                     kNumberOfHoleCheckSamples * length);
     return Smi::FromInt(estimate);
   }

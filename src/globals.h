@@ -95,6 +95,16 @@ typedef byte* Address;
 // -----------------------------------------------------------------------------
 // Constants
 
+struct float32x4_value_t { float storage[4]; };
+struct float64x2_value_t { double storage[2]; };
+struct int32x4_value_t { int32_t storage[4]; };
+union simd128_value_t {
+  double d[2];
+  float32x4_value_t f4;
+  float64x2_value_t d2;
+  int32x4_value_t i4;
+};
+
 const int KB = 1024;
 const int MB = KB * KB;
 const int GB = KB * KB * KB;

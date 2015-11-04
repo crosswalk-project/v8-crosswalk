@@ -15,6 +15,7 @@ var GlobalSIMD = global.SIMD;
 
 macro SIMD_FLOAT_TYPES(FUNCTION)
 FUNCTION(Float32x4, float32x4, 4)
+FUNCTION(Float64x2, float64x2, 2)
 endmacro
 
 macro SIMD_INT_TYPES(FUNCTION)
@@ -24,6 +25,7 @@ FUNCTION(Int8x16, int8x16, 16)
 endmacro
 
 macro SIMD_BOOL_TYPES(FUNCTION)
+FUNCTION(Bool64x2, bool64x2, 2)
 FUNCTION(Bool32x4, bool32x4, 4)
 FUNCTION(Bool16x8, bool16x8, 8)
 FUNCTION(Bool8x16, bool8x16, 16)
@@ -227,6 +229,8 @@ SIMD_LOGICAL_TYPES(DECLARE_LOGICAL_FUNCTIONS)
 macro SIMD_FROM_TYPES(FUNCTION)
 FUNCTION(Float32x4, Int32x4)
 FUNCTION(Int32x4, Float32x4)
+FUNCTION(Float64x2, Int32x4)
+FUNCTION(Float64x2, Float32x4)
 endmacro
 
 macro DECLARE_FROM_FUNCTIONS(TO, FROM)
@@ -241,6 +245,8 @@ macro SIMD_FROM_BITS_TYPES(FUNCTION)
 FUNCTION(Float32x4, Int32x4)
 FUNCTION(Float32x4, Int16x8)
 FUNCTION(Float32x4, Int8x16)
+FUNCTION(Float64x2, Int32x4)
+FUNCTION(Float64x2, Float32x4)
 FUNCTION(Int32x4, Float32x4)
 FUNCTION(Int32x4, Int16x8)
 FUNCTION(Int32x4, Int8x16)
@@ -319,6 +325,61 @@ function Float32x4ShuffleJS(a, b, c0, c1, c2, c3) {
 }
 
 
+function Float64x2Constructor(c0, c1) {
+  if (%_IsConstructCall()) throw MakeTypeError(kNotConstructor, "Float64x2");
+  return %CreateFloat64x2(TO_NUMBER_INLINE(c0), TO_NUMBER_INLINE(c1));
+}
+
+
+function Float64x2Splat(s) {
+  return %CreateFloat64x2(s, s);
+}
+
+
+function Float64x2AbsJS(a) {
+  return %Float64x2Abs(a);
+}
+
+
+function Float64x2SqrtJS(a) {
+  return %Float64x2Sqrt(a);
+}
+
+
+function Float64x2RecipApproxJS(a) {
+  return %Float64x2RecipApprox(a);
+}
+
+
+function Float64x2RecipSqrtApproxJS(a) {
+  return %Float64x2RecipSqrtApprox(a);
+}
+
+
+function Float64x2DivJS(a, b) {
+  return %Float64x2Div(a, b);
+}
+
+
+function Float64x2MinNumJS(a, b) {
+  return %Float64x2MinNum(a, b);
+}
+
+
+function Float64x2MaxNumJS(a, b) {
+  return %Float64x2MaxNum(a, b);
+}
+
+
+function Float64x2SwizzleJS(a, c0, c1) {
+  return %Float64x2Swizzle(a, c0, c1);
+}
+
+
+function Float64x2ShuffleJS(a, b, c0, c1) {
+  return %Float64x2Shuffle(a, b, c0, c1);
+}
+
 function Int32x4Constructor(c0, c1, c2, c3) {
   if (%_IsConstructCall()) throw MakeTypeError(kNotConstructor, "Int32x4");
   return %CreateInt32x4(TO_NUMBER_INLINE(c0), TO_NUMBER_INLINE(c1),
@@ -340,6 +401,25 @@ function Int32x4ShuffleJS(a, b, c0, c1, c2, c3) {
   return %Int32x4Shuffle(a, b, c0, c1, c2, c3);
 }
 
+
+function Bool64x2Constructor(c0, c1) {
+  if (%_IsConstructCall()) throw MakeTypeError(kNotConstructor, "Bool64x2");
+  return %CreateBool64x2(c0, c1);
+}
+
+
+function Bool64x2Splat(s) {
+  return %CreateBool64x2(s, s);
+}
+
+function Bool64x2SwizzleJS(a, c0, c1) {
+  return %Bool64x2Swizzle(a, c0, c1);
+}
+
+
+function Bool64x2ShuffleJS(a, b, c0, c1) {
+  return %Bool64x2Shuffle(a, b, c0, c1);
+}
 
 function Bool32x4Constructor(c0, c1, c2, c3) {
   if (%_IsConstructCall()) throw MakeTypeError(kNotConstructor, "Bool32x4");
@@ -484,11 +564,40 @@ endmacro
 
 SIMD_ALL_TYPES(SETUP_SIMD_TYPE)
 
+macro DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(TYPE, LANES)
+function TYPELoadLANESJS(tarray, index) {
+  return tarray._getTYPELANES(index);
+}
+
+function TYPEStoreLANESJS(tarray, index, value) {
+  tarray._setTYPELANES(index, value);
+}
+endmacro
+
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float32x4, XYZW)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float32x4, XYZ)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float32x4, XY)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float32x4, X)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float64x2, XY)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Float64x2, X)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Int32x4, XYZW)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Int32x4, XYZ)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Int32x4, XY)
+DECLARE_SIMD_LOAD_AND_STORE_FUNCTION(Int32x4, X)
+
 //-------------------------------------------------------------------
 
 utils.InstallFunctions(GlobalFloat32x4, DONT_ENUM, [
   'splat', Float32x4Splat,
   'check', Float32x4CheckJS,
+  'load', Float32x4LoadXYZWJS,
+  'loadX', Float32x4LoadXJS,
+  'loadXY', Float32x4LoadXYJS,
+  'loadXYZ', Float32x4LoadXYZJS,
+  'store', Float32x4StoreXYZWJS,
+  'storeX', Float32x4StoreXJS,
+  'storeXY', Float32x4StoreXYJS,
+  'storeXYZ', Float32x4StoreXYZJS,
   'extractLane', Float32x4ExtractLaneJS,
   'replaceLane', Float32x4ReplaceLaneJS,
   'neg', Float32x4NegJS,
@@ -519,9 +628,54 @@ utils.InstallFunctions(GlobalFloat32x4, DONT_ENUM, [
   'fromInt8x16Bits', Float32x4FromInt8x16BitsJS,
 ]);
 
+utils.InstallFunctions(GlobalFloat64x2, DONT_ENUM, [
+  'splat', Float64x2Splat,
+  'check', Float64x2CheckJS,
+  'load', Float64x2LoadXYJS,
+  'loadX', Float64x2LoadXJS,
+  'store', Float64x2StoreXYJS,
+  'storeX', Float64x2StoreXJS,
+  'extractLane', Float64x2ExtractLaneJS,
+  'replaceLane', Float64x2ReplaceLaneJS,
+  'neg', Float64x2NegJS,
+  'abs', Float64x2AbsJS,
+  'sqrt', Float64x2SqrtJS,
+  'reciprocalApproximation', Float64x2RecipApproxJS,
+  'reciprocalSqrtApproximation', Float64x2RecipSqrtApproxJS,
+  'add', Float64x2AddJS,
+  'sub', Float64x2SubJS,
+  'mul', Float64x2MulJS,
+  'div', Float64x2DivJS,
+  'min', Float64x2MinJS,
+  'max', Float64x2MaxJS,
+  'minNum', Float64x2MinNumJS,
+  'maxNum', Float64x2MaxNumJS,
+  'lessThan', Float64x2LessThanJS,
+  'lessThanOrEqual', Float64x2LessThanOrEqualJS,
+  'greaterThan', Float64x2GreaterThanJS,
+  'greaterThanOrEqual', Float64x2GreaterThanOrEqualJS,
+  'equal', Float64x2EqualJS,
+  'notEqual', Float64x2NotEqualJS,
+  'select', Float64x2SelectJS,
+  'swizzle', Float64x2SwizzleJS,
+  'shuffle', Float64x2ShuffleJS,
+  'fromInt32x4', Float64x2FromInt32x4JS,
+  'fromInt32x4Bits', Float64x2FromInt32x4BitsJS,
+  'fromFloat32x4', Float64x2FromFloat32x4JS,
+  'fromFloat32x4Bits', Float64x2FromFloat32x4BitsJS,
+]);
+
 utils.InstallFunctions(GlobalInt32x4, DONT_ENUM, [
   'splat', Int32x4Splat,
   'check', Int32x4CheckJS,
+  'load', Int32x4LoadXYZWJS,
+  'loadX', Int32x4LoadXJS,
+  'loadXY', Int32x4LoadXYJS,
+  'loadXYZ', Int32x4LoadXYZJS,
+  'store', Int32x4StoreXYZWJS,
+  'storeX', Int32x4StoreXJS,
+  'storeXY', Int32x4StoreXYJS,
+  'storeXYZ', Int32x4StoreXYZJS,
   'extractLane', Int32x4ExtractLaneJS,
   'replaceLane', Int32x4ReplaceLaneJS,
   'neg', Int32x4NegJS,
@@ -550,6 +704,23 @@ utils.InstallFunctions(GlobalInt32x4, DONT_ENUM, [
   'fromFloat32x4Bits', Int32x4FromFloat32x4BitsJS,
   'fromInt16x8Bits', Int32x4FromInt16x8BitsJS,
   'fromInt8x16Bits', Int32x4FromInt8x16BitsJS,
+]);
+
+utils.InstallFunctions(GlobalBool64x2, DONT_ENUM, [
+  'splat', Bool64x2Splat,
+  'check', Bool64x2CheckJS,
+  'extractLane', Bool64x2ExtractLaneJS,
+  'replaceLane', Bool64x2ReplaceLaneJS,
+  'and', Bool64x2AndJS,
+  'or', Bool64x2OrJS,
+  'xor', Bool64x2XorJS,
+  'not', Bool64x2NotJS,
+  'anyTrue', Bool64x2AnyTrueJS,
+  'allTrue', Bool64x2AllTrueJS,
+  'equal', Bool64x2EqualJS,
+  'notEqual', Bool64x2NotEqualJS,
+  'swizzle', Bool64x2SwizzleJS,
+  'shuffle', Bool64x2ShuffleJS,
 ]);
 
 utils.InstallFunctions(GlobalBool32x4, DONT_ENUM, [
@@ -668,6 +839,129 @@ utils.InstallFunctions(GlobalBool8x16, DONT_ENUM, [
   'swizzle', Bool8x16SwizzleJS,
   'shuffle', Bool8x16ShuffleJS,
 ]);
+
+//------------------------------------------------------------------------------
+
+function TypedArrayGetToStringTag() {
+  if (!%_IsTypedArray(this)) return;
+  var name = %_ClassOf(this);
+  if (IS_UNDEFINED(name)) return;
+  return name;
+}
+
+
+// --------------------SIMD128 Access in Typed Array -----------------
+var Uint8Array = global.Uint8Array;
+var Int8Array = global.Int8Array;
+var Uint16Array = global.Uint16Array;
+var Int16Array = global.Int16Array;
+var Uint32Array = global.Uint32Array;
+var Int32Array = global.Int32Array;
+var Float32Array = global.Float32Array;
+var Float64Array = global.Float64Array;
+
+macro DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, TYPE, LANES, NBYTES)
+function VIEWGetTYPELANESJS(index) {
+  if (!(%_ClassOf(this) === 'VIEW')) {
+    throw MakeTypeError('incompatible_method_receiver',
+                        ["VIEW._getTYPELANES", this]);
+  }
+  var tarray = this;
+  if (%_ArgumentsLength() < 1) {
+    throw MakeTypeError('invalid_argument');
+  }
+  if (!IS_NUMBER(index)) {
+    throw MakeTypeError('The 2nd argument must be a Number.');
+  }
+  var offset = TO_INTEGER(index) * tarray.BYTES_PER_ELEMENT + tarray.byteOffset;
+  if (offset < tarray.byteOffset || (offset + NBYTES) > (tarray.byteLength + tarray.byteOffset))
+    throw MakeRangeError('The value of index is invalid.');
+  var arraybuffer = tarray.buffer;
+  return %TYPELoadLANES(arraybuffer, offset);
+}
+
+function VIEWSetTYPELANESJS(index, value) {
+
+  if (!(%_ClassOf(this) === 'VIEW')) {
+    throw MakeTypeError('incompatible_method_receiver',
+                        ["VIEW._setTYPELANES", this]);
+  }
+  var tarray = this;
+  if (%_ArgumentsLength() < 2) {
+    throw MakeTypeError('invalid_argument');
+  }
+  if (!IS_NUMBER(index)) {
+    throw MakeTypeError('The 2nd argument must be a Number.');
+  }
+
+  var offset = TO_INTEGER(index) * tarray.BYTES_PER_ELEMENT + tarray.byteOffset;
+  if (offset < tarray.byteOffset || (offset + NBYTES) > (tarray.byteLength + tarray.byteOffset))
+    throw MakeRangeError('The value of index is invalid.');
+  var arraybuffer = tarray.buffer;
+  %TYPEStoreLANES(arraybuffer, offset, value);
+
+}
+endmacro
+
+macro DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(VIEW)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Float32x4, XYZW, 16)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Float32x4, XYZ, 12)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Float32x4, XY, 8)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Float32x4, X, 4)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Float64x2, XY, 16)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Float64x2, X, 8)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Int32x4, XYZW, 16)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Int32x4, XYZ, 12)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Int32x4, XY, 8)
+DECLARE_TYPED_ARRAY_SIMD_LOAD_AND_STORE_FUNCTION(VIEW, Int32x4, X, 4)
+endmacro
+
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Uint8Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Int8Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Uint16Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Int16Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Uint32Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Int32Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Float32Array)
+DECLARE_VIEW_SIMD_LOAD_AND_STORE_FUNCTION(Float64Array)
+
+function SetupTypedArraysSimdLoadStore() {
+macro DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(VIEW)
+  utils.InstallFunctions(VIEW.prototype, DONT_ENUM, [
+      "_getFloat32x4X", VIEWGetFloat32x4XJS,
+      "_setFloat32x4X", VIEWSetFloat32x4XJS,
+      "_getFloat32x4XY", VIEWGetFloat32x4XYJS,
+      "_setFloat32x4XY", VIEWSetFloat32x4XYJS,
+      "_getFloat32x4XYZ", VIEWGetFloat32x4XYZJS,
+      "_setFloat32x4XYZ", VIEWSetFloat32x4XYZJS,
+      "_getFloat32x4XYZW", VIEWGetFloat32x4XYZWJS,
+      "_setFloat32x4XYZW", VIEWSetFloat32x4XYZWJS,
+      "_getFloat64x2X", VIEWGetFloat64x2XJS,
+      "_setFloat64x2X", VIEWSetFloat64x2XJS,
+      "_getFloat64x2XY", VIEWGetFloat64x2XYJS,
+      "_setFloat64x2XY", VIEWSetFloat64x2XYJS,
+      "_getInt32x4X", VIEWGetInt32x4XJS,
+      "_setInt32x4X", VIEWSetInt32x4XJS,
+      "_getInt32x4XY", VIEWGetInt32x4XYJS,
+      "_setInt32x4XY", VIEWSetInt32x4XYJS,
+      "_getInt32x4XYZ", VIEWGetInt32x4XYZJS,
+      "_setInt32x4XYZ", VIEWSetInt32x4XYZJS,
+      "_getInt32x4XYZW", VIEWGetInt32x4XYZWJS,
+      "_setInt32x4XYZW", VIEWSetInt32x4XYZWJS
+  ]);
+endmacro
+
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Uint8Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Int8Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Uint16Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Int16Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Uint32Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Int32Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Float32Array)
+DECLARE_INSTALL_SIMD_LOAD_AND_STORE_FUNCTION(Float64Array)
+}
+
+SetupTypedArraysSimdLoadStore();
 
 utils.Export(function(to) {
   to.Float32x4ToString = Float32x4ToString;
