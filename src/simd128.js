@@ -62,32 +62,40 @@ SIMD128_DATA_TYPES(DECLARE_DATA_TYPE_COMMON_FUNCTION)
 
 function StringfyFloat32x4JS() {
   CheckFloat32x4(this);
-  return "Float32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
+  var value = %_ValueOf(this);
+  var str = "Float32x4(";
+  str += %Float32x4ExtractLane(value, 0);
+  for (var i = 1; i < 4; i++) {
+  str += "," + %Float32x4ExtractLane(value, i);
+  }
+  return str + ")";
 }
 
 function StringfyFloat64x2JS() {
   CheckFloat64x2(this);
-  return "Float64x2(" + this.x + "," + this.y + ")";
+  var value = %_ValueOf(this);
+  var str = "Float64x2(";
+  str += %Float64x2ExtractLane(value, 0);
+  for (var i = 1; i < 2; i++) {
+  str += "," + %Float64x2ExtractLane(value, i);
+  }
+  return str + ")";
 }
 
 function StringfyInt32x4JS() {
   CheckInt32x4(this);
-  return "Int32x4(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
+  var value = %_ValueOf(this);
+  var str = "Int32x4(";
+  str += %Int32x4ExtractLane(value, 0);
+  for (var i = 1; i < 4; i++) {
+  str += "," + %Int32x4ExtractLane(value, i);
+  }
+  return str + ")";
 }
 
 macro SIMD128_DATA_TYPE_FUNCTIONS(FUNCTION)
-FUNCTION(Float32x4, GetX)
-FUNCTION(Float32x4, GetY)
-FUNCTION(Float32x4, GetZ)
-FUNCTION(Float32x4, GetW)
 FUNCTION(Float32x4, GetSignMask)
-FUNCTION(Float64x2, GetX)
-FUNCTION(Float64x2, GetY)
 FUNCTION(Float64x2, GetSignMask)
-FUNCTION(Int32x4, GetX)
-FUNCTION(Int32x4, GetY)
-FUNCTION(Int32x4, GetZ)
-FUNCTION(Int32x4, GetW)
 FUNCTION(Int32x4, GetFlagX)
 FUNCTION(Int32x4, GetFlagY)
 FUNCTION(Int32x4, GetFlagZ)
@@ -114,7 +122,16 @@ function Float32x4Constructor(x, y, z, w) {
 
 function Float32x4CheckJS(v) {
   CheckFloat32x4(v);
-  return %CreateFloat32x4(v.x, v.y, v.z, v.w);
+  var value = %_ValueOf(v);
+  var x = %Float32x4ExtractLane(value, 0);
+  var y = %Float32x4ExtractLane(value, 1);
+  var z = %Float32x4ExtractLane(value, 2);
+  var w = %Float32x4ExtractLane(value, 3);
+  x = TO_NUMBER_INLINE(x);
+  y = TO_NUMBER_INLINE(y);
+  z = TO_NUMBER_INLINE(z);
+  w = TO_NUMBER_INLINE(w);
+  return %CreateFloat32x4(x, y, z, w);
 }
 
 function Float64x2Constructor(x, y) {
@@ -125,7 +142,12 @@ function Float64x2Constructor(x, y) {
 
 function Float64x2CheckJS(v) {
   CheckFloat64x2(v);
-  return %CreateFloat64x2(v.x, v.y);
+  var value = %_ValueOf(v);
+  var x = %Float64x2ExtractLane(value, 0);
+  var y = %Float64x2ExtractLane(value, 1);
+  x = TO_NUMBER_INLINE(x);
+  y = TO_NUMBER_INLINE(y);
+  return %CreateFloat64x2(x, y);
 }
 
 function Int32x4Constructor(x, y, z, w) {
@@ -138,7 +160,16 @@ function Int32x4Constructor(x, y, z, w) {
 
 function Int32x4CheckJS(v) {
   CheckInt32x4(v);
-  return %CreateInt32x4(v.x, v.y, v.z, v.w);
+  var value = %_ValueOf(v);
+  var x = %Int32x4ExtractLane(value, 0);
+  var y = %Int32x4ExtractLane(value, 1);
+  var z = %Int32x4ExtractLane(value, 2);
+  var w = %Int32x4ExtractLane(value, 3);
+  x = TO_NUMBER_INLINE(x);
+  y = TO_NUMBER_INLINE(y);
+  z = TO_NUMBER_INLINE(z);
+  w = TO_NUMBER_INLINE(w);
+  return %CreateInt32x4(x, y, z, w);
 }
 
 function SetUpFloat32x4() {
@@ -148,10 +179,6 @@ function SetUpFloat32x4() {
   %AddNamedProperty($Float32x4.prototype, "constructor", $Float32x4, DONT_ENUM);
 
 
-  utils.InstallGetter($Float32x4.prototype, "x", Float32x4GetXJS);
-  utils.InstallGetter($Float32x4.prototype, "y", Float32x4GetYJS);
-  utils.InstallGetter($Float32x4.prototype, "z", Float32x4GetZJS);
-  utils.InstallGetter($Float32x4.prototype, "w", Float32x4GetWJS);
   utils.InstallGetter($Float32x4.prototype, "signMask", Float32x4GetSignMaskJS);
   utils.InstallFunctions($Float32x4.prototype, DONT_ENUM, [
     "toString", StringfyFloat32x4JS
@@ -164,8 +191,6 @@ function SetUpFloat64x2() {
   %FunctionSetPrototype($Float64x2, new GlobalObject());
   %AddNamedProperty($Float64x2.prototype, "constructor", $Float64x2, DONT_ENUM);
 
-  utils.InstallGetter($Float64x2.prototype, "x", Float64x2GetXJS);
-  utils.InstallGetter($Float64x2.prototype, "y", Float64x2GetYJS);
   utils.InstallGetter($Float64x2.prototype, "signMask", Float64x2GetSignMaskJS);
   utils.InstallFunctions($Float64x2.prototype, DONT_ENUM, [
     "toString", StringfyFloat64x2JS
@@ -178,10 +203,6 @@ function SetUpInt32x4() {
   %FunctionSetPrototype($Int32x4, new GlobalObject());
   %AddNamedProperty($Int32x4.prototype, "constructor", $Int32x4, DONT_ENUM);
 
-  utils.InstallGetter($Int32x4.prototype, "x", Int32x4GetXJS);
-  utils.InstallGetter($Int32x4.prototype, "y", Int32x4GetYJS);
-  utils.InstallGetter($Int32x4.prototype, "z", Int32x4GetZJS);
-  utils.InstallGetter($Int32x4.prototype, "w", Int32x4GetWJS);
   utils.InstallGetter($Int32x4.prototype, "flagX", Int32x4GetFlagXJS);
   utils.InstallGetter($Int32x4.prototype, "flagY", Int32x4GetFlagYJS);
   utils.InstallGetter($Int32x4.prototype, "flagZ", Int32x4GetFlagZJS);
@@ -227,7 +248,9 @@ macro SIMD128_BINARY_FUNCTIONS(FUNCTION)
 FUNCTION(Float32x4, Add)
 FUNCTION(Float32x4, Div)
 FUNCTION(Float32x4, Max)
+FUNCTION(Float32x4, MaxNum)
 FUNCTION(Float32x4, Min)
+FUNCTION(Float32x4, MinNum)
 FUNCTION(Float32x4, Mul)
 FUNCTION(Float32x4, Sub)
 FUNCTION(Float32x4, Equal)
@@ -253,6 +276,18 @@ FUNCTION(Int32x4, GreaterThan)
 FUNCTION(Int32x4, LessThan)
 endmacro
 
+macro SIMD128_BINARY_EXTRACTLANE(FUNCTION)
+FUNCTION(Float32x4, ExtractLane, 4)
+FUNCTION(Float64x2, ExtractLane, 2)
+FUNCTION(Int32x4, ExtractLane, 4)
+endmacro
+
+macro SIMD128_BINARY_REPLACELANE(FUNCTION)
+FUNCTION(Float32x4, ReplaceLane, 4)
+FUNCTION(Float64x2, ReplaceLane, 2)
+FUNCTION(Int32x4, ReplaceLane, 4)
+endmacro
+
 macro SIMD128_SHUFFLE_FUNCTIONS(FUNCTION)
 FUNCTION(Float32x4)
 FUNCTION(Int32x4)
@@ -260,23 +295,10 @@ endmacro
 
 macro FLOAT32x4_BINARY_FUNCTIONS_WITH_FLOAT32_PARAMETER(FUNCTION)
 FUNCTION(Scale)
-FUNCTION(WithX)
-FUNCTION(WithY)
-FUNCTION(WithZ)
-FUNCTION(WithW)
 endmacro
 
 macro FLOAT64x2_BINARY_FUNCTIONS_WITH_FLOAT64_PARAMETER(FUNCTION)
 FUNCTION(Scale)
-FUNCTION(WithX)
-FUNCTION(WithY)
-endmacro
-
-macro INT32x4_BINARY_FUNCTIONS_WITH_INT32_PARAMETER(FUNCTION)
-FUNCTION(WithX)
-FUNCTION(WithY)
-FUNCTION(WithZ)
-FUNCTION(WithW)
 endmacro
 
 macro INT32x4_BINARY_FUNCTIONS_WITH_BOOLEAN_PARAMETER(FUNCTION)
@@ -298,6 +320,26 @@ function TYPEFUNCTIONJS(a4, b4) {
   CheckTYPE(a4);
   CheckTYPE(b4);
   return %TYPEFUNCTION(a4, b4);
+}
+endmacro
+
+macro DECLARE_SIMD_BINARY_EXTRACTLANE(TYPE, FUNCTION, LANES_COUNT)
+function TYPEFUNCTIONJS(a, lane) {
+  CheckTYPE(a);
+  if ((lane < 0) || ((lane) > (LANES_COUNT - 1))) {
+    throw MakeRangeError("invalid_extractLane");
+  }
+  return %TYPEFUNCTION(a, lane);
+}
+endmacro
+
+macro DECLARE_SIMD_BINARY_REPLACELANE(TYPE, FUNCTION, LANES_COUNT)
+function TYPEFUNCTIONJS(instance, lane, value) {
+  CheckTYPE(instance);
+  if ((lane < 0) || (lane > (LANES_COUNT-1))) {
+    throw MakeRangeError("invalid_replaceLane");
+  }
+  return %TYPEFUNCTION(instance, lane, value);
 }
 endmacro
 
@@ -373,14 +415,6 @@ function Float64x2FUNCTIONJS(x2, f) {
 }
 endmacro
 
-macro DECLARE_INT32x4_BINARY_FUNCTION_WITH_INT32_PARAMETER(FUNCTION)
-function Int32x4FUNCTIONJS(x4, i) {
-  CheckInt32x4(x4);
-  i = TO_INT32(i);
-  return %Int32x4FUNCTION(x4, i);
-}
-endmacro
-
 macro DECLARE_INT32x4_BINARY_FUNCTION_WITH_BOOLEAN_PARAMETER(FUNCTION)
 function Int32x4FUNCTIONJS(x4, b) {
   CheckInt32x4(x4);
@@ -391,10 +425,11 @@ endmacro
 
 SIMD128_UNARY_FUNCTIONS(DECLARE_SIMD_UNARY_FUNCTION)
 SIMD128_BINARY_FUNCTIONS(DECLARE_SIMD_BINARY_FUNCTION)
+SIMD128_BINARY_EXTRACTLANE(DECLARE_SIMD_BINARY_EXTRACTLANE)
+SIMD128_BINARY_REPLACELANE(DECLARE_SIMD_BINARY_REPLACELANE)
 SIMD128_SHUFFLE_FUNCTIONS(DECLARE_SIMD_SHUFFLE_FUNCTION)
 FLOAT32x4_BINARY_FUNCTIONS_WITH_FLOAT32_PARAMETER(DECLARE_FLOAT32x4_BINARY_FUNCTION_WITH_FLOAT32_PARAMETER)
 FLOAT64x2_BINARY_FUNCTIONS_WITH_FLOAT64_PARAMETER(DECLARE_FLOAT64x2_BINARY_FUNCTION_WITH_FLOAT64_PARAMETER)
-INT32x4_BINARY_FUNCTIONS_WITH_INT32_PARAMETER(DECLARE_INT32x4_BINARY_FUNCTION_WITH_INT32_PARAMETER)
 INT32x4_BINARY_FUNCTIONS_WITH_BOOLEAN_PARAMETER(DECLARE_INT32x4_BINARY_FUNCTION_WITH_BOOLEAN_PARAMETER)
 
 function NotImplementedJS() {
@@ -499,31 +534,46 @@ function Int32x4SelectJS(x4, trueValue, falseValue) {
 
 function Int32x4ShiftLeftByScalarJS(t, s) {
   CheckInt32x4(t);
+  var value = %_ValueOf(t);
+  var x = %Int32x4ExtractLane(value, 0);
+  var y = %Int32x4ExtractLane(value, 1);
+  var z = %Int32x4ExtractLane(value, 2);
+  var w = %Int32x4ExtractLane(value, 3);
   s = TO_NUMBER_INLINE(s);
-  var x = t.x << s;
-  var y = t.y << s;
-  var z = t.z << s;
-  var w = t.w << s;
+  x = TO_NUMBER_INLINE(x) << s;
+  y = TO_NUMBER_INLINE(y) << s;
+  z = TO_NUMBER_INLINE(z) << s;
+  w = TO_NUMBER_INLINE(w) << s;
   return %CreateInt32x4(x, y, z, w);
 }
 
 function Int32x4ShiftRightLogicalByScalarJS(t, s) {
   CheckInt32x4(t);
+  var value = %_ValueOf(t);
+  var x = %Int32x4ExtractLane(value, 0);
+  var y = %Int32x4ExtractLane(value, 1);
+  var z = %Int32x4ExtractLane(value, 2);
+  var w = %Int32x4ExtractLane(value, 3);
   s = TO_NUMBER_INLINE(s);
-  var x = t.x >>> s;
-  var y = t.y >>> s;
-  var z = t.z >>> s;
-  var w = t.w >>> s;
+  x = TO_NUMBER_INLINE(x) >>> s;
+  y = TO_NUMBER_INLINE(y) >>> s;
+  z = TO_NUMBER_INLINE(z) >>> s;
+  w = TO_NUMBER_INLINE(w) >>> s;
   return %CreateInt32x4(x, y, z, w);
 }
 
 function Int32x4ShiftRightArithmeticByScalarJS(t, s) {
   CheckInt32x4(t);
+  var value = %_ValueOf(t);
+  var x = %Int32x4ExtractLane(value, 0);
+  var y = %Int32x4ExtractLane(value, 1);
+  var z = %Int32x4ExtractLane(value, 2);
+  var w = %Int32x4ExtractLane(value, 3);
   s = TO_NUMBER_INLINE(s);
-  var x = t.x >> s;
-  var y = t.y >> s;
-  var z = t.z >> s;
-  var w = t.w >> s;
+  x = TO_NUMBER_INLINE(x) >> s;
+  y = TO_NUMBER_INLINE(y) >> s;
+  z = TO_NUMBER_INLINE(z) >> s;
+  w = TO_NUMBER_INLINE(w) >> s;
   return %CreateInt32x4(x, y, z, w);
 }
 
@@ -581,7 +631,9 @@ function SetUpSIMD() {
     "add", Float32x4AddJS,
     "div", Float32x4DivJS,
     "max", Float32x4MaxJS,
+    "maxNum", Float32x4MaxNumJS,
     "min", Float32x4MinJS,
+    "minNum", Float32x4MinNumJS,
     "mul", Float32x4MulJS,
     "sub", Float32x4SubJS,
     "lessThan", Float32x4LessThanJS,
@@ -595,13 +647,11 @@ function SetUpSIMD() {
     "xor", Float32x4XorJS,
     "not", Float32x4NotJS,
     "scale", Float32x4ScaleJS,
-    "withX", Float32x4WithXJS,
-    "withY", Float32x4WithYJS,
-    "withZ", Float32x4WithZJS,
-    "withW", Float32x4WithWJS,
+    "extractLane", Float32x4ExtractLaneJS,
     // Ternary
     "clamp", Float32x4ClampJS,
     "select", Float32x4SelectJS,
+    "replaceLane", Float32x4ReplaceLaneJS,
      // Quinary
     "swizzle", Float32x4SwizzleJS,
     // Senary
@@ -634,11 +684,11 @@ function SetUpSIMD() {
     "mul", Float64x2MulJS,
     "sub", Float64x2SubJS,
     "scale", Float64x2ScaleJS,
-    "withX", Float64x2WithXJS,
-    "withY", Float64x2WithYJS,
+    "extractLane", Float64x2ExtractLaneJS,
     // Ternary
     "clamp", Float64x2ClampJS,
     "swizzle", Float64x2SwizzleJS,
+    "replaceLane", Float64x2ReplaceLaneJS,
     //Quarternary
     "shuffle", Float64x2ShuffleJS
   ]);
@@ -672,14 +722,11 @@ function SetUpSIMD() {
     "or", Int32x4OrJS,
     "sub", Int32x4SubJS,
     "xor", Int32x4XorJS,
-    "withX", Int32x4WithXJS,
-    "withY", Int32x4WithYJS,
-    "withZ", Int32x4WithZJS,
-    "withW", Int32x4WithWJS,
     "withFlagX", Int32x4WithFlagXJS,
     "withFlagY", Int32x4WithFlagYJS,
     "withFlagZ", Int32x4WithFlagZJS,
     "withFlagW", Int32x4WithFlagWJS,
+    "extractLane", Int32x4ExtractLaneJS,
     "greaterThan", Int32x4GreaterThanJS,
     "equal", Int32x4EqualJS,
     "lessThan", Int32x4LessThanJS,
@@ -688,6 +735,7 @@ function SetUpSIMD() {
     "shiftRightArithmeticByScalar", Int32x4ShiftRightArithmeticByScalarJS,
     // Ternary
     "select", Int32x4SelectJS,
+    "replaceLane", Int32x4ReplaceLaneJS,
     // Quinary
     "swizzle", Int32x4SwizzleJS,
     // Senary

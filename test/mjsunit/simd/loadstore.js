@@ -36,20 +36,20 @@ function testFloat32x4LoadAndStore() {
   var v2 = SIMD.Float32x4.load(f32_array, 4);
   var v3 = SIMD.Float32x4.load(f32_array, 8);
 
-  assertEquals(1.0, v1.x);
-  assertEquals(2.0, v1.y);
-  assertEquals(3.0, v1.z);
-  assertEquals(4.0, v1.w);
+  assertEquals(1.0, SIMD.Float32x4.extractLane(v1, 0));
+  assertEquals(2.0, SIMD.Float32x4.extractLane(v1, 1));
+  assertEquals(3.0, SIMD.Float32x4.extractLane(v1, 2));
+  assertEquals(4.0, SIMD.Float32x4.extractLane(v1, 3));
 
-  assertEquals(5.0, v2.x);
-  assertEquals(6.0, v2.y);
-  assertEquals(7.0, v2.z);
-  assertEquals(8.0, v2.w);
+  assertEquals(5.0, SIMD.Float32x4.extractLane(v2, 0));
+  assertEquals(6.0, SIMD.Float32x4.extractLane(v2, 1));
+  assertEquals(7.0, SIMD.Float32x4.extractLane(v2, 2));
+  assertEquals(8.0, SIMD.Float32x4.extractLane(v2, 3));
 
-  assertEquals(9.0, v3.x);
-  assertEquals(10.0, v3.y);
-  assertEquals(11.0, v3.z);
-  assertEquals(12.0, v3.w);
+  assertEquals(9.0, SIMD.Float32x4.extractLane(v3, 0));
+  assertEquals(10.0, SIMD.Float32x4.extractLane(v3, 1));
+  assertEquals(11.0, SIMD.Float32x4.extractLane(v3, 2));
+  assertEquals(12.0, SIMD.Float32x4.extractLane(v3, 3));
 
   SIMD.Float32x4.store(f32_array, 0, SIMD.Float32x4(12.0, 11.0, 10.0, 9.0));
   SIMD.Float32x4.store(f32_array, 4, SIMD.Float32x4(8.0, 7.0, 6.0, 5.0));
@@ -72,10 +72,10 @@ function testFloat32x4LoadXAndStoreX() {
   for (var i = 0; i < 12; ++i) {
     var v = SIMD.Float32x4.loadX(f32_array, i);
 
-    assertEquals(1.0 + i, v.x);
-    assertEquals(0.0, v.y);
-    assertEquals(0.0, v.z);
-    assertEquals(0.0, v.w);
+    assertEquals(1.0 + i, SIMD.Float32x4.extractLane(v, 0));
+    assertEquals(0.0, SIMD.Float32x4.extractLane(v, 1));
+    assertEquals(0.0, SIMD.Float32x4.extractLane(v, 2));
+    assertEquals(0.0, SIMD.Float32x4.extractLane(v, 3));
   }
 
   for (var i = 0; i < 12; ++i) {
@@ -99,10 +99,10 @@ function testFloat32x4LoadXYAndStoreXY() {
   for (var i = 0; i < 12; i += 2) {
     var v = SIMD.Float32x4.loadXY(f32_array, i);
 
-    assertEquals(1.0 + i, v.x);
-    assertEquals(2.0 + i, v.y);
-    assertEquals(0.0, v.z);
-    assertEquals(0.0, v.w);
+    assertEquals(1.0 + i, SIMD.Float32x4.extractLane(v, 0));
+    assertEquals(2.0 + i, SIMD.Float32x4.extractLane(v, 1));
+    assertEquals(0.0, SIMD.Float32x4.extractLane(v, 2));
+    assertEquals(0.0, SIMD.Float32x4.extractLane(v, 3));
   }
 
   for (var i = 0; i < 12; i += 2) {
@@ -126,10 +126,10 @@ function testFloat32x4LoadXYZAndStoreXYZ() {
   for (var i = 0; i < 12; i += 3) {
     var v = SIMD.Float32x4.loadXYZ(f32_array, i);
 
-    assertEquals(1.0 + i, v.x);
-    assertEquals(2.0 + i, v.y);
-    assertEquals(3.0 + i, v.z);
-    assertEquals(0.0, v.w);
+    assertEquals(1.0 + i, SIMD.Float32x4.extractLane(v, 0));
+    assertEquals(2.0 + i, SIMD.Float32x4.extractLane(v, 1));
+    assertEquals(3.0 + i, SIMD.Float32x4.extractLane(v, 2));
+    assertEquals(0.0, SIMD.Float32x4.extractLane(v, 3));
   }
 
   for (var i = 0; i < 12; i += 3) {
@@ -156,20 +156,20 @@ function testFloat32x4LoadAndStoreFromInt8Array() {
   var v2 = SIMD.Float32x4.load(i8_array, 16);
   var v3 = SIMD.Float32x4.load(i8_array, 32);
 
-  assertEquals(1.0, v1.x);
-  assertEquals(2.0, v1.y);
-  assertEquals(3.0, v1.z);
-  assertEquals(4.0, v1.w);
+  assertEquals(1.0, SIMD.Float32x4.extractLane(v1, 0));
+  assertEquals(2.0, SIMD.Float32x4.extractLane(v1, 1));
+  assertEquals(3.0, SIMD.Float32x4.extractLane(v1, 2));
+  assertEquals(4.0, SIMD.Float32x4.extractLane(v1, 3));
 
-  assertEquals(5.0, v2.x);
-  assertEquals(6.0, v2.y);
-  assertEquals(7.0, v2.z);
-  assertEquals(8.0, v2.w);
+  assertEquals(5.0, SIMD.Float32x4.extractLane(v2, 0));
+  assertEquals(6.0, SIMD.Float32x4.extractLane(v2, 1));
+  assertEquals(7.0, SIMD.Float32x4.extractLane(v2, 2));
+  assertEquals(8.0, SIMD.Float32x4.extractLane(v2, 3));
 
-  assertEquals(9.0, v3.x);
-  assertEquals(10.0, v3.y);
-  assertEquals(11.0, v3.z);
-  assertEquals(12.0, v3.w);
+  assertEquals(9.0, SIMD.Float32x4.extractLane(v3, 0));
+  assertEquals(10.0, SIMD.Float32x4.extractLane(v3, 1));
+  assertEquals(11.0, SIMD.Float32x4.extractLane(v3, 2));
+  assertEquals(12.0, SIMD.Float32x4.extractLane(v3, 3));
 
   SIMD.Float32x4.store(i8_array, 0, SIMD.Float32x4(12.0, 11.0, 10.0, 9.0));
   SIMD.Float32x4.store(i8_array, 16, SIMD.Float32x4(8.0, 7.0, 6.0, 5.0));
@@ -193,14 +193,14 @@ function testFloat64x2LoadAndStore() {
   var v2 = SIMD.Float64x2.load(f64_array, 2);
   var v3 = SIMD.Float64x2.load(f64_array, 4);
 
-  assertEquals(1.0, v1.x);
-  assertEquals(2.0, v1.y);
+  assertEquals(1.0, SIMD.Float64x2.extractLane(v1, 0));
+  assertEquals(2.0, SIMD.Float64x2.extractLane(v1, 1));
 
-  assertEquals(3.0, v2.x);
-  assertEquals(4.0, v2.y);
+  assertEquals(3.0, SIMD.Float64x2.extractLane(v2, 0));
+  assertEquals(4.0, SIMD.Float64x2.extractLane(v2, 1));
 
-  assertEquals(5.0, v3.x);
-  assertEquals(6.0, v3.y);
+  assertEquals(5.0, SIMD.Float64x2.extractLane(v3, 0));
+  assertEquals(6.0, SIMD.Float64x2.extractLane(v3, 1));
 
   SIMD.Float64x2.store(f64_array, 0, SIMD.Float64x2(6.0, 5.0));
   SIMD.Float64x2.store(f64_array, 2, SIMD.Float64x2(4.0, 3.0));
@@ -224,20 +224,20 @@ function testInt32x4LoadAndStore() {
   var v2 = SIMD.Int32x4.load(i32_array, 4);
   var v3 = SIMD.Int32x4.load(i32_array, 8);
 
-  assertEquals(1, v1.x);
-  assertEquals(2, v1.y);
-  assertEquals(3, v1.z);
-  assertEquals(4, v1.w);
+  assertEquals(1, SIMD.Int32x4.extractLane(v1, 0));
+  assertEquals(2, SIMD.Int32x4.extractLane(v1, 1));
+  assertEquals(3, SIMD.Int32x4.extractLane(v1, 2));
+  assertEquals(4, SIMD.Int32x4.extractLane(v1, 3));
 
-  assertEquals(5, v2.x);
-  assertEquals(6, v2.y);
-  assertEquals(7, v2.z);
-  assertEquals(8, v2.w);
+  assertEquals(5, SIMD.Int32x4.extractLane(v2, 0));
+  assertEquals(6, SIMD.Int32x4.extractLane(v2, 1));
+  assertEquals(7, SIMD.Int32x4.extractLane(v2, 2));
+  assertEquals(8, SIMD.Int32x4.extractLane(v2, 3));
 
-  assertEquals(9, v3.x);
-  assertEquals(10, v3.y);
-  assertEquals(11, v3.z);
-  assertEquals(12, v3.w);
+  assertEquals(9, SIMD.Int32x4.extractLane(v3, 0));
+  assertEquals(10, SIMD.Int32x4.extractLane(v3, 1));
+  assertEquals(11, SIMD.Int32x4.extractLane(v3, 2));
+  assertEquals(12, SIMD.Int32x4.extractLane(v3, 3));
 
   SIMD.Int32x4.store(i32_array, 0, SIMD.Int32x4(12, 11, 10, 9));
   SIMD.Int32x4.store(i32_array, 4, SIMD.Int32x4(8, 7, 6, 5));
