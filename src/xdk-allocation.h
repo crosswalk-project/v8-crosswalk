@@ -8,7 +8,7 @@
 #include <map>
 #include <string>
 #include "src/base/platform/time.h"
-#include "src/heap-snapshot-generator-inl.h"
+#include "src/profiler/heap-snapshot-generator-inl.h"
 
 namespace v8 {
 namespace internal {

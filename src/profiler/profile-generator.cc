@@ -677,9 +677,7 @@ void ProfileGenerator::RecordTickSample(const TickSample& sample) {
            *stack_end = stack_pos + sample.frames_count;
          stack_pos != stack_end;
          ++stack_pos) {
-      Address start = NULL;
-
-      stackentry->entry = code_map_.FindEntry(*stack_pos, &start);
+      stackentry->entry = code_map_.FindEntry(*stack_pos);
 
       // Skip unresolved frames (e.g. internal frame) and get source lines for
       // each entry. Save source line (src_line) of the first JS caller
