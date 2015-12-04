@@ -5,7 +5,7 @@
 #include "src/v8.h"
 
 #include "src/frames-inl.h"
-#include "src/strings-storage.h"
+#include "src/profiler/strings-storage.h"
 #include "src/xdk-utils.h"
 
 namespace v8 {
