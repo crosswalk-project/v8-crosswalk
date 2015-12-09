@@ -185,6 +185,8 @@ class HeapEventXDK {
   DISALLOW_COPY_AND_ASSIGN(HeapEventXDK);
 };
 
-} }  // namespace v8::internal
+}  // namespace internal
+}  // namespace v8
+
 
 #endif  // V8_XDK_ALLOCATION_H_
