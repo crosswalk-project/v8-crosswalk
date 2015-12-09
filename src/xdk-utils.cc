@@ -667,4 +667,5 @@ std::string References::serialize() const {
 }
 
 
-} }  // namespace v8::internal
+}  // namespace internal
+}  // namespace v8
