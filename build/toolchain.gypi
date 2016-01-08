@@ -1207,14 +1207,28 @@
             ],
           }],
           ['OS=="android"', {
-            'cflags!': [
-              '-O3',
-              '-Os',
-            ],
-            'cflags': [
-              '-fdata-sections',
-              '-ffunction-sections',
-              '-O2',
+            'conditions': [
+              ['use_optimize_for_size_compile_option==1', {
+                'cflags!': [
+                  '-O3',
+                  '-O2',
+                ],
+                'cflags': [
+                  '-fdata-sections',
+                  '-ffunction-sections',
+                  '-Os',
+                ],
+              }, {
+                'cflags!': [
+                  '-O3',
+                  '-Os',
+                ],
+                'cflags': [
+                  '-fdata-sections',
+                  '-ffunction-sections',
+                  '-O2',
+                ],
+              }],
             ],
           }],
           ['OS=="mac"', {
