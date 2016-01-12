@@ -9,7 +9,7 @@
 
 #include "src/xdk-allocation.h"
 
-#include "frames-inl.h"
+#include "src/frames-inl.h"
 #include "src/xdk-utils.h"
 
 namespace v8 {
@@ -573,6 +573,6 @@ void XDKSnapshotFiller::SetNamedAutoIndexReference(HeapGraphEdge::Type type,
                                 HeapEntry* child_entry) {
 }
 
+}  // namespace internal
 
-}
-}  // namespace v8::internal
+}  // namespace v8
