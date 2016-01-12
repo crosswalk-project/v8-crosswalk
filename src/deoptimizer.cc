@@ -3053,10 +3053,10 @@ TranslatedValue TranslatedState::CreateNextTranslatedValue(
 #endif
         }
       }
-      if (opcode == Translation::FLOAT32x4_STACK_SLOT) {
+      if (opcode == Translation::FLOAT32x4_REGISTER) {
         float32x4_value_t x4 = value.f4;
         return TranslatedValue::NewFloat32x4(this, x4);
-      } else if (opcode == Translation::BOOL32x4_STACK_SLOT) {
+      } else if (opcode == Translation::BOOL32x4_REGISTER) {
         bool32x4_value_t x4 = value.b4;
         return TranslatedValue::NewBool32x4(this, x4);
       } else {
