@@ -3025,20 +3025,20 @@ TranslatedValue TranslatedState::CreateNextTranslatedValue(
           PrintF(trace_file,
                  "float32x4(%e, %e, %e, %e) ; %s\n",
                  x4.storage[0], x4.storage[1], x4.storage[2], x4.storage[3],
-#if V8_TARGET_ARCH_ARM
-                 "QwNeonRegister hasn't no toString");
-#else
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
                  SIMD128Register::from_code(input_reg).ToString());
+#else
+                 "Target hasn't no method toString()");
 #endif
         } else if (opcode == Translation::BOOL32x4_REGISTER) {
           bool32x4_value_t x4 = value.b4;
           PrintF(trace_file,
                  "bool32x4(%u, %u, %u, %u) ; %s\n",
                  x4.storage[0], x4.storage[1], x4.storage[2], x4.storage[3],
-#if V8_TARGET_ARCH_ARM
-                 "QwNeonRegister hasn't no toString");
-#else
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
                  SIMD128Register::from_code(input_reg).ToString());
+#else
+                 "Target hasn't no method toString()");
 #endif
         } else {
           DCHECK(opcode == Translation::INT32x4_REGISTER);
@@ -3046,10 +3046,10 @@ TranslatedValue TranslatedState::CreateNextTranslatedValue(
           PrintF(trace_file,
                  "int32x4(%u, %u, %u, %u) ; %s\n",
                  x4.storage[0], x4.storage[1], x4.storage[2], x4.storage[3],
-#if V8_TARGET_ARCH_ARM
-                 "QwNeonRegister hasn't no toString");
-#else
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
                  SIMD128Register::from_code(input_reg).ToString());
+#else
+                 "Target hasn't no method toString()");
 #endif
         }
       }
