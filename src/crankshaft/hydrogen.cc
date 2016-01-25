@@ -13807,25 +13807,25 @@ void HTracer::TraceLiveRange(LiveRange* range, const char* type,
         trace_.Add(" \"%s\"",
                    DoubleRegister::from_code(assigned_reg).ToString());
       } else if (op->IsFloat32x4Register()) {
-#if V8_TARGET_ARCH_ARM
-        trace_.Add(" \"%s\"", "QwNeonRegister hasn't no toString");
-#else
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
         trace_.Add(" \"%s\"",
                    SIMD128Register::from_code(assigned_reg).ToString());
+#else
+        trace_.Add(" \"%s\"", "target hasn't no method toString()");
 #endif
       } else if (op->IsBool32x4Register()) {
-#if V8_TARGET_ARCH_ARM
-        trace_.Add(" \"%s\"", "QwNeonRegister hasn't no toString");
-#else
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
         trace_.Add(" \"%s\"",
                    SIMD128Register::from_code(assigned_reg).ToString());
+#else
+        trace_.Add(" \"%s\"", "target hasn't no method toString()");
 #endif
       } else if (op->IsInt32x4Register()) {
-#if V8_TARGET_ARCH_ARM
-        trace_.Add(" \"%s\"", "QwNeonRegister hasn't no toString");
-#else
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
         trace_.Add(" \"%s\"",
                    SIMD128Register::from_code(assigned_reg).ToString());
+#else
+        trace_.Add(" \"%s\"", "target hasn't no method toString()");
 #endif
       } else {
         DCHECK(op->IsRegister());
