@@ -261,6 +261,17 @@ struct SIMD128Register {
     UNIMPLEMENTED();
     return NULL;
   }
+
+  static SIMD128Register from_code(int code) {
+    UNIMPLEMENTED();
+    SIMD128Register result = {-1};
+    return result;
+  }
+  int code() const {
+    UNIMPLEMENTED();
+    return -1;
+  }
+  int code_;
 };
 
 

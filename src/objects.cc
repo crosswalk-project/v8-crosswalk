@@ -13192,11 +13192,11 @@ void DeoptimizationInputData::DeoptimizationInputDataPrint(
 
         case Translation::FLOAT32x4_REGISTER: {
           int reg_code = iterator.Next();
-#ifdef V8_TARGET_ARCH_ARM
-          os << "{input=" << reg_code << "on QwNeonRegister"
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+          os << "{input=" << SIMD128Register::from_code(reg_code).ToString()
              << "}";
 #else
-          os << "{input=" << SIMD128Register::from_code(reg_code).ToString()
+          os << "{input=" << reg_code << "on other target"
              << "}";
 #endif
           break;
@@ -13204,11 +13204,11 @@ void DeoptimizationInputData::DeoptimizationInputDataPrint(
 
         case Translation::BOOL32x4_REGISTER: {
           int reg_code = iterator.Next();
-#ifdef V8_TARGET_ARCH_ARM
-          os << "{input=" << reg_code << "on QwNeonRegister"
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
+          os << "{input=" << SIMD128Register::from_code(reg_code).ToString()
              << "}";
 #else
-          os << "{input=" << SIMD128Register::from_code(reg_code).ToString()
+          os << "{input=" << reg_code << "on ther target"
              << "}";
 #endif
           break;
@@ -13216,14 +13216,13 @@ void DeoptimizationInputData::DeoptimizationInputDataPrint(
 
         case Translation::INT32x4_REGISTER: {
           int reg_code = iterator.Next();
-#ifdef V8_TARGET_ARCH_ARM
-          os << "{input=" << reg_code << "on QwNeonRegister"
-             << "}";
-#else
+#if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
           os << "{input=" << SIMD128Register::from_code(reg_code).ToString()
              << "}";
+#else
+          os << "{input=" << reg_code << "on other target"
+             << "}";
 #endif
-
           break;
         }
 
