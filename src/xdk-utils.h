@@ -275,5 +275,6 @@ class References {
 };
 
 
-} }  // namespace v8::internal
+}  // namespace internal
+}  // namespace v8
 #endif  // __xdk_utils_h__
