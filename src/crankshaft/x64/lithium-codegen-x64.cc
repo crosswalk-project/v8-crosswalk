@@ -4306,11 +4306,11 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
       return;
     }
     case kInt32x4Select: {
-      DCHECK(instr->hydrogen()->first()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->first()->representation().IsBool32x4());
       DCHECK(instr->hydrogen()->second()->representation().IsInt32x4());
       DCHECK(instr->hydrogen()->third()->representation().IsInt32x4());
 
-      XMMRegister mask_reg = ToInt32x4Register(instr->first());
+      XMMRegister mask_reg = ToBool32x4Register(instr->first());
       XMMRegister left_reg = ToInt32x4Register(instr->second());
       XMMRegister right_reg = ToInt32x4Register(instr->third());
       XMMRegister result_reg = ToInt32x4Register(instr->result());
@@ -4481,20 +4481,52 @@ void LCodeGen::DoQuarternarySIMDOperation(LQuarternarySIMDOperation* instr) {
       return;
     }
     case kBool32x4Constructor: {
-      DCHECK(instr->hydrogen()->x()->representation().IsInteger32());
-      DCHECK(instr->hydrogen()->y()->representation().IsInteger32());
-      DCHECK(instr->hydrogen()->z()->representation().IsInteger32());
-      DCHECK(instr->hydrogen()->w()->representation().IsInteger32());
+      DCHECK(instr->hydrogen()->x()->representation().IsTagged());
+      DCHECK(instr->hydrogen()->y()->representation().IsTagged());
+      DCHECK(instr->hydrogen()->z()->representation().IsTagged());
+      DCHECK(instr->hydrogen()->w()->representation().IsTagged());
+      DCHECK(instr->hydrogen()->x()->type().IsBoolean());
+      DCHECK(instr->hydrogen()->y()->type().IsBoolean());
+      DCHECK(instr->hydrogen()->z()->type().IsBoolean());
+      DCHECK(instr->hydrogen()->w()->type().IsBoolean());
+
       Register x_reg = ToRegister(instr->x());
       Register y_reg = ToRegister(instr->y());
       Register z_reg = ToRegister(instr->z());
       Register w_reg = ToRegister(instr->w());
       XMMRegister result_reg = ToBool32x4Register(instr->result());
+
+      Immediate neg(-1);
+      Label done_x, done_y, done_z, done_w;
+
+      __ xorps(result_reg, result_reg);
       __ subq(rsp, Immediate(kBool32x4Size));
-      __ movl(Operand(rsp, 0 * kBool32Size), x_reg);
-      __ movl(Operand(rsp, 1 * kBool32Size), y_reg);
-      __ movl(Operand(rsp, 2 * kBool32Size), z_reg);
-      __ movl(Operand(rsp, 3 * kBool32Size), w_reg);
+      __ movups(Operand(rsp, 0 * kBool32Size), result_reg);
+
+      __ CompareRoot(x_reg, Heap::kTrueValueRootIndex);
+      __ j(not_equal, &done_x, Label::kNear);
+      __ movl(Operand(rsp, 0 * kBool32Size), neg);
+      __ jmp(&done_x, Label::kNear);
+      __ bind(&done_x);
+
+      __ CompareRoot(y_reg, Heap::kTrueValueRootIndex);
+      __ j(not_equal, &done_y, Label::kNear);
+      __ movl(Operand(rsp, 1 * kBool32Size), neg);
+      __ jmp(&done_y, Label::kNear);
+      __ bind(&done_y);
+
+      __ CompareRoot(z_reg, Heap::kTrueValueRootIndex);
+      __ j(not_equal, &done_z, Label::kNear);
+      __ movl(Operand(rsp, 2 * kBool32Size), neg);
+      __ jmp(&done_z, Label::kNear);
+      __ bind(&done_z);
+
+      __ CompareRoot(w_reg, Heap::kTrueValueRootIndex);
+      __ j(not_equal, &done_w, Label::kNear);
+      __ movl(Operand(rsp, 3 * kBool32Size), neg);
+      __ jmp(&done_w, Label::kNear);
+      __ bind(&done_w);
+
       __ movups(result_reg, Operand(rsp, 0 * kBool32Size));
       __ addq(rsp, Immediate(kBool32x4Size));
       return;
@@ -6077,7 +6109,7 @@ void LCodeGen::HandleTaggedToSIMD128(LTaggedToSIMD128* instr) {
 
   __ testp(input_reg, Immediate(kSmiTagMask));
   DeoptimizeIf(zero, instr, Deoptimizer::kSmi);
-  __ CmpObjectType(input_reg, I, kScratchRegister);
+  __ CmpObjectType(input_reg, SIMD128_VALUE_TYPE, kScratchRegister);
   DeoptimizeIf(not_equal, instr, Deoptimizer::kNotASIMD128);
 
   // Load value to SIMD register.
