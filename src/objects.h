@@ -6742,13 +6742,13 @@ class Script: public Struct {
   V(SIMD.Bool32x4, extractLane, Bool32x4ExtractLane, Tagged, Bool32x4,         \
     Integer32)
 
-#define SIMD_TERNARY_OPERATIONS(V)                                           \
-  V(SIMD.Float32x4, select, Float32x4Select, Float32x4, Int32x4, Float32x4,  \
-    Float32x4)                                                               \
-  V(SIMD.Int32x4, select, Int32x4Select, Int32x4, Int32x4, Int32x4, Int32x4) \
-  V(SIMD.Float32x4, replaceLane, Float32x4ReplaceLane, Float32x4, Float32x4, \
-    Integer32, Double)                                                       \
-  V(SIMD.Int32x4, replaceLane, Int32x4ReplaceLane, Int32x4, Int32x4,         \
+#define SIMD_TERNARY_OPERATIONS(V)                                            \
+  V(SIMD.Float32x4, select, Float32x4Select, Float32x4, Int32x4, Float32x4,   \
+    Float32x4)                                                                \
+  V(SIMD.Int32x4, select, Int32x4Select, Int32x4, Bool32x4, Int32x4, Int32x4) \
+  V(SIMD.Float32x4, replaceLane, Float32x4ReplaceLane, Float32x4, Float32x4,  \
+    Integer32, Double)                                                        \
+  V(SIMD.Int32x4, replaceLane, Int32x4ReplaceLane, Int32x4, Int32x4,          \
     Integer32, Integer32)
 
 #define SIMD_QUARTERNARY_OPERATIONS(V)                                        \
@@ -6756,8 +6756,8 @@ class Script: public Struct {
     Double)                                                                   \
   V(SIMD, Int32x4, Int32x4Constructor, Int32x4, Integer32, Integer32,         \
     Integer32, Integer32)                                                     \
-  V(SIMD, Bool32x4, Bool32x4Constructor, Bool32x4, Integer32, Integer32,      \
-    Integer32, Integer32)
+  V(SIMD, Bool32x4, Bool32x4Constructor, Bool32x4, Tagged, Tagged, Tagged,    \
+    Tagged)
 
 #define SIMD_QUINARY_OPERATIONS(V)                                      \
   V(SIMD.Float32x4, swizzle, Float32x4Swizzle, Float32x4, Float32x4,    \
