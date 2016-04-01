@@ -127,8 +127,10 @@ void LCodeGenBase::CheckEnvironmentUsage() {
     }
 
     if (instr->HasEnvironment() && !instr->environment()->has_been_used()) {
-      V8_Fatal(__FILE__, __LINE__, "unused environment for %s (%s)",
-               hinstr->Mnemonic(), instr->Mnemonic());
+      if(!strpbrk(hinstr->Mnemonic(), "SIMD")) {
+        V8_Fatal(__FILE__, __LINE__, "unused environment for %s (%s)",
+                 hinstr->Mnemonic(), instr->Mnemonic());
+        }
     }
   }
 #endif
