@@ -3927,7 +3927,8 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
   uint8_t imm8 = 0;  // for with operation
   switch (instr->op()) {
     case kFloat32x4ExtractLane: {
-      DCHECK_EXTRACTLANE(Float32x4)
+      DCHECK_EXTRACTLANE(Float32x4);
+      Condition cc = never;
       if (instr->hydrogen()->right()->IsConstant() &&
           HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
         uint32_t right = ToInteger32(LConstantOperand::cast(instr->right()));
@@ -3944,15 +3945,16 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
           __ pshufd(xmm_scratch, left_reg, imm8);
           __ cvtss2sd(result, xmm_scratch);
         }
-        return;
       } else {
+        cc = no_condition;
         Comment(";;; deoptimize: non-constant selector for extractLane");
-        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
-        return;
       }
+      DeoptimizeIf(cc, instr, Deoptimizer::kForcedDeoptToRuntime);
+      return;
     }
     case kInt32x4ExtractLane: {
       DCHECK_EXTRACTLANE(Int32x4);
+      Condition cc = never;
       if (instr->hydrogen()->right()->IsConstant() &&
           HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
         uint32_t right = ToInteger32(LConstantOperand::cast(instr->right()));
@@ -3972,15 +3974,16 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
             __ movd(result, xmm_scratch);
           }
         }
-        return;
       } else {
         Comment(";;; deoptimize: non-constant selector for extractLane");
-        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
-        return;
+        cc = no_condition;
       }
+      DeoptimizeIf(cc, instr, Deoptimizer::kForcedDeoptToRuntime);
+      return;
     }
     case kBool32x4ExtractLane: {
       DCHECK_EXTRACTLANE(Bool32x4);
+      Condition cc = never;
       if (instr->hydrogen()->right()->IsConstant() &&
           HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
         uint32_t right = ToInteger32(LConstantOperand::cast(instr->right()));
@@ -4000,12 +4003,12 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
             __ movd(result, xmm_scratch);
           }
         }
-        return;
       } else {
         Comment(";;; deoptimize: non-constant selector for extractLane");
-        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
-        return;
+        cc = no_condition;
       }
+      DeoptimizeIf(cc, instr, Deoptimizer::kForcedDeoptToRuntime);
+      return;
     }
     case kFloat32x4Add:
     case kFloat32x4Sub:
@@ -4046,34 +4049,36 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
     case kFloat32x4Shuffle: {
       DCHECK(instr->left()->Equals(instr->result()));
       DCHECK(instr->hydrogen()->left()->representation().IsFloat32x4());
+      Condition cc = never;
       if (instr->hydrogen()->right()->IsConstant() &&
           HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
         int32_t value = ToInteger32(LConstantOperand::cast(instr->right()));
         uint8_t select = static_cast<uint8_t>(value & 0xFF);
         XMMRegister left_reg = ToFloat32x4Register(instr->left());
         __ shufps(left_reg, left_reg, select);
-        return;
       } else {
         Comment(";;; deoptimize: non-constant selector for shuffle");
-        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
-        return;
+        cc = no_condition;
       }
+      DeoptimizeIf(cc, instr, Deoptimizer::kForcedDeoptToRuntime);
+      return;
     }
     case kInt32x4Shuffle: {
       DCHECK(instr->left()->Equals(instr->result()));
       DCHECK(instr->hydrogen()->left()->representation().IsInt32x4());
+      Condition cc = never;
       if (instr->hydrogen()->right()->IsConstant() &&
           HConstant::cast(instr->hydrogen()->right())->HasInteger32Value()) {
         int32_t value = ToInteger32(LConstantOperand::cast(instr->right()));
         uint8_t select = static_cast<uint8_t>(value & 0xFF);
         XMMRegister left_reg = ToInt32x4Register(instr->left());
         __ pshufd(left_reg, left_reg, select);
-        return;
       } else {
         Comment(";;; deoptimize: non-constant selector for shuffle");
-        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
-        return;
+        cc = no_condition;
       }
+      DeoptimizeIf(cc, instr, Deoptimizer::kForcedDeoptToRuntime);
+      return;
     }
     case kInt32x4ShiftLeft:
     case kInt32x4ShiftRightArithmetic: {
@@ -4350,6 +4355,7 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
       DCHECK(instr->hydrogen()->first()->representation().IsFloat32x4());
       DCHECK(instr->hydrogen()->second()->representation().IsInteger32());
       DCHECK(instr->hydrogen()->third()->representation().IsDouble());
+      Condition cc = never;
       if (instr->hydrogen()->second()->IsConstant() &&
           HConstant::cast(instr->hydrogen()->second())->HasInteger32Value()) {
         int32_t x = ToInteger32(LConstantOperand::cast(instr->second()));
@@ -4380,18 +4386,19 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
           __ movups(result_reg, Operand(rsp, 0));
           __ addq(rsp, Immediate(kFloat32x4Size));
         }
-        return;
       } else {
         Comment(";;; deoptimize: non-constant selector for replacetLane");
-        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
-        return;
+        cc = no_condition;
       }
+      DeoptimizeIf(cc, instr, Deoptimizer::kForcedDeoptToRuntime);
+      return;
     }
     case kInt32x4ReplaceLane: {
       DCHECK(instr->first()->Equals(instr->result()));
       DCHECK(instr->hydrogen()->first()->representation().IsInt32x4());
       DCHECK(instr->hydrogen()->second()->representation().IsInteger32());
       DCHECK(instr->hydrogen()->third()->representation().IsInteger32());
+      Condition cc = never;
       if (instr->hydrogen()->second()->IsConstant() &&
           HConstant::cast(instr->hydrogen()->second())->HasInteger32Value()) {
         int32_t x = ToInteger32(LConstantOperand::cast(instr->second()));
@@ -4418,12 +4425,12 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
           __ movdqu(result_reg, Operand(rsp, 0));
           __ addq(rsp, Immediate(kInt32x4Size));
         }
-        return;
       } else {
         Comment(";;; deoptimize: non-constant selector for replacetLane");
-        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
-        return;
+        cc = no_condition;
       }
+      DeoptimizeIf(cc, instr, Deoptimizer::kForcedDeoptToRuntime);
+      return;
     }
     default:
       UNREACHABLE();
@@ -4517,6 +4524,7 @@ void LCodeGen::DoQuinarySIMDOperation(LQuinarySIMDOperation* instr) {
     case kFloat32x4Swizzle: {
       DCHECK(instr->a0()->Equals(instr->result()));
       DCHECK(instr->hydrogen()->a0()->representation().IsFloat32x4());
+      Condition cc = never;
       if ((instr->hydrogen()->a1()->IsConstant() &&
            HConstant::cast(instr->hydrogen()->a1())->HasInteger32Value()) &&
           (instr->hydrogen()->a2()->IsConstant() &&
@@ -4532,16 +4540,17 @@ void LCodeGen::DoQuinarySIMDOperation(LQuinarySIMDOperation* instr) {
         uint8_t select = ComputeShuffleSelect(x, y, z, w);
         XMMRegister left_reg = ToFloat32x4Register(instr->a0());
         __ shufps(left_reg, left_reg, select);
-        return;
       } else {
         Comment(";;; deoptimize: non-constant selector for swizzle");
-        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
-        return;
+        cc = no_condition;
       }
+      DeoptimizeIf(cc, instr, Deoptimizer::kForcedDeoptToRuntime);
+      return;
     }
     case kInt32x4Swizzle: {
       DCHECK(instr->a0()->Equals(instr->result()));
       DCHECK(instr->hydrogen()->a0()->representation().IsInt32x4());
+      Condition cc = never;
       if ((instr->hydrogen()->a1()->IsConstant() &&
            HConstant::cast(instr->hydrogen()->a1())->HasInteger32Value()) &&
           (instr->hydrogen()->a2()->IsConstant() &&
@@ -4557,12 +4566,12 @@ void LCodeGen::DoQuinarySIMDOperation(LQuinarySIMDOperation* instr) {
         uint8_t select = ComputeShuffleSelect(x, y, z, w);
         XMMRegister left_reg = ToInt32x4Register(instr->a0());
         __ pshufd(left_reg, left_reg, select);
-        return;
       } else {
         Comment(";;; deoptimize: non-constant selector for shuffle");
-        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
-        return;
+        cc = no_condition;
       }
+      DeoptimizeIf(cc, instr, Deoptimizer::kForcedDeoptToRuntime);
+      return;
     }
     default:
       UNREACHABLE();
@@ -4574,6 +4583,7 @@ void LCodeGen::DoSenarySIMDOperation(LSenarySIMDOperation* instr) {
   switch (instr->op()) {
     case kFloat32x4Shuffle:
     case kInt32x4Shuffle: {
+      Condition cc = never;
       DCHECK(instr->a0()->Equals(instr->result()));
       if (instr->op() == kFloat32x4Shuffle) {
         DCHECK(instr->hydrogen()->a0()->representation().IsFloat32x4());
@@ -4609,7 +4619,6 @@ void LCodeGen::DoSenarySIMDOperation(LSenarySIMDOperation* instr) {
         if (num_lanes_from_lhs == 4) {
           uint8_t select = ComputeShuffleSelect(x, y, z, w);
           __ shufps(lhs, lhs, select);
-          return;
         } else if (num_lanes_from_lhs == 0) {
           x -= 4;
           y -= 4;
@@ -4618,7 +4627,6 @@ void LCodeGen::DoSenarySIMDOperation(LSenarySIMDOperation* instr) {
           uint8_t select = ComputeShuffleSelect(x, y, z, w);
           __ movaps(lhs, rhs);
           __ shufps(lhs, lhs, select);
-          return;
         } else if (num_lanes_from_lhs == 3) {
           uint8_t first_select = 0xFF;
           uint8_t second_select = 0xFF;
@@ -4641,47 +4649,43 @@ void LCodeGen::DoSenarySIMDOperation(LSenarySIMDOperation* instr) {
             __ movaps(temp, rhs);
             __ shufps(temp, lhs, first_select);
             __ shufps(lhs, temp, second_select);
-            return;
           }
 
           DCHECK(z < 4 && w < 4);
+          if (z < 4 && w < 4) {
+            if (y >= 4) {
+              y -= 4;
+              // T = (Ry Ry Lx Lx) = shufps(firstMask, lhs, rhs)
+              first_select = ComputeShuffleSelect(y, y, x, x);
+              // (Lx Ry Lz Lw) = (Tz Tx Lz Lw) = shufps(secondMask, lhs, T)
+              second_select = ComputeShuffleSelect(2, 0, z, w);
+            } else {
+              DCHECK(x >= 4);
+              x -= 4;
+              // T = (Rx Rx Ly Ly) = shufps(firstMask, lhs, rhs)
+              first_select = ComputeShuffleSelect(x, x, y, y);
+              // (Rx Ly Lz Lw) = (Tx Tz Lz Lw) = shufps(secondMask, lhs, T)
+              second_select = ComputeShuffleSelect(0, 2, z, w);
+            }
 
-          if (y >= 4) {
-            y -= 4;
-            // T = (Ry Ry Lx Lx) = shufps(firstMask, lhs, rhs)
-            first_select = ComputeShuffleSelect(y, y, x, x);
-            // (Lx Ry Lz Lw) = (Tz Tx Lz Lw) = shufps(secondMask, lhs, T)
-            second_select = ComputeShuffleSelect(2, 0, z, w);
-          } else {
-            DCHECK(x >= 4);
-            x -= 4;
-            // T = (Rx Rx Ly Ly) = shufps(firstMask, lhs, rhs)
-            first_select = ComputeShuffleSelect(x, x, y, y);
-            // (Rx Ly Lz Lw) = (Tx Tz Lz Lw) = shufps(secondMask, lhs, T)
-            second_select = ComputeShuffleSelect(0, 2, z, w);
+            __ movaps(temp, rhs);
+            __ shufps(temp, lhs, first_select);
+            __ shufps(temp, lhs, second_select);
+            __ movaps(lhs, temp);
           }
-
-          __ movaps(temp, rhs);
-          __ shufps(temp, lhs, first_select);
-          __ shufps(temp, lhs, second_select);
-          __ movaps(lhs, temp);
-          return;
         } else if (num_lanes_from_lhs == 2) {
           if (x < 4 && y < 4) {
             uint8_t select = ComputeShuffleSelect(x, y, z % 4, w % 4);
             __ shufps(lhs, rhs, select);
-            return;
           } else if (z < 4 && w < 4) {
             uint8_t select = ComputeShuffleSelect(x % 4, y % 4, z, w);
             __ movaps(temp, rhs);
             __ shufps(temp, lhs, select);
             __ movaps(lhs, temp);
-            return;
-          }
-
-          // In two shufps, for the most generic case:
-          uint8_t first_select[4], second_select[4];
-          uint32_t i = 0, j = 2, k = 0;
+          } else {
+            // In two shufps, for the most generic case:
+            uint8_t first_select[4], second_select[4];
+            uint32_t i = 0, j = 2, k = 0;
 
 #define COMPUTE_SELECT(lane)    \
   if (lane >= 4) {              \
@@ -4708,13 +4712,14 @@ void LCodeGen::DoSenarySIMDOperation(LSenarySIMDOperation* instr) {
           select = ComputeShuffleSelect(second_select[0], second_select[1],
                                         second_select[2], second_select[3]);
           __ shufps(lhs, lhs, select);
+          }
         }
-        return;
       } else {
         Comment(";;; deoptimize: non-constant selector for shuffle");
-        DeoptimizeIf(no_condition, instr, Deoptimizer::kForcedDeoptToRuntime);
-        return;
+        cc = no_condition;
       }
+      DeoptimizeIf(cc, instr, Deoptimizer::kForcedDeoptToRuntime);
+      return;
     }
 
     default:
