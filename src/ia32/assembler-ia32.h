@@ -207,7 +207,7 @@ enum Condition {
   greater_equal = 13,
   less_equal    = 14,
   greater       = 15,
-
+  never         = 17,
   // aliases
   carry         = below,
   not_carry     = above_equal,
