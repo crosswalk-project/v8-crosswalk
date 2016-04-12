@@ -189,32 +189,32 @@ typedef DoubleRegister SIMD128Register;
 
 enum Condition {
   // any value < 0 is considered no_condition
-  no_condition  = -1,
+  no_condition = -1,
 
-  overflow      =  0,
-  no_overflow   =  1,
-  below         =  2,
-  above_equal   =  3,
-  equal         =  4,
-  not_equal     =  5,
-  below_equal   =  6,
-  above         =  7,
-  negative      =  8,
-  positive      =  9,
-  parity_even   = 10,
-  parity_odd    = 11,
-  less          = 12,
+  overflow = 0,
+  no_overflow = 1,
+  below = 2,
+  above_equal = 3,
+  equal = 4,
+  not_equal = 5,
+  below_equal = 6,
+  above = 7,
+  negative = 8,
+  positive = 9,
+  parity_even = 10,
+  parity_odd = 11,
+  less = 12,
   greater_equal = 13,
-  less_equal    = 14,
-  greater       = 15,
-
+  less_equal = 14,
+  greater = 15,
+  never = 17,
   // aliases
-  carry         = below,
-  not_carry     = above_equal,
-  zero          = equal,
-  not_zero      = not_equal,
-  sign          = negative,
-  not_sign      = positive
+  carry = below,
+  not_carry = above_equal,
+  zero = equal,
+  not_zero = not_equal,
+  sign = negative,
+  not_sign = positive
 };
 
 
