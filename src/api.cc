@@ -8056,9 +8056,10 @@ void CpuProfiler::SetSamplingInterval(int us) {
 }
 
 
-void CpuProfiler::StartProfiling(Local<String> title, bool record_samples) {
+void CpuProfiler::StartProfiling(Local<String> title, bool record_samples,
+                                 bool disable_crankshaft) {
   reinterpret_cast<i::CpuProfiler*>(this)->StartProfiling(
-      *Utils::OpenHandle(*title), record_samples);
+      *Utils::OpenHandle(*title), record_samples, disable_crankshaft);
 }
 
 

@@ -88,6 +88,7 @@ class HeapProfiler {
   base::SmartPointer<XDKAllocationTracker> allocation_tracker_xdk_;
   bool is_tracking_object_moves_;
   base::Mutex profiler_mutex_;
+  bool saved_crankshaft_flag_;
 };
 
 }  // namespace internal
