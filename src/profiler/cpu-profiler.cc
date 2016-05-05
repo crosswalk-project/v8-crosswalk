@@ -437,7 +437,13 @@ void CpuProfiler::StartProfiling(const char* title, bool record_samples) {
 }
 
 
-void CpuProfiler::StartProfiling(String* title, bool record_samples) {
+void CpuProfiler::StartProfiling(String* title, bool record_samples,
+                                 bool disable_crankshaft) {
+  saved_crankshaft_flag_ = FLAG_crankshaft;
+  if (disable_crankshaft) {
+    FLAG_crankshaft = false;
+    Deoptimizer::DeoptimizeAll(isolate_);
+  }
   StartProfiling(profiles_->GetName(title), record_samples);
   isolate_->debug()->feature_tracker()->Track(DebugFeatureTracker::kProfiler);
 }
@@ -488,6 +494,7 @@ CpuProfile* CpuProfiler::StopProfiling(String* title) {
   if (!is_profiling_) return NULL;
   const char* profile_title = profiles_->GetName(title);
   StopProcessorIfLastProfile(profile_title);
+  FLAG_crankshaft = saved_crankshaft_flag_;
   return profiles_->StopProfiling(profile_title);
 }
 

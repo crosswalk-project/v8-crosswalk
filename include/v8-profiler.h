@@ -215,8 +215,11 @@ class V8_EXPORT CpuProfiler {
    *
    * |record_samples| parameter controls whether individual samples should
    * be recorded in addition to the aggregated tree.
+   * |disable_crankshaft| parameter disables crankshaft optimizations if
+   * it's set to true
    */
-  void StartProfiling(Local<String> title, bool record_samples = false);
+  void StartProfiling(Local<String> title, bool record_samples = false,
+                      bool disable_crankshaft = false);
 
   /**
    * Stops collecting CPU profile with a given title and returns it.

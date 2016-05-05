@@ -206,7 +206,8 @@ class CpuProfiler : public CodeEventListener {
 
   void set_sampling_interval(base::TimeDelta value);
   void StartProfiling(const char* title, bool record_samples = false);
-  void StartProfiling(String* title, bool record_samples);
+  void StartProfiling(String* title, bool record_samples,
+                      bool disable_crankshaft = false);
   CpuProfile* StopProfiling(const char* title);
   CpuProfile* StopProfiling(String* title);
   int GetProfilesCount();
@@ -267,6 +268,7 @@ class CpuProfiler : public CodeEventListener {
   ProfilerEventsProcessor* processor_;
   bool saved_is_logging_;
   bool is_profiling_;
+  bool saved_crankshaft_flag_;
 
   DISALLOW_COPY_AND_ASSIGN(CpuProfiler);
 };
