@@ -219,7 +219,7 @@ class ProfileTree {
 
   // Support old function
   ProfileNode* AddPathFromEnd(
-      const Vector<CodeEntry*>& path,
+      const std::vector<CodeEntry*>& path,
       int src_line = v8::CpuProfileNode::kNoLineNumberInfo);
 
   ProfileNode* root() const { return root_; }
