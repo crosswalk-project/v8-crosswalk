@@ -85,7 +85,7 @@ void XDKAllocationTracker::OnAlloc(Address addr, int size) {
   // below call saves from the crash during StackTraceFrameIterator creation
   // Mark the new block as FreeSpace to make sure the heap is iterable
   // while we are capturing stack trace.
-  heap->CreateFillerObjectAt(addr, size);
+  heap->CreateFillerObjectAt(addr, size, ClearRecordedSlots::kNo);
 
   Isolate* isolate = heap->isolate();
   StackTraceFrameIterator it(isolate);
