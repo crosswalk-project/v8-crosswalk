@@ -19,6 +19,18 @@ import("//build_overrides/v8.gni")
 import("snapshot_toolchain.gni")
 
 declare_args() {
+  # Use ICU data file (icudtl.dat) if true or library (shared on windows,
+  # static otherwise).
+  icu_use_data_file_flag = true
+
+  # Enable the snapshot feature, for fast context creation.
+  # http://v8project.blogspot.com/2015/09/custom-startup-snapshots.html
+  v8_use_snapshot = true
+
+  # Use external files for startup data blobs:
+  # the JS builtins sources and the start snapshot.
+  v8_use_external_startup_data = !is_ios
+
   # Sets -DVERIFY_HEAP.
   v8_enable_verify_heap = false
 
