@@ -1356,6 +1356,7 @@ LInstruction* LChunkBuilder::DoBinarySIMDOperation(
     }
     case kFloat32x4ExtractLane:
     case kFloat32x4Shuffle:
+    case kBool32x4ExtractLane:
     case kInt32x4Shuffle:
     case kInt32x4ShiftLeft:
     case kInt32x4ExtractLane:
