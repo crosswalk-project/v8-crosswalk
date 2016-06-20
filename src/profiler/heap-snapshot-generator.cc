@@ -43,15 +43,14 @@ void HeapGraphEdge::ReplaceToIndexWithEntry(HeapSnapshot* snapshot) {
 
 const int HeapEntry::kNoEntry = -1;
 
-HeapEntry::HeapEntry(HeapSnapshot* snapshot, const List<HeapEntry>* entries,
-                     Type type, const char* name, SnapshotObjectId id,
-                     size_t self_size, unsigned trace_node_id)
+HeapEntry::HeapEntry(HeapSnapshot* snapshot, Type type, const char* name,
+                     SnapshotObjectId id, size_t self_size,
+                     unsigned trace_node_id)
     : type_(type),
       children_count_(0),
       children_index_(-1),
       self_size_(self_size),
       snapshot_(snapshot),
-      entries_(entries),
       name_(name),
       id_(id),
       trace_node_id_(trace_node_id) {}
@@ -164,16 +163,12 @@ template <size_t ptr_size> struct SnapshotSizeConstants;
 
 template <> struct SnapshotSizeConstants<4> {
   static const int kExpectedHeapGraphEdgeSize = 12;
-  // This variable reflects the size of the HeapEntry structure
-  // it is increased to the 4 bytes in case of 32bit arch and for
-  // 8 bytes for 64 bit arch because for isolating HeapEntry from
-  // snapshot we need to add one more pointer to the List* entries_
-  static const int kExpectedHeapEntrySize = 32;
+  static const int kExpectedHeapEntrySize = 28;
 };
 
 template <> struct SnapshotSizeConstants<8> {
   static const int kExpectedHeapGraphEdgeSize = 24;
-  static const int kExpectedHeapEntrySize = 48;
+  static const int kExpectedHeapEntrySize = 40;
 };
 
 }  // namespace
@@ -264,7 +259,7 @@ HeapEntry* HeapSnapshot::AddEntry(HeapEntry::Type type,
                                   SnapshotObjectId id,
                                   size_t size,
                                   unsigned trace_node_id) {
-  HeapEntry entry(this, &this->entries(), type, name, id, size, trace_node_id);
+  HeapEntry entry(this, type, name, id, size, trace_node_id);
   entries_.Add(entry);
   return &entries_.last();
 }
@@ -777,13 +772,13 @@ void HeapObjectsSet::SetTag(Object* obj, const char* tag) {
   cache_entry->value = const_cast<char*>(tag);
 }
 
-V8HeapExplorer::V8HeapExplorer(HeapProfiler* profiler, HeapSnapshot* snapshot,
+V8HeapExplorer::V8HeapExplorer(HeapSnapshot* snapshot,
                                SnapshottingProgressReportingInterface* progress,
                                v8::HeapProfiler::ObjectNameResolver* resolver)
-    : heap_(profiler->heap_object_map()->heap()),
+    : heap_(snapshot->profiler()->heap_object_map()->heap()),
       snapshot_(snapshot),
-      names_(profiler->names()),
-      heap_object_map_(profiler->heap_object_map()),
+      names_(snapshot_->profiler()->names()),
+      heap_object_map_(snapshot_->profiler()->heap_object_map()),
       progress_(progress),
       filler_(NULL),
       global_object_name_resolver_(resolver) {}
@@ -890,13 +885,12 @@ HeapEntry* V8HeapExplorer::AddEntry(Address address,
   return snapshot_->AddEntry(type, name, object_id, size, trace_node_id);
 }
 
-class CDTSnapshotFiller : public SnapshotFiller {
+class SnapshotFiller {
  public:
-  explicit CDTSnapshotFiller(HeapSnapshot* snapshot, HeapEntriesMap* entries)
+  explicit SnapshotFiller(HeapSnapshot* snapshot, HeapEntriesMap* entries)
       : snapshot_(snapshot),
         names_(snapshot->profiler()->names()),
         entries_(entries) {}
-  virtual ~CDTSnapshotFiller() {}
   HeapEntry* AddEntry(HeapThing ptr, HeapEntriesAllocator* allocator) {
     HeapEntry* entry = allocator->AllocateEntry(ptr);
     entries_->Pair(ptr, entry->index());
@@ -1802,15 +1796,11 @@ bool V8HeapExplorer::IterateAndExtractReferences(
   // Make sure builtin code objects get their builtin tags
   // first. Otherwise a particular JSFunction object could set
   // its custom name to a generic builtin.
-  // TODO(amalyshe): this condition should be refactored for catching
-  // root extractor
-  if (snapshot_) {
-    RootsReferencesExtractor extractor(heap_);
-    heap_->IterateRoots(&extractor, VISIT_ONLY_STRONG);
-    extractor.SetCollectingAllReferences();
-    heap_->IterateRoots(&extractor, VISIT_ALL);
-    extractor.FillReferences(this);
-  }
+  RootsReferencesExtractor extractor(heap_);
+  heap_->IterateRoots(&extractor, VISIT_ONLY_STRONG);
+  extractor.SetCollectingAllReferences();
+  heap_->IterateRoots(&extractor, VISIT_ALL);
+  extractor.FillReferences(this);
 
   // We have to do two passes as sometimes FixedArrays are used
   // to weakly hold their items, and it's impossible to distinguish
@@ -2064,11 +2054,9 @@ void V8HeapExplorer::SetPropertyReference(HeapObject* parent_obj,
 
 
 void V8HeapExplorer::SetRootGcRootsReference() {
-  if (snapshot_) {
-    filler_->SetIndexedAutoIndexReference(HeapGraphEdge::kElement,
-                                          snapshot_->root()->index(),
-                                          snapshot_->gc_roots());
-  }
+  filler_->SetIndexedAutoIndexReference(HeapGraphEdge::kElement,
+                                        snapshot_->root()->index(),
+                                        snapshot_->gc_roots());
 }
 
 
@@ -2083,11 +2071,9 @@ void V8HeapExplorer::SetUserGlobalReference(Object* child_obj) {
 
 
 void V8HeapExplorer::SetGcRootsReference(VisitorSynchronization::SyncTag tag) {
-  if (snapshot_) {
-    filler_->SetIndexedAutoIndexReference(HeapGraphEdge::kElement,
-                                          snapshot_->gc_roots()->index(),
-                                          snapshot_->gc_subroot(tag));
-  }
+  filler_->SetIndexedAutoIndexReference(HeapGraphEdge::kElement,
+                                        snapshot_->gc_roots()->index(),
+                                        snapshot_->gc_subroot(tag));
 }
 
 
@@ -2243,11 +2229,11 @@ class GlobalHandlesExtractor : public ObjectVisitor {
 
 class BasicHeapEntriesAllocator : public HeapEntriesAllocator {
  public:
-  BasicHeapEntriesAllocator(HeapProfiler* profiler, HeapSnapshot* snapshot,
+  BasicHeapEntriesAllocator(HeapSnapshot* snapshot,
                             HeapEntry::Type entries_type)
       : snapshot_(snapshot),
-        names_(profiler->names()),
-        heap_object_map_(profiler->heap_object_map()),
+        names_(snapshot_->profiler()->names()),
+        heap_object_map_(snapshot_->profiler()->heap_object_map()),
         entries_type_(entries_type) {}
   virtual HeapEntry* AllocateEntry(HeapThing ptr);
  private:
@@ -2275,19 +2261,18 @@ HeapEntry* BasicHeapEntriesAllocator::AllocateEntry(HeapThing ptr) {
 }
 
 NativeObjectsExplorer::NativeObjectsExplorer(
-    HeapProfiler* profiler, HeapSnapshot* snapshot,
-    SnapshottingProgressReportingInterface* progress)
-    : isolate_(profiler->heap_object_map()->heap()->isolate()),
+    HeapSnapshot* snapshot, SnapshottingProgressReportingInterface* progress)
+    : isolate_(snapshot->profiler()->heap_object_map()->heap()->isolate()),
       snapshot_(snapshot),
-      names_(profiler->names()),
+      names_(snapshot_->profiler()->names()),
       embedder_queried_(false),
       objects_by_info_(RetainedInfosMatch),
       native_groups_(StringsMatch),
       filler_(NULL) {
   synthetic_entries_allocator_ =
-      new BasicHeapEntriesAllocator(profiler, snapshot, HeapEntry::kSynthetic);
+      new BasicHeapEntriesAllocator(snapshot, HeapEntry::kSynthetic);
   native_entries_allocator_ =
-      new BasicHeapEntriesAllocator(profiler, snapshot, HeapEntry::kNative);
+      new BasicHeapEntriesAllocator(snapshot, HeapEntry::kNative);
 }
 
 
@@ -2516,16 +2501,13 @@ void NativeObjectsExplorer::VisitSubtreeWrapper(Object** p, uint16_t class_id) {
 }
 
 HeapSnapshotGenerator::HeapSnapshotGenerator(
-    HeapProfiler* profiler, HeapSnapshot* snapshot,
-    v8::ActivityControl* control,
-    v8::HeapProfiler::ObjectNameResolver* resolver, Heap* heap,
-    SnapshotFiller* filler)
+    HeapSnapshot* snapshot, v8::ActivityControl* control,
+    v8::HeapProfiler::ObjectNameResolver* resolver, Heap* heap)
     : snapshot_(snapshot),
       control_(control),
-      v8_heap_explorer_(profiler, snapshot_, this, resolver),
-      dom_explorer_(profiler, snapshot_, this),
-      heap_(heap),
-      filler_(filler) {}
+      v8_heap_explorer_(snapshot_, this, resolver),
+      dom_explorer_(snapshot_, this),
+      heap_(heap) {}
 
 bool HeapSnapshotGenerator::GenerateSnapshot() {
   v8_heap_explorer_.TagGlobalObjects();
@@ -2556,16 +2538,12 @@ bool HeapSnapshotGenerator::GenerateSnapshot() {
   }
 #endif
 
-  if (snapshot_) {
-    snapshot_->AddSyntheticRootEntries();
-  }
+  snapshot_->AddSyntheticRootEntries();
 
   if (!FillReferences()) return false;
 
-  if (snapshot_) {
-    snapshot_->FillChildren();
-    snapshot_->RememberLastJSObjectId();
-  }
+  snapshot_->FillChildren();
+  snapshot_->RememberLastJSObjectId();
 
   progress_counter_ = progress_total_;
   if (!ProgressReport(true)) return false;
@@ -2601,16 +2579,9 @@ void HeapSnapshotGenerator::SetProgressTotal(int iterations_count) {
 
 
 bool HeapSnapshotGenerator::FillReferences() {
-  if (!filler_) {
-    CDTSnapshotFiller filler(snapshot_, &entries_);
-    return v8_heap_explorer_.IterateAndExtractReferences(&filler) &&
-           dom_explorer_.IterateAndExtractReferences(&filler);
-  } else {
-    // TODO(amalyshe): finally this need to be returned back when XDK heap
-    // profiler supports toot extractor
-    // v8_heap_explorer_.AddRootEntries(filler_);
-    return v8_heap_explorer_.IterateAndExtractReferences(filler_);
-  }
+  SnapshotFiller filler(snapshot_, &entries_);
+  return v8_heap_explorer_.IterateAndExtractReferences(&filler) &&
+         dom_explorer_.IterateAndExtractReferences(&filler);
 }
 
 
