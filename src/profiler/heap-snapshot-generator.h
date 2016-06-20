@@ -95,12 +95,8 @@ class HeapEntry BASE_EMBEDDED {
   static const int kNoEntry;
 
   HeapEntry() { }
-  HeapEntry(HeapSnapshot* snapshot,
-            Type type,
-            const char* name,
-            SnapshotObjectId id,
-            size_t self_size,
-            unsigned trace_node_id);
+  HeapEntry(HeapSnapshot* snapshot, Type type, const char* name,
+            SnapshotObjectId id, size_t self_size, unsigned trace_node_id);
 
   HeapSnapshot* snapshot() { return snapshot_; }
   Type type() { return static_cast<Type>(type_); }
@@ -539,8 +535,7 @@ class NativeObjectsExplorer {
 
 class HeapSnapshotGenerator : public SnapshottingProgressReportingInterface {
  public:
-  HeapSnapshotGenerator(HeapSnapshot* snapshot,
-                        v8::ActivityControl* control,
+  HeapSnapshotGenerator(HeapSnapshot* snapshot, v8::ActivityControl* control,
                         v8::HeapProfiler::ObjectNameResolver* resolver,
                         Heap* heap);
   bool GenerateSnapshot();

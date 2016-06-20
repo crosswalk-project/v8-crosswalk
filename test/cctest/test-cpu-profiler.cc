@@ -439,7 +439,6 @@ static v8::CpuProfile* RunProfiler(v8::Local<v8::Context> env,
   return profile;
 }
 
-
 static const v8::CpuProfileNode* FindChild(v8::Local<v8::Context> context,
                                            const v8::CpuProfileNode* node,
                                            const char* name) {
@@ -454,7 +453,6 @@ static const v8::CpuProfileNode* FindChild(v8::Local<v8::Context> context,
   return NULL;
 }
 
-
 static const v8::CpuProfileNode* GetChild(v8::Local<v8::Context> context,
                                           const v8::CpuProfileNode* node,
                                           const char* name) {
@@ -468,7 +466,6 @@ static const v8::CpuProfileNode* GetChild(v8::Local<v8::Context> context,
   return result;
 }
 
-
 static void CheckSimpleBranch(v8::Local<v8::Context> context,
                               const v8::CpuProfileNode* node,
                               const char* names[], int length) {
@@ -477,7 +474,6 @@ static void CheckSimpleBranch(v8::Local<v8::Context> context,
     node = GetChild(context, node, name);
   }
 }
-
 
 static const ProfileNode* GetSimpleBranch(v8::Local<v8::Context> context,
                                           v8::CpuProfile* profile,
@@ -1667,7 +1663,6 @@ TEST(FunctionDetails) {
   CheckFunctionDetails(env->GetIsolate(), bar, "bar", "script_a",
                        script_a->GetUnboundScript()->GetId(), 5, 14);
 }
-
 
 TEST(DontStopOnFinishedProfileDelete) {
   v8::HandleScope scope(CcTest::isolate());
