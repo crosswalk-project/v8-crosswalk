@@ -3998,6 +3998,16 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
             __ movd(result, xmm_scratch);
           }
         }
+        {
+          Label false_value, done;
+          __ testl(result, result);
+          __ j(zero, &false_value, Label::kNear);
+          __ LoadRoot(result, Heap::kTrueValueRootIndex);
+          __ jmp(&done, Label::kNear);
+          __ bind(&false_value);
+          __ LoadRoot(result, Heap::kFalseValueRootIndex);
+          __ bind(&done);
+        }
       } else {
         Comment(";;; deoptimize: non-constant selector for extractLane");
         cc = no_condition;
