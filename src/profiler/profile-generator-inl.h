@@ -29,7 +29,6 @@ CodeEntry::CodeEntry(Logger::LogEventsAndTags tag, const char* name,
       line_info_(line_info),
       instruction_start_(instruction_start) {}
 
-
 ProfileNode::ProfileNode(ProfileTree* tree, CodeEntry* entry)
     : tree_(tree),
       entry_(entry),
@@ -37,7 +36,6 @@ ProfileNode::ProfileNode(ProfileTree* tree, CodeEntry* entry)
       children_(CodeEntriesMatch),
       id_(tree->next_node_id()),
       line_ticks_(LineTickMatch) {}
-
 
 inline unsigned ProfileNode::function_id() const {
   return tree_->GetFunctionId(this);
