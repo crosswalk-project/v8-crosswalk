@@ -5116,7 +5116,8 @@ void MacroAssembler::AllocateHeapNumber(Register result,
                                       Register scratch2, Register scratch3,   \
                                       Label* gc_required) {                   \
     /* Allocate SIMD128 object.*/                                             \
-    Allocate(Type::kSize, result, scratch1, no_reg, gc_required, TAG_OBJECT); \
+    Allocate(Type::kSize, result, scratch1, no_reg, gc_required,              \
+             NO_ALLOCATION_FLAGS);                                            \
                                                                               \
     Heap::RootListIndex map_index = Heap::k##Type##MapRootIndex;              \
                                                                               \
