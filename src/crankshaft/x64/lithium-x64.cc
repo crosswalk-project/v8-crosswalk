@@ -1306,6 +1306,7 @@ LInstruction* LChunkBuilder::DoUnarySIMDOperation(HUnarySIMDOperation* instr) {
     case kInt32x4GetZ:
     case kInt32x4GetW:
     case kBool32x4AnyTrue:
+    case kBool32x4AllTrue:
     case kInt32x4GetFlagX:
     case kInt32x4GetFlagY:
     case kInt32x4GetFlagZ:
