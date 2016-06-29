@@ -5808,6 +5808,21 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
       __ bind(&done);
       return;
     }
+    case kBool32x4AllTrue: {
+      DCHECK(instr->hydrogen()->value()->representation().IsBool32x4());
+      XMMRegister input_reg = ToBool32x4Register(instr->value());
+      Register result = ToRegister(instr->result());
+      __ movmskps(result, input_reg);
+      Label all_value, done;
+      __ xor_(result, 0xF);
+      __ j(zero, &all_value, Label::kNear);
+      __ xor_(result, result);
+      __ jmp(&done, Label::kNear);
+      __ bind(&all_value);
+      __ mov(result, 0xFF);
+      __ bind(&done);
+      return;
+    }
     case kInt32x4GetX:
     case kInt32x4GetY:
     case kInt32x4GetZ:

@@ -6684,7 +6684,8 @@ class Script: public Struct {
   V(SIMD.Int32x4, neg, Int32x4Neg, Int32x4, Int32x4)                          \
   V(SIMD.Int32x4, not, Int32x4Not, Int32x4, Int32x4)                          \
   V(SIMD.Int32x4, splat, Int32x4Splat, Int32x4, Integer32)                    \
-  V(SIMD.Bool32x4, anyTrue, Bool32x4AnyTrue, Tagged, Bool32x4)
+  V(SIMD.Bool32x4, anyTrue, Bool32x4AnyTrue, Integer32, Bool32x4)             \
+  V(SIMD.Bool32x4, allTrue, Bool32x4AllTrue, Integer32, Bool32x4)
 
 // Do not need to install them in InstallExperimentalSIMDBuiltinFunctionIds.
 #define SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(V)                          \
