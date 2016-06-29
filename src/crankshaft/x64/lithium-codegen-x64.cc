@@ -3836,6 +3836,21 @@ void LCodeGen::DoUnarySIMDOperation(LUnarySIMDOperation* instr) {
       __ bind(&done);
       return;
     }
+    case kBool32x4AllTrue: {
+      DCHECK(instr->hydrogen()->value()->representation().IsBool32x4());
+      XMMRegister input_reg = ToBool32x4Register(instr->value());
+      Register result = ToRegister(instr->result());
+      __ movmskps(result, input_reg);
+      Label true_value, done;
+      __ xorl(result, Immediate(0xF));
+      __ j(zero, &true_value, Label::kNear);
+      __ LoadRoot(result, Heap::kFalseValueRootIndex);
+      __ jmp(&done, Label::kNear);
+      __ bind(&true_value);
+      __ LoadRoot(result, Heap::kTrueValueRootIndex);
+      __ bind(&done);
+      return;
+    }
     case kInt32x4GetX:
     case kInt32x4GetY:
     case kInt32x4GetZ:
@@ -4122,7 +4137,7 @@ void LCodeGen::DoBinarySIMDOperation(LBinarySIMDOperation* instr) {
       DCHECK(instr->hydrogen()->right()->representation().IsFloat32x4());
       XMMRegister left_reg = ToFloat32x4Register(instr->left());
       XMMRegister right_reg = ToFloat32x4Register(instr->right());
-      XMMRegister result_reg = ToInt32x4Register(instr->result());
+      XMMRegister result_reg = ToBool32x4Register(instr->result());
       switch (instr->op()) {
         case kFloat32x4LessThan:
           if (result_reg.is(left_reg)) {
@@ -4267,11 +4282,11 @@ void LCodeGen::DoTernarySIMDOperation(LTernarySIMDOperation* instr) {
   uint8_t imm8 = 0;
   switch (instr->op()) {
     case kFloat32x4Select: {
-      DCHECK(instr->hydrogen()->first()->representation().IsInt32x4());
+      DCHECK(instr->hydrogen()->first()->representation().IsBool32x4());
       DCHECK(instr->hydrogen()->second()->representation().IsFloat32x4());
       DCHECK(instr->hydrogen()->third()->representation().IsFloat32x4());
 
-      XMMRegister mask_reg = ToInt32x4Register(instr->first());
+      XMMRegister mask_reg = ToBool32x4Register(instr->first());
       XMMRegister left_reg = ToFloat32x4Register(instr->second());
       XMMRegister right_reg = ToFloat32x4Register(instr->third());
       XMMRegister result_reg = ToFloat32x4Register(instr->result());
