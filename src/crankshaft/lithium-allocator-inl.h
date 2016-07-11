@@ -46,8 +46,7 @@ LGap* LAllocator::GapAt(int index) {
 
 
 void LAllocator::SetLiveRangeAssignedRegister(LiveRange* range, int reg) {
-  if (range->Kind() == DOUBLE_REGISTERS ||
-      IsSIMD128RegisterKind(range->Kind())) {
+  if (range->Kind() == DOUBLE_REGISTERS) {
     assigned_double_registers_->Add(reg);
   } else {
     DCHECK(range->Kind() == GENERAL_REGISTERS);

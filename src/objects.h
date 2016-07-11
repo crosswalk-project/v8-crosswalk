@@ -426,9 +426,6 @@ const int kStubMinorKeyBits = kSmiValueSize - kStubMajorKeyBits - 1;
   V(JS_ARRAY_BUFFER_TYPE)                                       \
   V(JS_TYPED_ARRAY_TYPE)                                        \
   V(JS_DATA_VIEW_TYPE)                                          \
-  V(FLOAT32x4_TYPE)                                             \
-  V(INT32x4_TYPE)                                               \
-  V(BOOL32x4_TYPE)                                              \
   V(JS_PROXY_TYPE)                                              \
   V(JS_SET_TYPE)                                                \
   V(JS_MAP_TYPE)                                                \
@@ -722,9 +719,6 @@ enum InstanceType {
   JS_ARRAY_BUFFER_TYPE,
   JS_TYPED_ARRAY_TYPE,
   JS_DATA_VIEW_TYPE,
-  FLOAT32x4_TYPE,
-  INT32x4_TYPE,
-  BOOL32x4_TYPE,
   JS_SET_TYPE,
   JS_MAP_TYPE,
   JS_SET_ITERATOR_TYPE,
@@ -6569,243 +6563,18 @@ class Script: public Struct {
   V(Atomics, load, AtomicsLoad)          \
   V(Atomics, store, AtomicsStore)
 
-#define SIMD_NULLARY_OPERATIONS(V)                  \
-  V(SIMD.Float32x4, zero, Float32x4Zero, Float32x4) \
-  V(SIMD.Int32x4, zero, Int32x4Zero, Int32x4)
-
-#define SIMD_UNARY_OPERATIONS(V)                                              \
-  V(SIMD.Float32x4, check, Float32x4Check, Float32x4, Float32x4)              \
-  V(SIMD.Int32x4, check, Int32x4Check, Int32x4, Int32x4)                      \
-  V(SIMD.Float32x4, abs, Float32x4Abs, Float32x4, Float32x4)                  \
-  V(SIMD.Float32x4, fromInt32x4, Int32x4ToFloat32x4, Float32x4, Int32x4)      \
-  V(SIMD.Float32x4, fromInt32x4Bits, Int32x4BitsToFloat32x4, Float32x4,       \
-    Int32x4)                                                                  \
-  V(SIMD.Float32x4, neg, Float32x4Neg, Float32x4, Float32x4)                  \
-  V(SIMD.Float32x4, reciprocalApproximation, Float32x4RecipApprox, Float32x4, \
-    Float32x4)                                                                \
-  V(SIMD.Float32x4, reciprocalSqrtApproximation, Float32x4RecipSqrtApprox,    \
-    Float32x4, Float32x4)                                                     \
-  V(SIMD.Float32x4, splat, Float32x4Splat, Float32x4, Double)                 \
-  V(SIMD.Float32x4, sqrt, Float32x4Sqrt, Float32x4, Float32x4)                \
-  V(SIMD.Int32x4, fromFloat32x4, Float32x4ToInt32x4, Int32x4, Float32x4)      \
-  V(SIMD.Int32x4, fromFloat32x4Bits, Float32x4BitsToInt32x4, Int32x4,         \
-    Float32x4)                                                                \
-  V(SIMD.Int32x4, neg, Int32x4Neg, Int32x4, Int32x4)                          \
-  V(SIMD.Int32x4, not, Int32x4Not, Int32x4, Int32x4)                          \
-  V(SIMD.Int32x4, splat, Int32x4Splat, Int32x4, Integer32)                    \
-  V(SIMD.Bool32x4, anyTrue, Bool32x4AnyTrue, Tagged, Bool32x4)
-
-// Do not need to install them in InstallExperimentalSIMDBuiltinFunctionIds.
-#define SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(V)                          \
-  V(SIMD.Float32x4.prototype, signMask, Float32x4GetSignMask, Integer32,      \
-    Float32x4)                                                                \
-  V(SIMD.Float32x4.prototype, x, Float32x4GetX, Double, Float32x4)            \
-  V(SIMD.Float32x4.prototype, y, Float32x4GetY, Double, Float32x4)            \
-  V(SIMD.Float32x4.prototype, z, Float32x4GetZ, Double, Float32x4)            \
-  V(SIMD.Float32x4.prototype, w, Float32x4GetW, Double, Float32x4)            \
-  V(SIMD.Int32x4.prototype, signMask, Int32x4GetSignMask, Integer32, Int32x4) \
-  V(SIMD.Int32x4.prototype, x, Int32x4GetX, Integer32, Int32x4)               \
-  V(SIMD.Int32x4.prototype, y, Int32x4GetY, Integer32, Int32x4)               \
-  V(SIMD.Int32x4.prototype, z, Int32x4GetZ, Integer32, Int32x4)               \
-  V(SIMD.Int32x4.prototype, w, Int32x4GetW, Integer32, Int32x4)               \
-  V(SIMD.Int32x4.prototype, flagX, Int32x4GetFlagX, Tagged, Int32x4)          \
-  V(SIMD.Int32x4.prototype, flagY, Int32x4GetFlagY, Tagged, Int32x4)          \
-  V(SIMD.Int32x4.prototype, flagZ, Int32x4GetFlagZ, Tagged, Int32x4)          \
-  V(SIMD.Int32x4.prototype, flagW, Int32x4GetFlagW, Tagged, Int32x4)
-
-#define SIMD_BINARY_OPERATIONS(V)                                              \
-  V(SIMD.Float32x4, add, Float32x4Add, Float32x4, Float32x4, Float32x4)        \
-  V(SIMD.Float32x4, div, Float32x4Div, Float32x4, Float32x4, Float32x4)        \
-  V(SIMD.Float32x4, max, Float32x4Max, Float32x4, Float32x4, Float32x4)        \
-  V(SIMD.Float32x4, min, Float32x4Min, Float32x4, Float32x4, Float32x4)        \
-  V(SIMD.Float32x4, mul, Float32x4Mul, Float32x4, Float32x4, Float32x4)        \
-  V(SIMD.Float32x4, sub, Float32x4Sub, Float32x4, Float32x4, Float32x4)        \
-  V(SIMD.Float32x4, equal, Float32x4Equal, Bool32x4, Float32x4, Float32x4)     \
-  V(SIMD.Float32x4, notEqual, Float32x4NotEqual, Bool32x4, Float32x4,          \
-    Float32x4)                                                                 \
-  V(SIMD.Float32x4, greaterThan, Float32x4GreaterThan, Bool32x4, Float32x4,    \
-    Float32x4)                                                                 \
-  V(SIMD.Float32x4, greaterThanOrEqual, Float32x4GreaterThanOrEqual, Bool32x4, \
-    Float32x4, Float32x4)                                                      \
-  V(SIMD.Float32x4, lessThan, Float32x4LessThan, Bool32x4, Float32x4,          \
-    Float32x4)                                                                 \
-  V(SIMD.Float32x4, lessThanOrEqual, Float32x4LessThanOrEqual, Bool32x4,       \
-    Float32x4, Float32x4)                                                      \
-  V(SIMD.Float32x4, extractLane, Float32x4ExtractLane, Double, Float32x4,      \
-    Integer32)                                                                 \
-  V(SIMD.Int32x4, add, Int32x4Add, Int32x4, Int32x4, Int32x4)                  \
-  V(SIMD.Int32x4, and, Int32x4And, Int32x4, Int32x4, Int32x4)                  \
-  V(SIMD.Int32x4, mul, Int32x4Mul, Int32x4, Int32x4, Int32x4)                  \
-  V(SIMD.Int32x4, or, Int32x4Or, Int32x4, Int32x4, Int32x4)                    \
-  V(SIMD.Int32x4, sub, Int32x4Sub, Int32x4, Int32x4, Int32x4)                  \
-  V(SIMD.Int32x4, xor, Int32x4Xor, Int32x4, Int32x4, Int32x4)                  \
-  V(SIMD.Int32x4, extractLane, Int32x4ExtractLane, Integer32, Int32x4,         \
-    Integer32)                                                                 \
-  V(SIMD.Int32x4, greaterThan, Int32x4GreaterThan, Bool32x4, Int32x4, Int32x4) \
-  V(SIMD.Int32x4, equal, Int32x4Equal, Bool32x4, Int32x4, Int32x4)             \
-  V(SIMD.Int32x4, lessThan, Int32x4LessThan, Bool32x4, Int32x4, Int32x4)       \
-  V(SIMD.Int32x4, shiftLeftByScalar, Int32x4ShiftLeft, Int32x4, Int32x4,       \
-    Integer32)                                                                 \
-  V(SIMD.Int32x4, shiftRightByScalar, Int32x4ShiftRightArithmetic, Int32x4,    \
-    Int32x4, Integer32)                                                        \
-  V(SIMD.Bool32x4, extractLane, Bool32x4ExtractLane, Tagged, Bool32x4,         \
-    Integer32)
-
-#define SIMD_TERNARY_OPERATIONS(V)                                           \
-  V(SIMD.Float32x4, select, Float32x4Select, Float32x4, Int32x4, Float32x4,  \
-    Float32x4)                                                               \
-  V(SIMD.Int32x4, select, Int32x4Select, Int32x4, Int32x4, Int32x4, Int32x4) \
-  V(SIMD.Float32x4, replaceLane, Float32x4ReplaceLane, Float32x4, Float32x4, \
-    Integer32, Double)                                                       \
-  V(SIMD.Int32x4, replaceLane, Int32x4ReplaceLane, Int32x4, Int32x4,         \
-    Integer32, Integer32)
-
-#define SIMD_QUARTERNARY_OPERATIONS(V)                                        \
-  V(SIMD, Float32x4, Float32x4Constructor, Float32x4, Double, Double, Double, \
-    Double)                                                                   \
-  V(SIMD, Int32x4, Int32x4Constructor, Int32x4, Integer32, Integer32,         \
-    Integer32, Integer32)                                                     \
-  V(SIMD, Bool32x4, Bool32x4Constructor, Bool32x4, Integer32, Integer32,      \
-    Integer32, Integer32)
-
-#define SIMD_QUINARY_OPERATIONS(V)                                      \
-  V(SIMD.Float32x4, swizzle, Float32x4Swizzle, Float32x4, Float32x4,    \
-    Integer32, Integer32, Integer32, Integer32)                         \
-  V(SIMD.Int32x4, swizzle, Int32x4Swizzle, Int32x4, Int32x4, Integer32, \
-    Integer32, Integer32, Integer32)
-
-#define SIMD_SENARY_OPERATIONS(V)                                     \
-  V(SIMD.Float32x4, shuffle, Float32x4Shuffle, Float32x4, Float32x4,  \
-    Float32x4, Integer32, Integer32, Integer32, Integer32)            \
-  V(SIMD.Int32x4, shuffle, Int32x4Shuffle, Int32x4, Int32x4, Int32x4, \
-    Integer32, Integer32, Integer32, Integer32)
-
-#define SIMD_LOAD_OPERATIONS(V)               \
-  V(SIMD.Float32x4, load, GetFloat32x4XYZW)   \
-  V(SIMD.Float32x4, loadX, GetFloat32x4X)     \
-  V(SIMD.Float32x4, loadXY, GetFloat32x4XY)   \
-  V(SIMD.Float32x4, loadXYZ, GetFloat32x4XYZ) \
-  V(SIMD.Int32x4, load, GetInt32x4XYZW)       \
-  V(SIMD.Int32x4, loadX, GetInt32x4X)         \
-  V(SIMD.Int32x4, loadXY, GetInt32x4XY)       \
-  V(SIMD.Int32x4, loadXYZ, GetInt32x4XYZ)
-
-#define SIMD_STORE_OPERATIONS(V)               \
-  V(SIMD.Float32x4, store, SetFloat32x4XYZW)   \
-  V(SIMD.Float32x4, storeX, SetFloat32x4X)     \
-  V(SIMD.Float32x4, storeXY, SetFloat32x4XY)   \
-  V(SIMD.Float32x4, storeXYZ, SetFloat32x4XYZ) \
-  V(SIMD.Int32x4, store, SetInt32x4XYZW)       \
-  V(SIMD.Int32x4, storeX, SetInt32x4X)         \
-  V(SIMD.Int32x4, storeXY, SetInt32x4XY)       \
-  V(SIMD.Int32x4, storeXYZ, SetInt32x4XYZ)
-
-#define TYPED_ARRAYS_SIMD_LOAD_OPERATIONS(V)                                 \
-  V(Float32Array.prototype, _getFloat32x4XYZW, Float32ArrayGetFloat32x4XYZW) \
-  V(Float32Array.prototype, _getFloat32x4XYZ, Float32ArrayGetFloat32x4XYZ)   \
-  V(Float32Array.prototype, _getFloat32x4XY, Float32ArrayGetFloat32x4XY)     \
-  V(Float32Array.prototype, _getFloat32x4X, Float32ArrayGetFloat32x4X)       \
-  V(Int32Array.prototype, _getInt32x4XYZW, Int32ArrayGetInt32x4XYZW)         \
-  V(Int32Array.prototype, _getInt32x4XYZ, Int32ArrayGetInt32x4XYZ)           \
-  V(Int32Array.prototype, _getInt32x4XY, Int32ArrayGetInt32x4XY)             \
-  V(Int32Array.prototype, _getInt32x4X, Int32ArrayGetInt32x4X)               \
-  V(Int8Array.prototype, _getFloat32x4XYZW, Int8ArrayGetFloat32x4XYZW)       \
-  V(Int8Array.prototype, _getFloat32x4XYZ, Int8ArrayGetFloat32x4XYZ)         \
-  V(Int8Array.prototype, _getFloat32x4XY, Int8ArrayGetFloat32x4XY)           \
-  V(Int8Array.prototype, _getFloat32x4X, Int8ArrayGetFloat32x4X)             \
-  V(Int8Array.prototype, _getInt32x4XYZW, Int8ArrayGetInt32x4XYZW)           \
-  V(Int8Array.prototype, _getInt32x4XYZ, Int8ArrayGetInt32x4XYZ)             \
-  V(Int8Array.prototype, _getInt32x4XY, Int8ArrayGetInt32x4XY)               \
-  V(Int8Array.prototype, _getInt32x4X, Int8ArrayGetInt32x4X)                 \
-  V(Uint8Array.prototype, _getFloat32x4XYZW, Uint8ArrayGetFloat32x4XYZW)     \
-  V(Uint8Array.prototype, _getFloat32x4XYZ, Uint8ArrayGetFloat32x4XYZ)       \
-  V(Uint8Array.prototype, _getFloat32x4XY, Uint8ArrayGetFloat32x4XY)         \
-  V(Uint8Array.prototype, _getFloat32x4X, Uint8ArrayGetFloat32x4X)           \
-  V(Uint8Array.prototype, _getInt32x4XYZW, Uint8ArrayGetInt32x4XYZW)         \
-  V(Uint8Array.prototype, _getInt32x4XYZ, Uint8ArrayGetInt32x4XYZ)           \
-  V(Uint8Array.prototype, _getInt32x4XY, Uint8ArrayGetInt32x4XY)             \
-  V(Uint8Array.prototype, _getInt32x4X, Uint8ArrayGetInt32x4X)
-
-#define TYPED_ARRAYS_SIMD_STORE_OPERATIONS(V)                                \
-  V(Float32Array.prototype, _setFloat32x4XYZW, Float32ArraySetFloat32x4XYZW) \
-  V(Float32Array.prototype, _setFloat32x4XYZ, Float32ArraySetFloat32x4XYZ)   \
-  V(Float32Array.prototype, _setFloat32x4XY, Float32ArraySetFloat32x4XY)     \
-  V(Float32Array.prototype, _setFloat32x4X, Float32ArraySetFloat32x4X)       \
-  V(Int32Array.prototype, _setInt32x4XYZW, Int32ArraySetInt32x4XYZW)         \
-  V(Int32Array.prototype, _setInt32x4XYZ, Int32ArraySetInt32x4XYZ)           \
-  V(Int32Array.prototype, _setInt32x4XY, Int32ArraySetInt32x4XY)             \
-  V(Int32Array.prototype, _setInt32x4X, Int32ArraySetInt32x4X)               \
-  V(Int8Array.prototype, _setFloat32x4XYZW, Int8ArraySetFloat32x4XYZW)       \
-  V(Int8Array.prototype, _setFloat32x4XYZ, Int8ArraySetFloat32x4XYZ)         \
-  V(Int8Array.prototype, _setFloat32x4XY, Int8ArraySetFloat32x4XY)           \
-  V(Int8Array.prototype, _setFloat32x4X, Int8ArraySetFloat32x4X)             \
-  V(Int8Array.prototype, _setInt32x4XYZW, Int8ArraySetInt32x4XYZW)           \
-  V(Int8Array.prototype, _setInt32x4XYZ, Int8ArraySetInt32x4XYZ)             \
-  V(Int8Array.prototype, _setInt32x4XY, Int8ArraySetInt32x4XY)               \
-  V(Int8Array.prototype, _setInt32x4X, Int8ArraySetInt32x4X)                 \
-  V(Uint8Array.prototype, _setFloat32x4XYZW, Uint8ArraySetFloat32x4XYZW)     \
-  V(Uint8Array.prototype, _setFloat32x4XYZ, Uint8ArraySetFloat32x4XYZ)       \
-  V(Uint8Array.prototype, _setFloat32x4XY, Uint8ArraySetFloat32x4XY)         \
-  V(Uint8Array.prototype, _setFloat32x4X, Uint8ArraySetFloat32x4X)           \
-  V(Uint8Array.prototype, _setInt32x4XYZW, Uint8ArraySetInt32x4XYZW)         \
-  V(Uint8Array.prototype, _setInt32x4XYZ, Uint8ArraySetInt32x4XYZ)           \
-  V(Uint8Array.prototype, _setInt32x4XY, Uint8ArraySetInt32x4XY)             \
-  V(Uint8Array.prototype, _setInt32x4X, Uint8ArraySetInt32x4X)
-
-// Do not need to install them in InstallExperimentalSIMDBuiltinFunctionIds.
-#define SIMD_FAKE_ID_LISTS(V)              \
-  V(SIMD, unreachable, SIMD128Unreachable) \
-  V(SIMD, change, SIMD128Change)
-
 enum BuiltinFunctionId {
   kArrayCode,
 #define DECLARE_FUNCTION_ID(ignored1, ignore2, name)    \
   k##name,
   FUNCTIONS_WITH_ID_LIST(DECLARE_FUNCTION_ID)
       ATOMIC_FUNCTIONS_WITH_ID_LIST(DECLARE_FUNCTION_ID)
+#undef DECLARE_FUNCTION_ID
   // Fake id for a special case of Math.pow. Note, it continues the
   // list of math functions.
-  kMathPowHalf,
-  SIMD_FAKE_ID_LISTS(DECLARE_FUNCTION_ID) TYPED_ARRAYS_SIMD_LOAD_OPERATIONS(
-      DECLARE_FUNCTION_ID)
-      TYPED_ARRAYS_SIMD_STORE_OPERATIONS(DECLARE_FUNCTION_ID)
-          SIMD_LOAD_OPERATIONS(DECLARE_FUNCTION_ID) SIMD_STORE_OPERATIONS(
-              DECLARE_FUNCTION_ID)
-#undef DECLARE_FUNCTION_ID
-#define DECLARE_SIMD_NULLARY_FUNCTION_ID(i1, i2, name, i3) k##name,
-              SIMD_NULLARY_OPERATIONS(DECLARE_SIMD_NULLARY_FUNCTION_ID)
-#undef DECLARE_SIMD_NULLARY_FUNCTION_ID
-#define DECLARE_SIMD_UNARY_FUNCTION_ID(i1, i2, name, i3, i4) k##name,
-                  SIMD_UNARY_OPERATIONS(DECLARE_SIMD_UNARY_FUNCTION_ID)
-                      SIMD_UNARY_OPERATIONS_FOR_PROPERTY_ACCESS(
-                          DECLARE_SIMD_UNARY_FUNCTION_ID)
-#undef DECLARE_SIMD_UNARY_FUNCTION_ID
-#define DECLARE_SIMD_BINARY_FUNCTION_ID(i1, i2, name, i3, i4, i5) k##name,
-                          SIMD_BINARY_OPERATIONS(
-                              DECLARE_SIMD_BINARY_FUNCTION_ID)
-#undef DECLARE_SIMD_BINARY_FUNCTION_ID
-#define DECLARE_SIMD_TERNARY_FUNCTION_ID(i1, i2, name, i3, i4, i5, i6) k##name,
-                              SIMD_TERNARY_OPERATIONS(
-                                  DECLARE_SIMD_TERNARY_FUNCTION_ID)
-#undef DECLARE_SIMD_TERNARY_FUNCTION_ID
-#define DECLARE_SIMD_QUARTERNARY_FUNCTION_ID(i1, i2, name, i3, i4, i5, i6, i7) \
-  k##name,
-                                  SIMD_QUARTERNARY_OPERATIONS(
-                                      DECLARE_SIMD_QUARTERNARY_FUNCTION_ID)
-#undef DECLARE_SIMD_QUARTERNARY_FUNCTION_ID
-#define DECLARE_SIMD_QUINARY_FUNCTION_ID(i1, i2, name, i3, i4, i5, i6, i7, i8) \
-  k##name,
-                                      SIMD_QUINARY_OPERATIONS(
-                                          DECLARE_SIMD_QUINARY_FUNCTION_ID)
-#undef DECLARE_SIMD_QUINARY_FUNCTION_ID
-#define DECLARE_SIMD_SENARY_FUNCTION_ID(i1, i2, name, i3, i4, i5, i6, i7, i8, \
-                                        i9)                                   \
-  k##name,
-                                          SIMD_SENARY_OPERATIONS(
-                                              DECLARE_SIMD_SENARY_FUNCTION_ID)
-#undef DECLARE_SIMD_SENARY_FUNCTION_ID
-                                              kNumberOfBuiltinFunction
+  kMathPowHalf
 };
+
 
 // Result of searching in an optimized code map of a SharedFunctionInfo. Note
 // that both {code} and {literals} can be NULL to pass search result status.

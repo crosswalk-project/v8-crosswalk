@@ -178,12 +178,11 @@ void Deoptimizer::SetPlatformCompiledStubRegisters(
   output_frame->SetRegister(ebx.code(), handler);
 }
 
-void Deoptimizer::CopyDoubleRegisters(FrameDescription* output_frame) {}
 
-void Deoptimizer::CopySIMD128Registers(FrameDescription* output_frame) {
+void Deoptimizer::CopyDoubleRegisters(FrameDescription* output_frame) {
   for (int i = 0; i < XMMRegister::kMaxNumRegisters; ++i) {
-    simd128_value_t xmm_value = input_->GetSIMD128Register(i);
-    output_frame->SetSIMD128Register(i, xmm_value);
+    double double_value = input_->GetDoubleRegister(i);
+    output_frame->SetDoubleRegister(i, double_value);
   }
 }
 
@@ -195,15 +194,15 @@ void Deoptimizer::TableEntryGenerator::Generate() {
   // Save all general purpose registers before messing with them.
   const int kNumberOfRegisters = Register::kNumRegisters;
 
-  const int kXMMRegsSize = kSIMD128Size * XMMRegister::kMaxNumRegisters;
-  __ sub(esp, Immediate(kXMMRegsSize));
+  const int kDoubleRegsSize = kDoubleSize * XMMRegister::kMaxNumRegisters;
+  __ sub(esp, Immediate(kDoubleRegsSize));
   const RegisterConfiguration* config =
       RegisterConfiguration::ArchDefault(RegisterConfiguration::CRANKSHAFT);
   for (int i = 0; i < config->num_allocatable_double_registers(); ++i) {
     int code = config->GetAllocatableDoubleCode(i);
     XMMRegister xmm_reg = XMMRegister::from_code(code);
-    int offset = code * kSIMD128Size;
-    __ movups(Operand(esp, offset), xmm_reg);
+    int offset = code * kDoubleSize;
+    __ movsd(Operand(esp, offset), xmm_reg);
   }
 
   __ pushad();
@@ -211,8 +210,8 @@ void Deoptimizer::TableEntryGenerator::Generate() {
   ExternalReference c_entry_fp_address(Isolate::kCEntryFPAddress, isolate());
   __ mov(Operand::StaticVariable(c_entry_fp_address), ebp);
 
-  const int kSavedRegistersAreaSize =
-      kNumberOfRegisters * kPointerSize + kXMMRegsSize;
+  const int kSavedRegistersAreaSize = kNumberOfRegisters * kPointerSize +
+                                      kDoubleRegsSize;
 
   // Get the bailout id from the stack.
   __ mov(ebx, Operand(esp, kSavedRegistersAreaSize));
@@ -255,14 +254,14 @@ void Deoptimizer::TableEntryGenerator::Generate() {
     __ pop(Operand(ebx, offset));
   }
 
-  int xmm_regs_offset = FrameDescription::simd128_registers_offset();
+  int double_regs_offset = FrameDescription::double_registers_offset();
   // Fill in the double input registers.
   for (int i = 0; i < config->num_allocatable_double_registers(); ++i) {
     int code = config->GetAllocatableDoubleCode(i);
-    int dst_offset = code * kSIMD128Size + xmm_regs_offset;
-    int src_offset = code * kSIMD128Size;
-    __ movups(xmm0, Operand(esp, src_offset));
-    __ movups(Operand(ebx, dst_offset), xmm0);
+    int dst_offset = code * kDoubleSize + double_regs_offset;
+    int src_offset = code * kDoubleSize;
+    __ movsd(xmm0, Operand(esp, src_offset));
+    __ movsd(Operand(ebx, dst_offset), xmm0);
   }
 
   // Clear FPU all exceptions.
@@ -271,7 +270,7 @@ void Deoptimizer::TableEntryGenerator::Generate() {
   __ fnclex();
 
   // Remove the bailout id, return address and the double registers.
-  __ add(esp, Immediate(kXMMRegsSize + 2 * kPointerSize));
+  __ add(esp, Immediate(kDoubleRegsSize + 2 * kPointerSize));
 
   // Compute a pointer to the unwinding limit in register ecx; that is
   // the first stack slot not part of the input frame.
@@ -334,8 +333,8 @@ void Deoptimizer::TableEntryGenerator::Generate() {
   for (int i = 0; i < config->num_allocatable_double_registers(); ++i) {
     int code = config->GetAllocatableDoubleCode(i);
     XMMRegister xmm_reg = XMMRegister::from_code(code);
-    int src_offset = code * kSIMD128Size + xmm_regs_offset;
-    __ movups(xmm_reg, Operand(ebx, src_offset));
+    int src_offset = code * kDoubleSize + double_regs_offset;
+    __ movsd(xmm_reg, Operand(ebx, src_offset));
   }
 
   // Push state, pc, and continuation from the last output frame.
@@ -387,33 +386,6 @@ void FrameDescription::SetCallerConstantPool(unsigned offset, intptr_t value) {
   UNREACHABLE();
 }
 
-double RegisterValues::GetDoubleRegister(unsigned n) const {
-  DCHECK(n < arraysize(simd128_registers_));
-  return simd128_registers_[n].d[0];
-}
-
-void RegisterValues::SetDoubleRegister(unsigned n, double value) {
-  DCHECK(n < arraysize(simd128_registers_));
-  simd128_registers_[n].d[0] = value;
-}
-
-simd128_value_t RegisterValues::GetSIMD128Register(unsigned n) const {
-  DCHECK(n < arraysize(simd128_registers_));
-  return simd128_registers_[n];
-}
-
-void RegisterValues::SetSIMD128Register(unsigned n, simd128_value_t value) {
-  DCHECK(n < arraysize(simd128_registers_));
-  simd128_registers_[n] = value;
-}
-
-int FrameDescription::double_registers_offset() {
-  return OFFSET_OF(FrameDescription, register_values_.simd128_registers_);
-}
-
-int FrameDescription::simd128_registers_offset() {
-  return OFFSET_OF(FrameDescription, register_values_.simd128_registers_);
-}
 
 #undef __
 

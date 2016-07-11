@@ -95,9 +95,8 @@ void Deoptimizer::SetPlatformCompiledStubRegisters(
   output_frame->SetRegister(r1.code(), handler);
 }
 
-void Deoptimizer::CopyDoubleRegisters(FrameDescription* output_frame) {}
 
-void Deoptimizer::CopySIMD128Registers(FrameDescription* output_frame) {
+void Deoptimizer::CopyDoubleRegisters(FrameDescription* output_frame) {
   for (int i = 0; i < DwVfpRegister::kMaxNumRegisters; ++i) {
     double double_value = input_->GetDoubleRegister(i);
     output_frame->SetDoubleRegister(i, double_value);
@@ -189,12 +188,13 @@ void Deoptimizer::TableEntryGenerator::Generate() {
 
   // Copy VFP registers to
   // double_registers_[DoubleRegister::kMaxNumAllocatableRegisters]
-  int double_regs_offset = FrameDescription::simd128_registers_offset();
+  int double_regs_offset = FrameDescription::double_registers_offset();
   const RegisterConfiguration* config =
       RegisterConfiguration::ArchDefault(RegisterConfiguration::CRANKSHAFT);
-  for (int i = 0; i < DwVfpRegister::kMaxNumRegisters; ++i) {
-    int dst_offset = i * kDoubleSize + double_regs_offset;
-    int src_offset = i * kDoubleSize + kNumberOfRegisters * kPointerSize;
+  for (int i = 0; i < config->num_allocatable_double_registers(); ++i) {
+    int code = config->GetAllocatableDoubleCode(i);
+    int dst_offset = code * kDoubleSize + double_regs_offset;
+    int src_offset = code * kDoubleSize + kNumberOfRegisters * kPointerSize;
     __ vldr(d0, sp, src_offset);
     __ vstr(d0, r1, dst_offset);
   }
@@ -335,33 +335,6 @@ void FrameDescription::SetCallerConstantPool(unsigned offset, intptr_t value) {
   SetFrameSlot(offset, value);
 }
 
-double RegisterValues::GetDoubleRegister(unsigned n) const {
-  DCHECK(n < 2 * arraysize(simd128_registers_));
-  return simd128_registers_[n / 2].d[n % 2];
-}
-
-void RegisterValues::SetDoubleRegister(unsigned n, double value) {
-  DCHECK(n < 2 * arraysize(simd128_registers_));
-  simd128_registers_[n / 2].d[n % 2] = value;
-}
-
-simd128_value_t RegisterValues::GetSIMD128Register(unsigned n) const {
-  DCHECK(n < arraysize(simd128_registers_));
-  return simd128_registers_[n];
-}
-
-void RegisterValues::SetSIMD128Register(unsigned n, simd128_value_t value) {
-  DCHECK(n < arraysize(simd128_registers_));
-  simd128_registers_[n] = value;
-}
-
-int FrameDescription::double_registers_offset() {
-  return OFFSET_OF(FrameDescription, register_values_.simd128_registers_);
-}
-
-int FrameDescription::simd128_registers_offset() {
-  return OFFSET_OF(FrameDescription, register_values_.simd128_registers_);
-}
 
 #undef __
 

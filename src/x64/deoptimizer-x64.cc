@@ -97,12 +97,11 @@ void Deoptimizer::SetPlatformCompiledStubRegisters(
   output_frame->SetRegister(rbx.code(), handler);
 }
 
-void Deoptimizer::CopyDoubleRegisters(FrameDescription* output_frame) {}
 
-void Deoptimizer::CopySIMD128Registers(FrameDescription* output_frame) {
+void Deoptimizer::CopyDoubleRegisters(FrameDescription* output_frame) {
   for (int i = 0; i < XMMRegister::kMaxNumRegisters; ++i) {
-    simd128_value_t xmm_value = input_->GetSIMD128Register(i);
-    output_frame->SetSIMD128Register(i, xmm_value);
+    double double_value = input_->GetDoubleRegister(i);
+    output_frame->SetDoubleRegister(i, double_value);
   }
 }
 
@@ -114,16 +113,16 @@ void Deoptimizer::TableEntryGenerator::Generate() {
   // Save all general purpose registers before messing with them.
   const int kNumberOfRegisters = Register::kNumRegisters;
 
-  const int kXMMRegsSize = kSIMD128Size * XMMRegister::kMaxNumRegisters;
-  __ subp(rsp, Immediate(kXMMRegsSize));
+  const int kDoubleRegsSize = kDoubleSize * XMMRegister::kMaxNumRegisters;
+  __ subp(rsp, Immediate(kDoubleRegsSize));
 
   const RegisterConfiguration* config =
       RegisterConfiguration::ArchDefault(RegisterConfiguration::CRANKSHAFT);
   for (int i = 0; i < config->num_allocatable_double_registers(); ++i) {
     int code = config->GetAllocatableDoubleCode(i);
     XMMRegister xmm_reg = XMMRegister::from_code(code);
-    int offset = code * kSIMD128Size;
-    __ movups(Operand(rsp, offset), xmm_reg);
+    int offset = code * kDoubleSize;
+    __ Movsd(Operand(rsp, offset), xmm_reg);
   }
 
   // We push all registers onto the stack, even though we do not need
@@ -133,8 +132,8 @@ void Deoptimizer::TableEntryGenerator::Generate() {
     __ pushq(r);
   }
 
-  const int kSavedRegistersAreaSize =
-      kNumberOfRegisters * kRegisterSize + kXMMRegsSize;
+  const int kSavedRegistersAreaSize = kNumberOfRegisters * kRegisterSize +
+                                      kDoubleRegsSize;
 
   __ Store(ExternalReference(Isolate::kCEntryFPAddress, isolate()), rbp);
 
@@ -191,13 +190,11 @@ void Deoptimizer::TableEntryGenerator::Generate() {
     __ PopQuad(Operand(rbx, offset));
   }
 
-  // Fill in the xmm input registers.
-  STATIC_ASSERT(kSIMD128Size == 2 * kDoubleSize);
-  int xmm_regs_offset = FrameDescription::simd128_registers_offset();
+  // Fill in the double input registers.
+  int double_regs_offset = FrameDescription::double_registers_offset();
   for (int i = 0; i < XMMRegister::kMaxNumRegisters; i++) {
-    int dst_offset = i * kSIMD128Size + xmm_regs_offset;
+    int dst_offset = i * kDoubleSize + double_regs_offset;
     __ popq(Operand(rbx, dst_offset));
-    __ popq(Operand(rbx, dst_offset + kDoubleSize));
   }
 
   // Remove the bailout id and return address from the stack.
@@ -264,8 +261,8 @@ void Deoptimizer::TableEntryGenerator::Generate() {
   for (int i = 0; i < config->num_allocatable_double_registers(); ++i) {
     int code = config->GetAllocatableDoubleCode(i);
     XMMRegister xmm_reg = XMMRegister::from_code(code);
-    int src_offset = code * kSIMD128Size + xmm_regs_offset;
-    __ movups(xmm_reg, Operand(rbx, src_offset));
+    int src_offset = code * kDoubleSize + double_regs_offset;
+    __ Movsd(xmm_reg, Operand(rbx, src_offset));
   }
 
   // Push state, pc, and continuation from the last output frame.
@@ -336,33 +333,6 @@ void FrameDescription::SetCallerConstantPool(unsigned offset, intptr_t value) {
   UNREACHABLE();
 }
 
-double RegisterValues::GetDoubleRegister(unsigned n) const {
-  DCHECK(n < arraysize(simd128_registers_));
-  return simd128_registers_[n].d[0];
-}
-
-void RegisterValues::SetDoubleRegister(unsigned n, double value) {
-  DCHECK(n < arraysize(simd128_registers_));
-  simd128_registers_[n].d[0] = value;
-}
-
-simd128_value_t RegisterValues::GetSIMD128Register(unsigned n) const {
-  DCHECK(n < arraysize(simd128_registers_));
-  return simd128_registers_[n];
-}
-
-void RegisterValues::SetSIMD128Register(unsigned n, simd128_value_t value) {
-  DCHECK(n < arraysize(simd128_registers_));
-  simd128_registers_[n] = value;
-}
-
-int FrameDescription::double_registers_offset() {
-  return OFFSET_OF(FrameDescription, register_values_.simd128_registers_);
-}
-
-int FrameDescription::simd128_registers_offset() {
-  return OFFSET_OF(FrameDescription, register_values_.simd128_registers_);
-}
 
 #undef __
 
