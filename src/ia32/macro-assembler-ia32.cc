@@ -1808,7 +1808,8 @@ void MacroAssembler::AllocateHeapNumber(Register result,
   void MacroAssembler::Allocate##Type(Register result, Register scratch1,      \
                                       Register scratch2, Label* gc_required) { \
     /* Allocate SIMD128 object */                                              \
-    Allocate(Type::kSize, result, scratch1, no_reg, gc_required, TAG_OBJECT);  \
+    Allocate(Type::kSize, result, scratch1, no_reg, gc_required,               \
+             NO_ALLOCATION_FLAGS);                                             \
     Handle<Map> map = isolate()->factory()->type##_map();                      \
                                                                                \
     /*set the map*/                                                            \
