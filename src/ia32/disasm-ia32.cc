@@ -1697,7 +1697,7 @@ int DisassemblerIA32::InstructionDecode(v8::internal::Vector<char> out_buffer,
               data++;
               int mod, regop, rm;
               get_modrm(*data, &mod, &regop, &rm);
-              AppendToBuffer("pmulld %s,%s", NameOfXMMRegister(regop));
+              AppendToBuffer("pmulld %s", NameOfXMMRegister(regop));
               data += PrintRightXMMOperand(data);
             } else if (*data == 0x2A) {
               // movntdqa
