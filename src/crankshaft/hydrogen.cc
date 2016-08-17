@@ -9376,7 +9376,7 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinMethodCall(
       if (CpuFeatures::SupportsSIMD128InCrankshaft() && argument_count == 1) {
         Drop(2);  // Receiver and function.
         HInstruction* op = NewUncasted<HNullarySIMDOperation>(id);
-        ast_context()->ReturnInstruction(op, expr->id());
+        ast_context()->ReturnInstruction(op, ast_id);
         return true;
       }
       break;
@@ -9387,7 +9387,7 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinMethodCall(
         HValue* argument = Pop();
         Drop(2);  // Receiver and function.
         HInstruction* op = NewUncasted<HUnarySIMDOperation>(argument, id);
-        ast_context()->ReturnInstruction(op, expr->id());
+        ast_context()->ReturnInstruction(op, ast_id);
         return true;
       }
       break;
@@ -9399,7 +9399,7 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinMethodCall(
         HValue* left = Pop();
         Drop(2);  // Receiver and function.
         HInstruction* op = NewUncasted<HBinarySIMDOperation>(left, right, id);
-        ast_context()->ReturnInstruction(op, expr->id());
+        ast_context()->ReturnInstruction(op, ast_id);
         return true;
       }
       break;
@@ -9414,7 +9414,7 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinMethodCall(
         Drop(2);  // Receiver and function.
         HInstruction* op =
             NewUncasted<HTernarySIMDOperation>(value, left, right, id);
-        ast_context()->ReturnInstruction(op, expr->id());
+        ast_context()->ReturnInstruction(op, ast_id);
         return true;
       }
       break;
@@ -9431,7 +9431,7 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinMethodCall(
         HValue* context = environment()->context();
         HInstruction* op = HQuarternarySIMDOperation::New(
             isolate(), zone(), context, x, y, z, w, id);
-        ast_context()->ReturnInstruction(op, expr->id());
+        ast_context()->ReturnInstruction(op, ast_id);
         return true;
       }
       break;
@@ -9440,7 +9440,7 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinMethodCall(
       SIMD_QUINARY_OPERATIONS(SIMD_QUINARY_OPERATION_CASE_ITEM)
 #undef SIMD_QUINARY_OPERATION_CASE_ITEM
       if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-          expr->arguments()->length() == 5) {
+          argument_count == 5) {
         HValue* a4 = Pop();
         HValue* a3 = Pop();
         HValue* a2 = Pop();
@@ -9449,7 +9449,7 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinMethodCall(
         Drop(2);  // Receiver and function.
         HInstruction* op =
             NewUncasted<HQuinarySIMDOperation>(a0, a1, a2, a3, a4, id);
-        ast_context()->ReturnInstruction(op, expr->id());
+        ast_context()->ReturnInstruction(op, ast_id);
         return true;
       }
       break;
@@ -9459,7 +9459,7 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinMethodCall(
       SIMD_SENARY_OPERATIONS(SIMD_SENARY_OPERATION_CASE_ITEM)
 #undef SIMD_SENARY_OPERATION_CASE_ITEM
       if (CpuFeatures::SupportsSIMD128InCrankshaft() &&
-          expr->arguments()->length() == 6) {
+          argument_count == 6) {
         HValue* a5 = Pop();
         HValue* a4 = Pop();
         HValue* a3 = Pop();
@@ -9469,7 +9469,7 @@ bool HOptimizedGraphBuilder::TryInlineBuiltinMethodCall(
         Drop(2);  // Receiver and function.
         HInstruction* op =
             NewUncasted<HSenarySIMDOperation>(a0, a1, a2, a3, a4, a5, id);
-        ast_context()->ReturnInstruction(op, expr->id());
+        ast_context()->ReturnInstruction(op, ast_id);
         return true;
       }
       break;
@@ -13823,21 +13823,24 @@ void HTracer::TraceLiveRange(LiveRange* range, const char* type,
       } else if (op->IsFloat32x4Register()) {
 #if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
         trace_.Add(" \"%s\"",
-                   SIMD128Register::from_code(assigned_reg).ToString());
+                   RegisterConfiguration::Crankshaft()->GetSimd128RegisterName(
+                       assigned_reg));
 #else
         trace_.Add(" \"%s\"", "target hasn't no method toString()");
 #endif
       } else if (op->IsBool32x4Register()) {
 #if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
         trace_.Add(" \"%s\"",
-                   SIMD128Register::from_code(assigned_reg).ToString());
+                   RegisterConfiguration::Crankshaft()->GetSimd128RegisterName(
+                       assigned_reg));
 #else
         trace_.Add(" \"%s\"", "target hasn't no method toString()");
 #endif
       } else if (op->IsInt32x4Register()) {
 #if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
         trace_.Add(" \"%s\"",
-                   SIMD128Register::from_code(assigned_reg).ToString());
+                   RegisterConfiguration::Crankshaft()->GetSimd128RegisterName(
+                       assigned_reg));
 #else
         trace_.Add(" \"%s\"", "target hasn't no method toString()");
 #endif

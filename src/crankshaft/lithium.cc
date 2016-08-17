@@ -136,7 +136,9 @@ void LOperand::PrintTo(StringStream* stream) {
     }
     case FLOAT32x4_REGISTER:
 #if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
-      stream->Add("[%s|R]", SIMD128Register::from_code(index()).ToString());
+      stream->Add("[%s|R]",
+                  RegisterConfiguration::Crankshaft()->GetSimd128RegisterName(
+                      index()));
 #else
       stream->Add("[%s|R]", "Target hasn't no method toString()");
 #endif
@@ -145,14 +147,18 @@ void LOperand::PrintTo(StringStream* stream) {
 
 #if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
       stream->Add("[%s|R]", "QwNeonRegister hasn't no toString");
-      stream->Add("[%s|R]", SIMD128Register::from_code(index()).ToString());
+      stream->Add("[%s|R]",
+                  RegisterConfiguration::Crankshaft()->GetSimd128RegisterName(
+                      index()));
 #else
       stream->Add("[%s|R]", "Target hasn't no method toString()");
 #endif
       break;
     case INT32x4_REGISTER:
 #if V8_TARGET_ARCH_IA32 || V8_TARGET_ARCH_X64
-      stream->Add("[%s|R]", SIMD128Register::from_code(index()).ToString());
+      stream->Add("[%s|R]",
+                  RegisterConfiguration::Crankshaft()->GetSimd128RegisterName(
+                      index()));
 #else
       stream->Add("[%s|R]", "Target hasn't no method toString()");
 #endif

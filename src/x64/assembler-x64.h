@@ -1043,8 +1043,6 @@ class Assembler : public AssemblerBase {
   // Use movaps when moving float values and movd for integer
   // values in xmm registers.
   void movss(XMMRegister dst, XMMRegister src);
-  void movups(XMMRegister dst, const Operand& src);
-  void movups(const Operand& dst, XMMRegister src);
   void movss(XMMRegister dst, const Operand& src);
   void movss(const Operand& dst, XMMRegister src);
   void shufps(XMMRegister dst, XMMRegister src, byte imm8);
@@ -1180,6 +1178,8 @@ class Assembler : public AssemblerBase {
   void maxpd(XMMRegister dst, const Operand& src);
   void sqrtpd(XMMRegister dst, XMMRegister src);
   void sqrtpd(XMMRegister dst, const Operand& src);
+  void punpackldq(XMMRegister dst, XMMRegister src);
+  void punpackldq(XMMRegister dst, const Operand& src);
   void pextrd(Register dst, XMMRegister src, int8_t imm8);
   void pinsrd(XMMRegister dst, Register src, int8_t imm8);
   void pinsrd(XMMRegister dst, const Operand& src, int8_t imm8);
@@ -1390,14 +1390,6 @@ class Assembler : public AssemblerBase {
   void vmovsd(const Operand& dst, XMMRegister src) {
     vsd(0x11, src, xmm0, dst);
   }
-
-  void cmpps(XMMRegister dst, XMMRegister src, int8_t cmp);
-  void cmpeqps(XMMRegister dst, XMMRegister src);
-  void cmpltps(XMMRegister dst, XMMRegister src);
-  void cmpleps(XMMRegister dst, XMMRegister src);
-  void cmpneqps(XMMRegister dst, XMMRegister src);
-  void cmpnltps(XMMRegister dst, XMMRegister src);
-  void cmpnleps(XMMRegister dst, XMMRegister src);
 
   void pslld(XMMRegister dst, XMMRegister src);
   void psrld(XMMRegister dst, XMMRegister src);

@@ -2916,18 +2916,6 @@ void Assembler::pextrd(Register dst, XMMRegister src, int8_t imm8) {
   emit(imm8);
 }
 
-void Assembler::insertps(XMMRegister dst, XMMRegister src, byte imm8) {
-  DCHECK(CpuFeatures::IsSupported(SSE4_1));
-  DCHECK(is_uint8(imm8));
-  EnsureSpace ensure_space(this);
-  emit(0x66);
-  emit_optional_rex_32(dst, src);
-  emit(0x0F);
-  emit(0x3A);
-  emit(0x21);
-  emit_sse_operand(dst, src);
-  emit(imm8);
-}
 
 void Assembler::pinsrd(XMMRegister dst, Register src, int8_t imm8) {
   DCHECK(IsEnabled(SSE4_1));
@@ -3017,21 +3005,6 @@ void Assembler::movaps(XMMRegister dst, XMMRegister src) {
   }
 }
 
-void Assembler::movups(XMMRegister dst, const Operand& src) {
-  EnsureSpace ensure_space(this);
-  emit_optional_rex_32(dst, src);
-  emit(0x0F);
-  emit(0x10);
-  emit_sse_operand(dst, src);
-}
-
-void Assembler::movups(const Operand& dst, XMMRegister src) {
-  EnsureSpace ensure_space(this);
-  emit_optional_rex_32(src, dst);
-  emit(0x0F);
-  emit(0x11);
-  emit_sse_operand(src, dst);
-}
 
 void Assembler::shufps(XMMRegister dst, XMMRegister src, byte imm8) {
   DCHECK(is_uint8(imm8));
@@ -3823,38 +3796,6 @@ void Assembler::roundss(XMMRegister dst, XMMRegister src, RoundingMode mode) {
   emit(static_cast<byte>(mode) | 0x8);
 }
 
-void Assembler::cmpps(XMMRegister dst, XMMRegister src, int8_t cmp) {
-  EnsureSpace ensure_space(this);
-  emit_optional_rex_32(dst, src);
-  emit(0x0F);
-  emit(0xC2);
-  emit_sse_operand(dst, src);
-  emit(cmp);
-}
-
-void Assembler::cmpeqps(XMMRegister dst, XMMRegister src) {
-  cmpps(dst, src, 0x0);
-}
-
-void Assembler::cmpltps(XMMRegister dst, XMMRegister src) {
-  cmpps(dst, src, 0x1);
-}
-
-void Assembler::cmpleps(XMMRegister dst, XMMRegister src) {
-  cmpps(dst, src, 0x2);
-}
-
-void Assembler::cmpneqps(XMMRegister dst, XMMRegister src) {
-  cmpps(dst, src, 0x4);
-}
-
-void Assembler::cmpnltps(XMMRegister dst, XMMRegister src) {
-  cmpps(dst, src, 0x5);
-}
-
-void Assembler::cmpnleps(XMMRegister dst, XMMRegister src) {
-  cmpps(dst, src, 0x6);
-}
 
 void Assembler::pslld(XMMRegister dst, XMMRegister src) {
   EnsureSpace ensure_space(this);
