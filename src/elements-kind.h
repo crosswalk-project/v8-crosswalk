@@ -137,7 +137,6 @@ inline bool IsDoubleOrFloatElementsKind(ElementsKind kind) {
   return IsFastDoubleElementsKind(kind) || IsFixedFloatElementsKind(kind);
 }
 
-inline bool IsSIMD128ElementsKind(ElementsKind kind) { return false; }
 
 inline bool IsFastSmiOrObjectElementsKind(ElementsKind kind) {
   return kind == FAST_SMI_ELEMENTS ||

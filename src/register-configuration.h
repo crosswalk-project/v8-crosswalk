@@ -88,9 +88,6 @@ class RegisterConfiguration {
   const char* GetDoubleRegisterName(int code) const {
     return double_register_names_[code];
   }
-  const char* GetSimd128RegisterName(int code) const {
-    return simd128_register_names_[code];
-  }
   const int* allocatable_general_codes() const {
     return allocatable_general_codes_;
   }
@@ -130,7 +127,6 @@ class RegisterConfiguration {
   char const* const* general_register_names_;
   char const* const* float_register_names_;
   char const* const* double_register_names_;
-  char const* const* simd128_register_names_;
 };
 
 }  // namespace internal
