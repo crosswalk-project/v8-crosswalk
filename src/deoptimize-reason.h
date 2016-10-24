@@ -48,6 +48,7 @@ namespace internal {
   V(NonStrictElementsInKeyedLoadGenericStub,                                  \
     "non-strict elements in KeyedLoadGenericStub")                            \
   V(NotAHeapNumber, "not a heap number")                                      \
+  V(NotASIMD128, "not a simd128 value")                                       \
   V(NotAHeapNumberUndefinedBoolean, "not a heap number/undefined/true/false") \
   V(NotAHeapNumberUndefined, "not a heap number/undefined")                   \
   V(NotAJavaScriptObject, "not a JavaScript object")                          \
